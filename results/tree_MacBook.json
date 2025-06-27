@@ -19,80 +19,54 @@
                   "url": "https://zh.ifixit.com/Device/MacBook",
                   "children": [
                     {
-                      "name": "MacBook Core Duo",
+                      "name": "MacBook Core Duo Repair",
                       "url": "https://zh.ifixit.com/Device/MacBook_Core_Duo",
-                      "children": [],
-                      "type": "product",
-                      "product_name": "MacBook Core Duo Repair",
-                      "product_url": "https://zh.ifixit.com/Device/MacBook_Core_Duo",
-                      "instruction_url": ""
+                      "instruction_url": "",
+                      "children": []
                     },
                     {
-                      "name": "MacBook Core 2 Duo",
+                      "name": "MacBook Core 2 Duo Repair",
                       "url": "https://zh.ifixit.com/Device/MacBook_Core_2_Duo",
-                      "children": [],
-                      "type": "product",
-                      "product_name": "MacBook Core 2 Duo Repair",
-                      "product_url": "https://zh.ifixit.com/Device/MacBook_Core_2_Duo",
-                      "instruction_url": ""
+                      "instruction_url": "",
+                      "children": []
                     },
                     {
-                      "name": "MacBook Unibody A1278",
+                      "name": "MacBook Unibody A1278 Repair",
                       "url": "https://zh.ifixit.com/Device/MacBook_Unibody_Model_A1278",
-                      "children": [],
-                      "type": "product",
-                      "product_name": "MacBook Unibody A1278 Repair",
-                      "product_url": "https://zh.ifixit.com/Device/MacBook_Unibody_Model_A1278",
-                      "instruction_url": ""
+                      "instruction_url": "",
+                      "children": []
                     },
                     {
-                      "name": "MacBook Unibody A1342",
+                      "name": "MacBook Unibody A1342 Repair",
                       "url": "https://zh.ifixit.com/Device/MacBook_Unibody_Model_A1342",
-                      "children": [],
-                      "type": "product",
-                      "product_name": "MacBook Unibody A1342 Repair",
-                      "product_url": "https://zh.ifixit.com/Device/MacBook_Unibody_Model_A1342",
-                      "instruction_url": "https://zh.ifixit.com/Document/OlSa6sc46JKxNuUO/K84-MLB_051-7982-C_820-2567_Ma.pdf"
+                      "instruction_url": "https://zh.ifixit.com/Document/OlSa6sc46JKxNuUO/K84-MLB_051-7982-C_820-2567_Ma.pdf",
+                      "children": []
                     },
                     {
-                      "name": "Retina MacBook 2015",
+                      "name": "Retina MacBook 2015 Repair",
                       "url": "https://zh.ifixit.com/Device/Retina_MacBook_2015",
-                      "children": [],
-                      "type": "product",
-                      "product_name": "Retina MacBook 2015 Repair",
-                      "product_url": "https://zh.ifixit.com/Device/Retina_MacBook_2015",
-                      "instruction_url": ""
+                      "instruction_url": "",
+                      "children": []
                     },
                     {
-                      "name": "Retina MacBook 2016",
+                      "name": "Retina MacBook 2016 Repair",
                       "url": "https://zh.ifixit.com/Device/Retina_MacBook_2016",
-                      "children": [],
-                      "type": "product",
-                      "product_name": "Retina MacBook 2016 Repair",
-                      "product_url": "https://zh.ifixit.com/Device/Retina_MacBook_2016",
-                      "instruction_url": ""
+                      "instruction_url": "",
+                      "children": []
                     },
                     {
-                      "name": "Retina MacBook 2017",
+                      "name": "Retina MacBook 2017修理",
                       "url": "https://zh.ifixit.com/Device/Retina_MacBook_2017",
-                      "children": [],
-                      "type": "product",
-                      "product_name": "Retina MacBook 2017修理",
-                      "product_url": "https://zh.ifixit.com/Device/Retina_MacBook_2017",
-                      "instruction_url": ""
+                      "instruction_url": "",
+                      "children": []
                     }
-                  ],
-                  "type": "category"
+                  ]
                 }
-              ],
-              "type": "category"
+              ]
             }
-          ],
-          "type": "category"
+          ]
         }
-      ],
-      "type": "category"
+      ]
     }
-  ],
-  "type": "category"
+  ]
 }

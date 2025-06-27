@@ -15,32 +15,22 @@
               "url": "https://zh.ifixit.com/Device/TCL_Television",
               "children": [
                 {
-                  "name": "TCL 3-Series S327",
+                  "name": "TCL 3-Series S327 Repair",
                   "url": "https://zh.ifixit.com/Device/TCL_3-Series_S327",
-                  "children": [],
-                  "type": "product",
-                  "product_name": "TCL 3-Series S327 Repair",
-                  "product_url": "https://zh.ifixit.com/Device/TCL_3-Series_S327",
-                  "instruction_url": "https://zh.ifixit.com/Document/jeIAQtiNvYcNTJy5/3-Series-Roku-User-Guide_US-CA-8.1_4.pdf"
+                  "instruction_url": "https://zh.ifixit.com/Document/jeIAQtiNvYcNTJy5/3-Series-Roku-User-Guide_US-CA-8.1_4.pdf",
+                  "children": []
                 },
                 {
-                  "name": "TCL 75S555 75 inch 4K TV",
+                  "name": "TCL 75S555 75 inch 4K TV Repair",
                   "url": "https://zh.ifixit.com/Device/75s555",
-                  "children": [],
-                  "type": "product",
-                  "product_name": "TCL 75S555 75 inch 4K TV Repair",
-                  "product_url": "https://zh.ifixit.com/Device/75s555",
-                  "instruction_url": ""
+                  "instruction_url": "",
+                  "children": []
                 }
-              ],
-              "type": "category"
+              ]
             }
-          ],
-          "type": "category"
+          ]
         }
-      ],
-      "type": "category"
+      ]
     }
-  ],
-  "type": "category"
+  ]
 }

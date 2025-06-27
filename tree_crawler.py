@@ -561,12 +561,11 @@ class TreeCrawler(IFixitCrawler):
         if not path:
             return None
             
-        # 根节点
+                    # 根节点
         root_node = {
             "name": path[0]["name"],
             "url": path[0]["url"],
-            "children": [],
-            "type": "category"
+            "children": []
         }
         
         current_node = root_node
@@ -576,8 +575,7 @@ class TreeCrawler(IFixitCrawler):
             new_node = {
                 "name": path[i]["name"],
                 "url": path[i]["url"],
-                "children": [],
-                "type": "category"
+                "children": []
             }
             
             # 添加为当前节点的子节点
@@ -691,9 +689,7 @@ class TreeCrawler(IFixitCrawler):
             # 只有当产品名称不为空时才添加到结果中
             if product_info["product_name"]:
                 # 设置当前节点为叶子节点(产品)
-                parent_node["type"] = "product"
-                parent_node["product_name"] = product_info["product_name"]
-                parent_node["product_url"] = product_info["product_url"]
+                parent_node["name"] = product_info["product_name"]
                 parent_node["instruction_url"] = product_info["instruction_url"]
                 print(f"已找到产品: {path_str} > {product_info['product_name']}")
         else:
@@ -703,19 +699,20 @@ class TreeCrawler(IFixitCrawler):
                 product_info = self.extract_product_info(soup, url, [])
                 if product_info["product_name"]:
                     # 设置当前节点为产品
-                    parent_node["type"] = "product"
-                    parent_node["product_name"] = product_info["product_name"]
-                    parent_node["product_url"] = product_info["product_url"]
+                    parent_node["name"] = product_info["product_name"]
                     parent_node["instruction_url"] = product_info["instruction_url"]
                     
                     # 同时让它保持category类型的children属性，继续向下爬取
                     print(f"找到产品与分类混合节点: {path_str} > {product_info['product_name']}")
             
+            # 确保所有叶子节点(没有子节点的节点)都有instruction_url字段
+            if not is_final_page and "children" in parent_node and (not parent_node["children"] or len(parent_node["children"]) == 0) and "instruction_url" not in parent_node:
+                parent_node["instruction_url"] = ""
+                print(f"添加缺失的instruction_url字段到叶子节点: {parent_node.get('name', '')}")
+                
             # 如果有子类别，则继续递归爬取
             if real_categories:
-                # 如果节点尚未设置类型，设置为分类节点
-                if "type" not in parent_node:
-                    parent_node["type"] = "category"
+                # 分类节点处理
                 
                 print(f"类别页面: {path_str}")
                 print(f"找到 {len(real_categories)} 个子类别")
@@ -755,9 +752,7 @@ class TreeCrawler(IFixitCrawler):
                 # 如果没有找到子类别但也不符合最终产品页面的定义
                 product_info = self.extract_product_info(soup, url, [])
                 if product_info["product_name"]:
-                    parent_node["type"] = "product"
-                    parent_node["product_name"] = product_info["product_name"]
-                    parent_node["product_url"] = product_info["product_url"]
+                    parent_node["name"] = product_info["product_name"]
                     parent_node["instruction_url"] = product_info["instruction_url"]
                     print(f"已找到产品: {path_str} > {product_info['product_name']}")
         
@@ -801,8 +796,62 @@ class TreeCrawler(IFixitCrawler):
         path.pop()
         return False
             
+    def ensure_instruction_url_in_leaf_nodes(self, node):
+        """
+        确保正确的字段结构:
+        1. 所有叶子节点(没有子节点)都有instruction_url字段，且字段顺序为name-url-instruction_url-children
+        2. 所有分类节点(有子节点)都没有instruction_url字段，字段顺序为name-url-children
+        """
+        if "children" in node:
+            if not node["children"] or len(node["children"]) == 0:
+                # 这是一个叶子节点，确保有instruction_url字段，并调整字段顺序
+                # 确保instruction_url存在
+                if "instruction_url" not in node:
+                    node["instruction_url"] = ""
+                    print(f"后处理: 添加缺失的instruction_url字段到叶子节点: {node.get('name', '')}")
+                
+                # 重新排序字段：name-url-instruction_url-children
+                name = node.get("name", "")
+                url = node.get("url", "")
+                instruction_url = node.get("instruction_url", "")
+                children = node.get("children", [])
+                
+                # 清除所有键
+                node.clear()
+                
+                # 按照正确的顺序添加回去
+                node["name"] = name
+                node["url"] = url
+                node["instruction_url"] = instruction_url
+                node["children"] = children
+            else:
+                # 这是一个分类节点(有子节点)，确保没有instruction_url字段
+                if "instruction_url" in node:
+                    # 发现分类节点有instruction_url字段，需要删除
+                    print(f"后处理: 删除分类节点中的instruction_url字段: {node.get('name', '')}")
+                    
+                    # 重新排序字段：name-url-children
+                    name = node.get("name", "")
+                    url = node.get("url", "")
+                    children = node.get("children", [])
+                    
+                    # 清除所有键
+                    node.clear()
+                    
+                    # 按照正确的顺序添加回去(不包括instruction_url)
+                    node["name"] = name
+                    node["url"] = url
+                    node["children"] = children
+                
+                # 递归处理所有子节点
+                for child in node["children"]:
+                    self.ensure_instruction_url_in_leaf_nodes(child)
+    
     def save_tree_result(self, tree_data, filename=None, target_name=None):
         """保存树形结构到JSON文件"""
+        # 确保所有叶子节点都有instruction_url字段
+        self.ensure_instruction_url_in_leaf_nodes(tree_data)
+        
         # 确保结果目录存在
         os.makedirs("results", exist_ok=True)
         
@@ -832,8 +881,9 @@ class TreeCrawler(IFixitCrawler):
     def print_tree_structure(self, node, level=0):
         """打印树形结构，方便在控制台查看"""
         indent = "  " * level
-        if node.get("type") == "product":
-            print(f"{indent}- {node.get('product_name', node.get('name', 'Unknown'))} [产品]")
+        # 没有children或children为空的节点视为产品
+        if "children" not in node or not node["children"]:
+            print(f"{indent}- {node.get('name', 'Unknown')} [产品]")
         else:
             print(f"{indent}+ {node.get('name', 'Unknown')} [类别]")
             
@@ -954,7 +1004,8 @@ def main():
 
 def find_sample_product(tree):
     """在树中查找一个示例产品节点"""
-    if tree.get("type") == "product":
+    # 没有子节点的视为产品节点
+    if "children" not in tree or not tree["children"]:
         return tree
         
     if "children" in tree:
@@ -968,7 +1019,8 @@ def find_sample_product(tree):
 def count_products_in_tree(node):
     """计算树中产品节点的数量"""
     count = 0
-    if node.get("type") == "product":
+    # 没有子节点的视为产品节点
+    if "children" not in node or not node["children"]:
         count = 1
     elif "children" in node:
         for child in node["children"]:
@@ -977,7 +1029,8 @@ def count_products_in_tree(node):
     
 def count_categories_in_tree(node):
     """计算树中分类节点的数量"""
-    if node.get("type") == "product":
+    # 有子节点的视为分类节点
+    if "children" not in node or not node["children"]:
         return 0
         
     count = 1  # 当前节点是一个分类

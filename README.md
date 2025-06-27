@@ -24,6 +24,8 @@
 18. 智能URL路径修复，确保生成的路径匹配网站真实结构
 19. 多层次路径发现机制，通过多种方式保证找到正确的层级关系
 20. 支持中英文混合路径的正确处理（如"设备 > 电子产品 > 耳机 > Apple Headphone"）
+21. 严格的字段规范：分类节点不包含instruction_url字段，只有产品节点（叶子节点）包含此字段
+22. 标准化的字段顺序：产品节点遵循name-url-instruction_url-children顺序，分类节点遵循name-url-children顺序
 
 ## 爬取结果格式
 
@@ -53,22 +55,30 @@
 
 ```json
 {
-  "name": "Television",                              // 设备类别名称
-  "url": "https://zh.ifixit.com/Device/Television",  // 类别URL
-  "type": "category",                                // 节点类型：category（分类）或product（产品）
+  "name": "设备",                                    // 设备类别名称
+  "url": "https://zh.ifixit.com/Device",            // 类别URL
   "children": [                                      // 子类别或产品列表
     {
-      "name": "LG Television",                       // 子类别名称
-      "url": "https://zh.ifixit.com/Device/LG_Television",  // 子类别URL
-      "type": "category",                            // 节点类型
+      "name": "电子产品",                             // 子类别名称
+      "url": "https://zh.ifixit.com/Device/Electronics", // 子类别URL
       "children": [                                  // 再下一级子类别或产品
         {
-          "name": "LG (70UK6570PUB)",               // 产品名称
-          "url": "https://zh.ifixit.com/Device/70UK6570PUB",  // 产品URL
-          "type": "product",                         // 节点类型：这里是产品（叶子节点）
-          "product_name": "LG (70UK6570PUB) Repair", // 产品完整名称
-          "product_url": "https://zh.ifixit.com/Device/70UK6570PUB", // 产品完整URL
-          "instruction_url": "https://zh.ifixit.com/Document/.../manual.pdf" // 说明书链接
+          "name": "电视",                             // 子类别名称
+          "url": "https://zh.ifixit.com/Device/Television", // 子类别URL
+          "children": [                              // 再下一级子类别或产品
+            {
+              "name": "LG Television",               // 子类别名称
+              "url": "https://zh.ifixit.com/Device/LG_Television", // 子类别URL
+              "children": [                          // 再下一级子类别或产品
+                {
+                  "name": "LG (70UK6570PUB) Repair", // 产品名称
+                  "url": "https://zh.ifixit.com/Device/70UK6570PUB", // 产品URL
+                  "instruction_url": "https://zh.ifixit.com/Document/.../manual.pdf", // 说明书链接
+                  "children": []                     // 空数组表示这是产品节点(叶子节点)
+                }
+              ]
+            }
+          ]
         }
       ]
     }
@@ -169,6 +179,10 @@ python tree_crawler.py https://zh.ifixit.com/Device/Television
    - 笔记本类别: "设备 > Mac > 笔记本 > MacBook"
 4. 智能URL路径修复，确保所有路径符合网站真实结构
 5. 中英文混合路径的处理，包括中文分类名称到英文URL的智能映射
+6. 严格的节点规范控制：
+   - 分类节点(有子节点): 不包含instruction_url字段，字段顺序为name-url-children
+   - 产品节点(叶子节点): 必须包含instruction_url字段，字段顺序为name-url-instruction_url-children
+7. 自动清理和优化结构：在保存前自动检查并修复所有节点结构，确保符合规范
 
 ### 方法四：运行完整爬虫
 
@@ -201,7 +215,9 @@ python crawler.py
 9. 数据格式区别：
    - easy_crawler.py生成的JSON文件为单个对象
    - batch_crawler.py生成的JSON文件为数组包裹的对象，即使只有一个结果
-   - tree_crawler.py生成的JSON文件为多层嵌套的树形结构，完整保留分类层级关系
+   - tree_crawler.py生成的JSON文件为多层嵌套的树形结构，其中：
+     - 分类节点（有子节点的节点）字段顺序为name、url、children，不包含instruction_url字段
+     - 产品节点（叶子节点，无子分类）字段顺序为name、url、instruction_url、children，通过空的children数组表示这是产品节点
 10. 面包屑导航提取：tree_crawler.py使用多层次的路径发现机制，优先从网页React组件中提取最精准的面包屑数据
 11. 支持的目录路径类型：
     - 电视相关：设备 > 电子产品 > 电视 > [品牌] Television
