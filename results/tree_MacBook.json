@@ -1,0 +1,98 @@
+{
+  "name": "设备",
+  "url": "https://zh.ifixit.com/Device",
+  "children": [
+    {
+      "name": "Mac",
+      "url": "https://zh.ifixit.com/Device/Mac",
+      "children": [
+        {
+          "name": "笔记本",
+          "url": "https://zh.ifixit.com/Device/Mac/笔记本",
+          "children": [
+            {
+              "name": "MacBook",
+              "url": "https://zh.ifixit.com/Device/Mac/笔记本/MacBook",
+              "children": [
+                {
+                  "name": "MacBook修理",
+                  "url": "https://zh.ifixit.com/Device/MacBook",
+                  "children": [
+                    {
+                      "name": "MacBook Core Duo",
+                      "url": "https://zh.ifixit.com/Device/MacBook_Core_Duo",
+                      "children": [],
+                      "type": "product",
+                      "product_name": "MacBook Core Duo Repair",
+                      "product_url": "https://zh.ifixit.com/Device/MacBook_Core_Duo",
+                      "instruction_url": ""
+                    },
+                    {
+                      "name": "MacBook Core 2 Duo",
+                      "url": "https://zh.ifixit.com/Device/MacBook_Core_2_Duo",
+                      "children": [],
+                      "type": "product",
+                      "product_name": "MacBook Core 2 Duo Repair",
+                      "product_url": "https://zh.ifixit.com/Device/MacBook_Core_2_Duo",
+                      "instruction_url": ""
+                    },
+                    {
+                      "name": "MacBook Unibody A1278",
+                      "url": "https://zh.ifixit.com/Device/MacBook_Unibody_Model_A1278",
+                      "children": [],
+                      "type": "product",
+                      "product_name": "MacBook Unibody A1278 Repair",
+                      "product_url": "https://zh.ifixit.com/Device/MacBook_Unibody_Model_A1278",
+                      "instruction_url": ""
+                    },
+                    {
+                      "name": "MacBook Unibody A1342",
+                      "url": "https://zh.ifixit.com/Device/MacBook_Unibody_Model_A1342",
+                      "children": [],
+                      "type": "product",
+                      "product_name": "MacBook Unibody A1342 Repair",
+                      "product_url": "https://zh.ifixit.com/Device/MacBook_Unibody_Model_A1342",
+                      "instruction_url": "https://zh.ifixit.com/Document/OlSa6sc46JKxNuUO/K84-MLB_051-7982-C_820-2567_Ma.pdf"
+                    },
+                    {
+                      "name": "Retina MacBook 2015",
+                      "url": "https://zh.ifixit.com/Device/Retina_MacBook_2015",
+                      "children": [],
+                      "type": "product",
+                      "product_name": "Retina MacBook 2015 Repair",
+                      "product_url": "https://zh.ifixit.com/Device/Retina_MacBook_2015",
+                      "instruction_url": ""
+                    },
+                    {
+                      "name": "Retina MacBook 2016",
+                      "url": "https://zh.ifixit.com/Device/Retina_MacBook_2016",
+                      "children": [],
+                      "type": "product",
+                      "product_name": "Retina MacBook 2016 Repair",
+                      "product_url": "https://zh.ifixit.com/Device/Retina_MacBook_2016",
+                      "instruction_url": ""
+                    },
+                    {
+                      "name": "Retina MacBook 2017",
+                      "url": "https://zh.ifixit.com/Device/Retina_MacBook_2017",
+                      "children": [],
+                      "type": "product",
+                      "product_name": "Retina MacBook 2017修理",
+                      "product_url": "https://zh.ifixit.com/Device/Retina_MacBook_2017",
+                      "instruction_url": ""
+                    }
+                  ],
+                  "type": "category"
+                }
+              ],
+              "type": "category"
+            }
+          ],
+          "type": "category"
+        }
+      ],
+      "type": "category"
+    }
+  ],
+  "type": "category"
+}

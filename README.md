@@ -17,7 +17,13 @@
 11. 支持批量爬取指定类别下的所有最终产品
 12. 自动将产品名称中的英寸符号(")转换为"英寸"文本，避免JSON转义问题
 13. 支持通过完整URL或产品名两种方式爬取数据
-14. 文件命名规则统一：使用URL路径最后一部分作为文件名
+14. 文件命名规则：根据命令行参数自动生成，以"tree_"加参数名称命名
+15. 支持以多层级树形结构方式爬取和保存设备信息
+16. 精准提取网页React组件数据中的完整面包屑导航信息
+17. 支持所有种类产品和类别的完整路径发现（如耳机、电视、笔记本等）
+18. 智能URL路径修复，确保生成的路径匹配网站真实结构
+19. 多层次路径发现机制，通过多种方式保证找到正确的层级关系
+20. 支持中英文混合路径的正确处理（如"设备 > 电子产品 > 耳机 > Apple Headphone"）
 
 ## 爬取结果格式
 
@@ -41,6 +47,33 @@
     "instruction_url": "https://zh.ifixit.com/Document/.../ipad_w_3g.pdf" // 说明书链接（PDF文档或视频链接）
   }
 ]
+```
+
+### 使用tree_crawler.py的结果格式（树形结构）
+
+```json
+{
+  "name": "Television",                              // 设备类别名称
+  "url": "https://zh.ifixit.com/Device/Television",  // 类别URL
+  "type": "category",                                // 节点类型：category（分类）或product（产品）
+  "children": [                                      // 子类别或产品列表
+    {
+      "name": "LG Television",                       // 子类别名称
+      "url": "https://zh.ifixit.com/Device/LG_Television",  // 子类别URL
+      "type": "category",                            // 节点类型
+      "children": [                                  // 再下一级子类别或产品
+        {
+          "name": "LG (70UK6570PUB)",               // 产品名称
+          "url": "https://zh.ifixit.com/Device/70UK6570PUB",  // 产品URL
+          "type": "product",                         // 节点类型：这里是产品（叶子节点）
+          "product_name": "LG (70UK6570PUB) Repair", // 产品完整名称
+          "product_url": "https://zh.ifixit.com/Device/70UK6570PUB", // 产品完整URL
+          "instruction_url": "https://zh.ifixit.com/Document/.../manual.pdf" // 说明书链接
+        }
+      ]
+    }
+  ]
+}
 ```
 
 ## 使用方法
@@ -94,7 +127,50 @@ python batch_crawler.py test
 
 **输出文件命名规则**：文件名以`batch_`开头，后跟URL路径最后一部分，如`batch_iPad_3G.json`
 
-### 方法三：运行完整爬虫
+### 方法三：以树形结构爬取设备分类
+
+爬取并以层级树结构保存设备分类，适合需要展示层级关系的场景。该方法会自动从React组件数据中提取完整的面包屑导航，构建准确的多层级路径：
+
+```bash
+python tree_crawler.py [URL或设备名]
+```
+
+示例：
+```bash
+# 爬取电视产品类别树结构
+python tree_crawler.py Television
+
+# 爬取LG电视产品类别树结构（包含38个子类别）
+python tree_crawler.py LG_Television
+
+# 爬取苹果耳机产品类别树结构
+python tree_crawler.py Apple_Headphone
+
+# 爬取MacBook产品类别树结构
+python tree_crawler.py MacBook
+
+# 通过完整URL爬取
+python tree_crawler.py https://zh.ifixit.com/Device/Television
+```
+
+**输出文件命名规则**：文件名以`tree_`开头，后跟命令行中指定的爬取目标名称，如`tree_Apple_Headphone.json`
+
+**树形结构爬虫特点**：
+1. 精准提取网页React组件数据中的完整面包屑导航信息
+2. 多层次路径发现机制，包括:
+   - 从React组件数据中提取面包屑（最准确）
+   - 从Schema.org元数据中提取标准化面包屑
+   - 从面包屑容器DOM元素中提取
+   - 从页面头部导航链接中提取
+   - 从URL结构推断基本路径
+3. 支持所有种类产品和类别的完整路径发现，如:
+   - 电视类别: "设备 > 电子产品 > 电视 > TCL Television"
+   - 耳机类别: "设备 > 电子产品 > 耳机 > Apple Headphone"
+   - 笔记本类别: "设备 > Mac > 笔记本 > MacBook"
+4. 智能URL路径修复，确保所有路径符合网站真实结构
+5. 中英文混合路径的处理，包括中文分类名称到英文URL的智能映射
+
+### 方法四：运行完整爬虫
 
 从设备首页开始爬取整个网站：
 
@@ -114,20 +190,29 @@ python crawler.py
 1. URL结构：iFixit网站的URL结构是替换而非追加路径，例如从"平板电脑"到"iPad"的URL变化是从`/Device/Tablet`到`/Device/iPad`
 2. 为避免对服务器造成压力，爬虫添加了随机延迟
 3. 爬虫只收集最终产品页面（没有子类别的页面）的信息，中间类别页面（如iPad Pro）不会被收集
-4. 爬虫会自动跳过"创建指南"等非产品页面
+4. 爬虫会自动跳过"创建指南"等非产品页面，以及各种无关内容（如"翻译"、"贡献者"、"论坛问题"等）
 5. 爬虫会自动将产品名称中的英寸符号(")转换为"英寸"文本，使JSON输出更加美观易读
-6. 当产品页面没有PDF文档时，爬虫会尝试提取视频指南链接作为说明书链接，特别是对于如Golf Cart等有维护视频的产品
+6. 当产品页面没有PDF文档时，爬虫会尝试提取视频指南链接作为说明书链接
 7. 输出结果中，字段顺序为：产品名称、产品URL、说明书链接
 8. 文件命名规则：
    - easy_crawler.py生成的文件名：使用URL路径最后一部分，如`iPad_3G.json`
    - batch_crawler.py生成的文件名：以`batch_`开头，后跟URL路径最后一部分，如`batch_iPad_3G.json`
+   - tree_crawler.py生成的文件名：以`tree_`开头，后跟命令行参数中指定的爬取目标名称，如`tree_Apple_Headphone.json`
 9. 数据格式区别：
    - easy_crawler.py生成的JSON文件为单个对象
    - batch_crawler.py生成的JSON文件为数组包裹的对象，即使只有一个结果
+   - tree_crawler.py生成的JSON文件为多层嵌套的树形结构，完整保留分类层级关系
+10. 面包屑导航提取：tree_crawler.py使用多层次的路径发现机制，优先从网页React组件中提取最精准的面包屑数据
+11. 支持的目录路径类型：
+    - 电视相关：设备 > 电子产品 > 电视 > [品牌] Television
+    - 耳机相关：设备 > 电子产品 > 耳机 > [品牌] Headphone
+    - 笔记本相关：设备 > Mac > 笔记本 > [品牌/型号]
+    - 以及其他各种产品类别的多级路径
 
 ## 文件说明
 
 - `crawler.py` - 主爬虫代码，支持完整站点爬取
 - `easy_crawler.py` - 交互式爬虫工具（推荐新手使用）
 - `batch_crawler.py` - 批量爬取工具，针对特定类别
+- `tree_crawler.py` - 树形结构爬虫工具，具有增强的路径发现功能，将设备分类以完整的多层级树结构保存
  
