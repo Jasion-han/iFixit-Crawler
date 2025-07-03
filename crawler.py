@@ -761,18 +761,21 @@ class IFixitCrawler:
                             video_id = video_elem['videoid']
                             # 构建YouTube链接
                             video_url = f"https://www.youtube.com/watch?v={video_id}"
-                            
+
                             # 尝试提取视频标题
                             video_title = ""
                             # 查找视频标题，通常在前面的h3标签中
                             prev_header = box.find_previous(['h3', 'h4'])
                             if prev_header:
                                 video_title = prev_header.get_text().strip()
-                                
+                                # 移除中文字符，保持英文内容
+                                video_title = re.sub(r'[\u4e00-\u9fff]+', '', video_title)
+                                video_title = re.sub(r'\s+', ' ', video_title).strip()
+
                             if not video_title:
-                                # 如果找不到标题，使用产品名称作为标题的一部分
-                                video_title = f"视频指南"
-                                
+                                # 如果找不到标题，使用英文标题
+                                video_title = "Video Guide"
+
                             videos.append({
                                 "url": video_url,
                                 "title": video_title,
@@ -788,12 +791,15 @@ class IFixitCrawler:
                     video_url = f"https://www.youtube.com/watch?v={video_id}"
                     
                     # 尝试提取视频标题
-                    video_title = "视频指南"
+                    video_title = "Video Guide"
                     # 查找最近的标题标签
                     prev_header = video_elem.find_previous(['h1', 'h2', 'h3', 'h4', 'h5'])
                     if prev_header:
                         video_title = prev_header.get_text().strip()
-                        
+                        # 移除中文字符，保持英文内容
+                        video_title = re.sub(r'[\u4e00-\u9fff]+', '', video_title)
+                        video_title = re.sub(r'\s+', ' ', video_title).strip()
+
                     videos.append({
                         "url": video_url,
                         "title": video_title,

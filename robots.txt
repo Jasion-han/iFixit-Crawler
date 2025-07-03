@@ -79,4 +79,4 @@ User-agent: TurnitinBot
 Disallow: /
 
 
-Sitemap: https://zh.ifixit.com/sitemap/sitemap.xml
+Sitemap: https://www.ifixit.com/sitemap/sitemap.xml
