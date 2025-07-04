@@ -1,6 +1,4 @@
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 import json
 import time
@@ -11,84 +9,19 @@ import re
 class IFixitCrawler:
     def __init__(self, base_url="https://www.ifixit.com"):
         self.base_url = base_url
+        self.headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
         self.results = []
         self.visited_urls = set()
         self.debug = False  # 默认关闭调试模式
-
-        # 初始化Session和重试策略
-        self.session = requests.Session()
-
-        # 配置重试策略
-        retry_strategy = Retry(
-            total=3,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504],
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
-
-        # 设置HTTP头部
-        self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "Cache-Control": "max-age=0"
-        })
         
     def get_soup(self, url):
-        """获取页面内容并解析为BeautifulSoup对象，强制使用英文版本"""
+        """获取页面内容并解析为BeautifulSoup对象"""
         try:
-            # 预处理URL，确保使用英文域名
-            if "zh.ifixit.com" in url:
-                url = url.replace("zh.ifixit.com", "www.ifixit.com")
-                self.print_debug(f"🔄 将中文URL转换为英文URL: {url}")
-
-            # 确保URL包含英文语言参数
-            if "?lang=en" not in url and "&lang=en" not in url:
-                url += "?lang=en" if "?" not in url else "&lang=en"
-                self.print_debug(f"🌐 添加英文语言参数: {url}")
-
-            # 首次尝试：禁止重定向
-            self.print_debug(f"📡 正在访问: {url}")
-            response = self.session.get(url, allow_redirects=False)
-
-            # 如果是重定向响应，检查重定向目标
-            if response.status_code in [301, 302, 303, 307, 308]:
-                redirect_url = response.headers.get('Location', '')
-                self.print_debug(f"🔀 检测到重定向: {response.status_code} -> {redirect_url}")
-
-                if "zh.ifixit.com" in redirect_url:
-                    # 强制转换重定向目标为英文版本
-                    english_redirect = redirect_url.replace("zh.ifixit.com", "www.ifixit.com")
-                    if "?lang=en" not in english_redirect and "&lang=en" not in english_redirect:
-                        english_redirect += "?lang=en" if "?" not in english_redirect else "&lang=en"
-
-                    self.print_debug(f"🔄 强制重定向到英文版本: {english_redirect}")
-                    response = self.session.get(english_redirect, allow_redirects=False)
-                else:
-                    # 如果重定向目标已经是英文版本，跟随重定向
-                    response = self.session.get(redirect_url, allow_redirects=True)
-
-            # 最终检查：如果还是被重定向到中文版本，强制重新请求
-            final_url = getattr(response, 'url', url)
-            if "zh.ifixit.com" in final_url:
-                english_final = final_url.replace("zh.ifixit.com", "www.ifixit.com")
-                if "?lang=en" not in english_final:
-                    english_final += "?lang=en" if "?" not in english_final else "&lang=en"
-
-                self.print_debug(f"⚠️  最终URL仍为中文版本，强制访问: {english_final}")
-                response = self.session.get(english_final, allow_redirects=False)
-
+            response = requests.get(url, headers=self.headers)
             response.raise_for_status()
-            self.print_debug(f"✅ 成功获取页面，最终URL: {getattr(response, 'url', url)}")
             return BeautifulSoup(response.text, "html.parser")
         except Exception as e:
             print(f"获取页面时发生错误: {url}, 错误: {str(e)}")
@@ -250,9 +183,10 @@ class IFixitCrawler:
                 if title_elem:
                     # 清理产品名称，去除多余空格并处理引号
                     product_name = title_elem.text.strip()
-                    # 清理产品名称，保持英文格式
-                    product_name = product_name.replace('\\"', '"').replace('\\"', '"')
-                    product_name = product_name.replace('"', '"').replace('"', '"')
+                    # 处理转义引号和英寸符号，将其替换为"英寸"
+                    product_name = product_name.replace('\\"', '英寸').replace('\\"', '英寸')
+                    product_name = product_name.replace('"', '英寸').replace('"', '英寸')
+                    product_name = re.sub(r'(\d+)\"', r'\1英寸', product_name)  # 将数字后面的英寸符号替换为"英寸"
                     product_name = re.sub(r'\s+', ' ', product_name)  # 处理多余空格
                     product_info["product_name"] = product_name
                     break
@@ -261,7 +195,7 @@ class IFixitCrawler:
             if not product_info["product_name"]:
                 url_path = url.split("/")[-1]
                 product_name = url_path.replace("_", " ").replace("-", " ")
-                product_name = product_name.replace('%22', '"').replace('%E2%80%9D', '"')  # 将URL编码的引号替换为英文引号
+                product_name = product_name.replace('%22', '英寸').replace('%E2%80%9D', '英寸')  # 将%22替换为英寸
                 product_info["product_name"] = product_name
             
             # 查找"文档"栏目下的链接
@@ -737,12 +671,13 @@ class IFixitCrawler:
         # 确保结果目录存在
         os.makedirs("results", exist_ok=True)
         
-        # 处理产品名称中的引号问题，保持英文格式
+        # 处理产品名称中的引号问题
         for item in self.results:
             if "product_name" in item:
-                # 标准化引号为英文格式
-                item["product_name"] = item["product_name"].replace('\\"', '"').replace('\\"', '"')
-                item["product_name"] = item["product_name"].replace('"', '"').replace('"', '"')
+                # 将引号替换为英寸
+                item["product_name"] = item["product_name"].replace('\\"', '英寸').replace('\\"', '英寸')
+                item["product_name"] = item["product_name"].replace('"', '英寸')
+                item["product_name"] = re.sub(r'(\d+)\"', r'\1英寸', item["product_name"])
             
             # 兼容旧数据，将manual_url转为instruction_url
             if "manual_url" in item and "instruction_url" not in item:
@@ -768,11 +703,12 @@ class IFixitCrawler:
             else:
                 filename = "results/product_info.json"
         
-        # 处理产品名称中的引号问题，保持英文格式
+        # 处理产品名称中的引号问题
         if "product_name" in product_info:
-            # 标准化引号为英文格式
-            product_info["product_name"] = product_info["product_name"].replace('\\"', '"').replace('\\"', '"')
-            product_info["product_name"] = product_info["product_name"].replace('"', '"').replace('"', '"')
+            # 将引号替换为英寸
+            product_info["product_name"] = product_info["product_name"].replace('\\"', '英寸').replace('\\"', '英寸')
+            product_info["product_name"] = product_info["product_name"].replace('"', '英寸')
+            product_info["product_name"] = re.sub(r'(\d+)\"', r'\1英寸', product_info["product_name"])
             
         # 兼容旧数据，将manual_url转为instruction_url
         if "manual_url" in product_info and "instruction_url" not in product_info:

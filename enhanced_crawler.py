@@ -18,7 +18,7 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         self.verbose = verbose  # 控制详细输出
 
         # 强制使用英文，添加英文语言头
-        self.session.headers.update({
+        self.headers.update({
             'Accept-Language': 'en-US,en;q=0.9',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
@@ -713,7 +713,7 @@ class EnhancedIFixitCrawler(IFixitCrawler):
 
                     try:
                         import requests
-                        response = self.session.get(api_url, timeout=10)
+                        response = requests.get(api_url, headers=self.headers, timeout=10)
                         if response.status_code == 200:
                             api_data = response.json()
 
