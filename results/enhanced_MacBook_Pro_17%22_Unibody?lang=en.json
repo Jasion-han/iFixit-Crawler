@@ -10,10 +10,10 @@
       "difficulty": "Moderate",
       "introduction": "Replace the AirPort Antenna in your MacBook Pro to get a clear signal and get back to watching cat videos.",
       "view_statistics": {
-        "past_24_hours": "24",
-        "past_7_days": "41",
-        "past_30_days": "91",
-        "all_time": "17,011"
+        "past_24_hours": "9",
+        "past_7_days": "47",
+        "past_30_days": "96",
+        "all_time": "17,017"
       },
       "completed": "9",
       "favorites": "14",
@@ -212,10 +212,10 @@
       "difficulty": "Moderate",
       "introduction": "Having issues with wireless connectivity? The problem could lie inside the AirPort Board.\n\nThis guide will show you how to replace the AirPort card installed in the display frame of the Early 2009 and Mid 2009 MacBook Pro 17\" Unibody. This guide does not apply to the Mid 2010 and Late 2011 MacBook Pro 17\" Unibody. The AirPort card in the later models is mounted beside the optical drive.",
       "view_statistics": {
-        "past_24_hours": "13",
-        "past_7_days": "32",
-        "past_30_days": "83",
-        "all_time": "22,555"
+        "past_24_hours": "7",
+        "past_7_days": "33",
+        "past_30_days": "85",
+        "all_time": "22,559"
       },
       "completed": "15",
       "favorites": "16",
@@ -440,10 +440,10 @@
       "difficulty": "Moderate",
       "introduction": "",
       "view_statistics": {
-        "past_24_hours": "14",
-        "past_7_days": "59",
+        "past_24_hours": "20",
+        "past_7_days": "62",
         "past_30_days": "265",
-        "all_time": "330,454"
+        "all_time": "330,467"
       },
       "completed": "208",
       "favorites": "81",
@@ -511,8 +511,8 @@
       "view_statistics": {
         "past_24_hours": "4",
         "past_7_days": "14",
-        "past_30_days": "50",
-        "all_time": "23,490"
+        "past_30_days": "51",
+        "all_time": "23,491"
       },
       "completed": "6",
       "favorites": "15",
@@ -594,10 +594,10 @@
       "difficulty": "Difficult",
       "introduction": "iSight acting more like iBlind? Maybe it's time for a new camera. Use this guide to replace a faulty camera.",
       "view_statistics": {
-        "past_24_hours": "9",
-        "past_7_days": "26",
-        "past_30_days": "52",
-        "all_time": "11,705"
+        "past_24_hours": "12",
+        "past_7_days": "25",
+        "past_30_days": "57",
+        "all_time": "11,710"
       },
       "completed": "5",
       "favorites": "7",
@@ -944,10 +944,10 @@
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace the camera board.",
       "view_statistics": {
-        "past_24_hours": "3",
-        "past_7_days": "6",
-        "past_30_days": "33",
-        "all_time": "2,435"
+        "past_24_hours": "2",
+        "past_7_days": "7",
+        "past_30_days": "35",
+        "all_time": "2,437"
       },
       "completed": "3",
       "favorites": "5",
@@ -1302,10 +1302,10 @@
       "difficulty": "Moderate",
       "introduction": "If your camera seems to be acting strange, it may be the fault of the camera cable. If you find that the Wi-Fi connection works only when the display is in a certain position, your camera/AirPort cable may be the culprit. Use this guide to replace a broken or damaged cable.",
       "view_statistics": {
-        "past_24_hours": "1",
-        "past_7_days": "5",
-        "past_30_days": "59",
-        "all_time": "12,880"
+        "past_24_hours": "2",
+        "past_7_days": "7",
+        "past_30_days": "61",
+        "all_time": "12,882"
       },
       "completed": "3",
       "favorites": "9",
@@ -1695,9 +1695,9 @@
       "introduction": "Maybe it's cracked. Maybe it's old. Either way, a nasty looking clutch cover is not good. Use this guide to replace the clutch/hinge cover.",
       "view_statistics": {
         "past_24_hours": "1",
-        "past_7_days": "12",
+        "past_7_days": "6",
         "past_30_days": "56",
-        "all_time": "20,413"
+        "all_time": "20,414"
       },
       "completed": "9",
       "favorites": "13",
@@ -1872,10 +1872,10 @@
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace your MacBook Pro's display assembly.",
       "view_statistics": {
-        "past_24_hours": "7",
-        "past_7_days": "19",
-        "past_30_days": "81",
-        "all_time": "74,293"
+        "past_24_hours": "5",
+        "past_7_days": "22",
+        "past_30_days": "79",
+        "all_time": "74,296"
       },
       "completed": "43",
       "favorites": "24",
@@ -2032,10 +2032,10 @@
       "difficulty": "Moderate",
       "introduction": "There are many benefits to adding a second drive (either HDD or SSD) to your laptop, such as improved speeds, greater storage space, and less heartache when installing new software. Use this guide to install one using our optical bay hard drive enclosure.\n\nWarning! If you have an older 3.0 Gb/s (SATA II) based system you need to make sure the drive you use is able to run at this slower speed. Review your drives spec sheet, make sure it clearly lists compatibility with 3.0 Gb/s (SATA II) systems. Most drives sold today are fixed speed 6.0 Gb/s (SATA III) which won’t work in 3.0 Gb/s (SATA II) systems properly.",
       "view_statistics": {
-        "past_24_hours": "3",
-        "past_7_days": "14",
-        "past_30_days": "72",
-        "all_time": "66,557"
+        "past_24_hours": "12",
+        "past_7_days": "24",
+        "past_30_days": "81",
+        "all_time": "66,568"
       },
       "completed": "68",
       "favorites": "62",
@@ -2231,10 +2231,10 @@
       "difficulty": "Difficult",
       "introduction": "Did your MacBook Pro stop recognizing express cards? Use this guide to replace the express card cage.",
       "view_statistics": {
-        "past_24_hours": "1",
-        "past_7_days": "5",
-        "past_30_days": "22",
-        "all_time": "12,445"
+        "past_24_hours": "2",
+        "past_7_days": "6",
+        "past_30_days": "24",
+        "all_time": "12,447"
       },
       "completed": "6",
       "favorites": "9",
@@ -2482,10 +2482,10 @@
       "difficulty": "Easy",
       "introduction": "Replace the missing feet for your MacBook Pro 17\".",
       "view_statistics": {
-        "past_24_hours": "3",
-        "past_7_days": "5",
-        "past_30_days": "30",
-        "all_time": "2,501"
+        "past_24_hours": "2",
+        "past_7_days": "7",
+        "past_30_days": "31",
+        "all_time": "2,503"
       },
       "completed": "10",
       "favorites": "1",
@@ -2570,10 +2570,10 @@
       "difficulty": "Difficult",
       "introduction": "Have you ever wondered how your display seems to work just fine, despite the huge cracks running across the front of it? Likely, you have just cracked the protective glass covering the LCD. Use this guide to remove a damaged or cracked display glass.",
       "view_statistics": {
-        "past_24_hours": "3",
-        "past_7_days": "13",
-        "past_30_days": "22",
-        "all_time": "14,462"
+        "past_24_hours": "1",
+        "past_7_days": "10",
+        "past_30_days": "23",
+        "all_time": "14,463"
       },
       "completed": "8",
       "favorites": "13",
@@ -2833,10 +2833,10 @@
       "difficulty": "Moderate",
       "introduction": "Use this guide to install a new hard drive in your MacBook Pro 17\" Unibody for more storage space.\n\nWarning! If you have an older 3.0 Gb/s (SATA II) based system you need to make sure the drive you use is able to run at this slower speed. Review your drives spec sheet, make sure it clearly lists compatibility with 3.0 Gb/s (SATA II) systems. Most drives sold today are fixed speed 6.0 Gb/s (SATA III) which won’t work in 3.0 Gb/s (SATA II) systems properly.",
       "view_statistics": {
-        "past_24_hours": "6",
-        "past_7_days": "30",
-        "past_30_days": "213",
-        "all_time": "274,040"
+        "past_24_hours": "11",
+        "past_7_days": "37",
+        "past_30_days": "214",
+        "all_time": "274,049"
       },
       "completed": "242",
       "favorites": "95",
@@ -2920,10 +2920,10 @@
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace the hard drive bracket nearest the front edge of the MacBook Pro 17\" Unibody.",
       "view_statistics": {
-        "past_24_hours": "1",
-        "past_7_days": "5",
-        "past_30_days": "34",
-        "all_time": "4,801"
+        "past_24_hours": "2",
+        "past_7_days": "7",
+        "past_30_days": "36",
+        "all_time": "4,803"
       },
       "completed": "10",
       "favorites": "6",
@@ -3017,9 +3017,9 @@
       "introduction": "Use this guide to replace a hard drive cable that is torn or has broken connectors.",
       "view_statistics": {
         "past_24_hours": "2",
-        "past_7_days": "6",
+        "past_7_days": "7",
         "past_30_days": "41",
-        "all_time": "20,505"
+        "all_time": "20,506"
       },
       "completed": "16",
       "favorites": "12",
@@ -3119,10 +3119,10 @@
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace your MacBook Pro's heat sink. Before reinstalling the heat sink, it is essential to apply a new layer of thermal paste.",
       "view_statistics": {
-        "past_24_hours": "5",
-        "past_7_days": "18",
-        "past_30_days": "63",
-        "all_time": "40,329"
+        "past_24_hours": "3",
+        "past_7_days": "19",
+        "past_30_days": "64",
+        "all_time": "40,331"
       },
       "completed": "33",
       "favorites": "29",
@@ -3361,10 +3361,10 @@
       "difficulty": "Difficult",
       "introduction": "A cracked LCD is no fun at all. Colors go wonky, things don't look right, it's an overall bad experience. Mysterious white lines and faded displays can often be fixed by replacing the LCD. Use this guide to help you out.",
       "view_statistics": {
-        "past_24_hours": "4",
-        "past_7_days": "32",
-        "past_30_days": "153",
-        "all_time": "75,200"
+        "past_24_hours": "7",
+        "past_7_days": "34",
+        "past_30_days": "145",
+        "all_time": "75,206"
       },
       "completed": "32",
       "favorites": "17",
@@ -3687,7 +3687,7 @@
       "difficulty": "Moderate",
       "introduction": "Does your display have a hard time staying upright? Nobody like a floppy display. Use this guide to replace the left clutch hinge.",
       "view_statistics": {
-        "past_24_hours": "3",
+        "past_24_hours": "0",
         "past_7_days": "6",
         "past_30_days": "42",
         "all_time": "7,151"
@@ -3883,8 +3883,8 @@
       "difficulty": "Moderate",
       "introduction": "Computer running hot? Use this guide to replace a burned-out fan.",
       "view_statistics": {
-        "past_24_hours": "1",
-        "past_7_days": "6",
+        "past_24_hours": "0",
+        "past_7_days": "5",
         "past_30_days": "37",
         "all_time": "24,006"
       },
@@ -3954,10 +3954,10 @@
       "difficulty": "Difficult",
       "introduction": "Left side of your MacBook Pro mute? Use this guide to replace the left speaker.",
       "view_statistics": {
-        "past_24_hours": "2",
-        "past_7_days": "8",
-        "past_30_days": "53",
-        "all_time": "21,483"
+        "past_24_hours": "1",
+        "past_7_days": "9",
+        "past_30_days": "54",
+        "all_time": "21,484"
       },
       "completed": "18",
       "favorites": "13",
@@ -4198,10 +4198,10 @@
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace your MacBook Pro's logic board. Before reattaching the heat sink, it is essential to apply a new layer of thermal paste.",
       "view_statistics": {
-        "past_24_hours": "4",
-        "past_7_days": "24",
-        "past_30_days": "117",
-        "all_time": "141,896"
+        "past_24_hours": "6",
+        "past_7_days": "22",
+        "past_30_days": "118",
+        "all_time": "141,901"
       },
       "completed": "100",
       "favorites": "44",
@@ -4474,10 +4474,10 @@
       "difficulty": "Easy",
       "introduction": "Cancel: I did not complete this guide.\n\n20 other people completed this guide.",
       "view_statistics": {
-        "past_24_hours": "0",
-        "past_7_days": "6",
-        "past_30_days": "21",
-        "all_time": "18,266"
+        "past_24_hours": "2",
+        "past_7_days": "8",
+        "past_30_days": "23",
+        "all_time": "18,268"
       },
       "completed": "20",
       "favorites": "10",
@@ -4509,10 +4509,10 @@
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace the DC-in board on your MacBook Pro.",
       "view_statistics": {
-        "past_24_hours": "6",
+        "past_24_hours": "1",
         "past_7_days": "12",
-        "past_30_days": "32",
-        "all_time": "29,579"
+        "past_30_days": "33",
+        "all_time": "29,580"
       },
       "completed": "30",
       "favorites": "13",
@@ -4735,7 +4735,7 @@
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace a non-functional microphone.",
       "view_statistics": {
-        "past_24_hours": "1",
+        "past_24_hours": "0",
         "past_7_days": "8",
         "past_30_days": "43",
         "all_time": "9,299"
@@ -4979,10 +4979,10 @@
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace your MacBook Pro's optical drive. The Bluetooth board and optical drive cable are not included with a new optical drive.",
       "view_statistics": {
-        "past_24_hours": "4",
-        "past_7_days": "14",
+        "past_24_hours": "1",
+        "past_7_days": "12",
         "past_30_days": "44",
-        "all_time": "94,218"
+        "all_time": "94,219"
       },
       "completed": "59",
       "favorites": "40",
@@ -5123,8 +5123,8 @@
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace your MacBook Pro's optical drive cable.",
       "view_statistics": {
-        "past_24_hours": "2",
-        "past_7_days": "8",
+        "past_24_hours": "0",
+        "past_7_days": "5",
         "past_30_days": "41",
         "all_time": "11,127"
       },
@@ -5250,10 +5250,10 @@
       "difficulty": "Easy",
       "introduction": "Use this guide to replace your MacBook Pro's RAM.",
       "view_statistics": {
-        "past_24_hours": "4",
-        "past_7_days": "21",
-        "past_30_days": "77",
-        "all_time": "97,833"
+        "past_24_hours": "6",
+        "past_7_days": "20",
+        "past_30_days": "81",
+        "all_time": "97,837"
       },
       "completed": "133",
       "favorites": "52",
@@ -5305,10 +5305,10 @@
       "difficulty": "Moderate",
       "introduction": "This guide will help you replace the rear display bezel.",
       "view_statistics": {
-        "past_24_hours": "1",
-        "past_7_days": "4",
-        "past_30_days": "36",
-        "all_time": "6,676"
+        "past_24_hours": "2",
+        "past_7_days": "5",
+        "past_30_days": "37",
+        "all_time": "6,677"
       },
       "favorites": "7",
       "videos": [],
@@ -5741,8 +5741,8 @@
       "introduction": "Does your display have a hard time staying upright? Nobody likes a floppy display. Use this guide to replace the right clutch hinge.",
       "view_statistics": {
         "past_24_hours": "0",
-        "past_7_days": "20",
-        "past_30_days": "70",
+        "past_7_days": "17",
+        "past_30_days": "69",
         "all_time": "18,351"
       },
       "completed": "7",
@@ -6006,8 +6006,8 @@
       "difficulty": "Moderate",
       "introduction": "No sound from the right side of your MacBook Pro? Use this guide to replace the subwoofer and right speaker assembly.",
       "view_statistics": {
-        "past_24_hours": "1",
-        "past_7_days": "5",
+        "past_24_hours": "0",
+        "past_7_days": "4",
         "past_30_days": "31",
         "all_time": "26,716"
       },
@@ -6157,10 +6157,10 @@
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace your MacBook Pro's upper case. Replacing the upper case requires removal of most components inside your computer, including the display assembly.",
       "view_statistics": {
-        "past_24_hours": "2",
-        "past_7_days": "8",
-        "past_30_days": "30",
-        "all_time": "75,142"
+        "past_24_hours": "3",
+        "past_7_days": "10",
+        "past_30_days": "32",
+        "all_time": "75,145"
       },
       "completed": "45",
       "favorites": "31",
@@ -6578,10 +6578,10 @@
       "difficulty": "Difficult",
       "introduction": "",
       "view_statistics": {
-        "past_24_hours": "7",
-        "past_7_days": "37",
+        "past_24_hours": "6",
+        "past_7_days": "35",
         "past_30_days": "201",
-        "all_time": "421,013"
+        "all_time": "421,015"
       },
       "favorites": "158",
       "videos": [],
@@ -6810,9 +6810,9 @@
       "introduction": "MacBook Pro 17\" Unibody 2.2GHz early 2011 Duo\n\nVibrating noise from new MacBook Pro ?\n\nRattling fan ? Overheating ?",
       "view_statistics": {
         "past_24_hours": "3",
-        "past_7_days": "11",
-        "past_30_days": "33",
-        "all_time": "10,089"
+        "past_7_days": "9",
+        "past_30_days": "34",
+        "all_time": "10,090"
       },
       "completed": "13",
       "favorites": "3",
@@ -6909,10 +6909,10 @@
       "difficulty": "Very difficult",
       "introduction": "In this guide, You’ll learn how to reclaim the use of your laptop’s screen, so it can continue to serve you for decades to come.",
       "view_statistics": {
-        "past_24_hours": "6",
+        "past_24_hours": "5",
         "past_7_days": "18",
         "past_30_days": "65",
-        "all_time": "2,538"
+        "all_time": "2,541"
       },
       "favorites": "1",
       "videos": [],
@@ -7048,23 +7048,23 @@
     {
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Fan+Loud/506012?lang=en",
       "title": "MacBook Fan Loud",
-      "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Restart your Mac. Especially if you have not done so recently. For the best results, uncheck the “Reopen windows when logging back in” box in the confirmation pop up.Check for updates to macOS. You may be running into a bug which Apple resolved later via update.If your Mac is on Mojave 10.14 or newer, software updates can be performed within System Preferences.High Sierra 10.13 and older will have software updates in the App Store.Reset the System Management Controller (or SMC). This can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM. These are terms for a small amount of memory which contains system settings for the Mac. Resetting it may clear a bad setting.Run Apple’s Diagnostic Suite to check for any blatant errors. High fan speed can manifest in errors with the fans themselves, the System Management Controller (SMC) or Power Management systems.",
       "view_statistics": {
-        "past_24_hours": "438",
-        "past_7_days": "2,783",
-        "past_30_days": "8,081",
-        "all_time": "55,567"
+        "past_24_hours": "398",
+        "past_7_days": "2,717",
+        "past_30_days": "8,290",
+        "all_time": "55,872"
       },
+      "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Especially if you have not done so recently.\n\nFor the best results, uncheck the “Reopen windows when logging back in” box in the confirmation pop up.Check for updates to macOS.. You may be running into a bug which Apple resolved later via update.If your Mac is on Mojave 10.14 or newer, software updates can be performed within System Preferences.High Sierra 10.13 and older will have software updates in the App Store.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory which contains system settings for the Mac.\n\nResetting it may clear a bad setting.Run Apple’s Diagnostic Suite to check for any blatant errors.. High fan speed can manifest in errors with the fans themselves, the System Management Controller (SMC) or Power Management systems.",
       "causes": [
         {
           "number": "1",
           "title": "Overheating",
-          "content": "The harder your MacBook is working, the more heat it is generating. Fans will ramp up accordingly to compensate. Your fans being loud might be a typical response to the workload it’s under.\nOpen Activity Monitor and see if any processes are utilizing a high percentage of your CPU. Close the corresponding program if it’s a process you recognize as an open application.Don’t get fooled by high “kernel_task” utilization. Kernel task is a process with many functions. One of these is a buffer for processes macOS thinks might be causing high CPU temperatures. If its utilization is high, another process is probably to blame.\nDon’t get fooled by high “kernel_task” utilization. Kernel task is a process with many functions. One of these is a buffer for processes macOS thinks might be causing high CPU temperatures. If its utilization is high, another process is probably to blame."
+          "content": "The harder your MacBook is working, the more heat it is generating.. Fans will ramp up accordingly to compensate.\n\nYour fans being loud might be a typical response to the workload it’s under.. Open Activity Monitor and see if any processes are utilizing a high percentage of your CPU.\n\nClose the corresponding program if it’s a process you recognize as an open application.Don’t get fooled by high “kernel_task” utilization.. Kernel task is a process with many functions.\n\nOne of these is a buffer for processes macOS thinks might be causing high CPU temperatures.. If its utilization is high, another process is probably to blame.\n\nDon’t get fooled by high “kernel_task” utilization."
         },
         {
           "number": "2",
           "title": "Dusty Internals or Obstructed Vents",
-          "content": "If your temperatures are high regardless of which sensor you look at, your issue may be lackluster airflow. Warmer air is typically blown out by dedicated vents, Some models have accompanying long, narrow cutouts along the bottom edge to allow for cool air to be pulled in.\nIf temperatures are high, even with nothing much running, it’s time for some routine maintenance. Pop open your MacBook, arm yourself with compressed air, and show the dust clinging to your fans who’s boss.\nHave a look in the gap along the heat sink. Pet hair especially tends to get caught in this area as air is exhausted through the fins. If there is a clog in the fan duct, it will generally be visible.You may be able to pull the dust bunnies through this gap with fine point tweezers rather than removing the whole fan.Even if your fans are not full of dust, a single sticker or stuck scrap of paper that won’t come loose, could be the cause of the ruckus.\nYou may be able to pull the dust bunnies through this gap with fine point tweezers rather than removing the whole fan.",
+          "content": "If your temperatures are high regardless of which sensor you look at, your issue may be lackluster airflow.. Warmer air is typically blown out by dedicated vents, Some models have accompanying long, narrow cutouts along the bottom edge to allow for cool air to be pulled in.\n\nIf temperatures are high, even with nothing much running, it’s time for some routine maintenance.. Pop open your MacBook, arm yourself with compressed air, and show the dust clinging to your fans who’s boss.\n\nHave a look in the gap along the heat sink.. Pet hair especially tends to get caught in this area as air is exhausted through the fins.\n\nIf there is a clog in the fan duct, it will generally be visible.You may be able to pull the dust bunnies through this gap with fine point tweezers rather than removing the whole fan.Even if your fans are not full of dust, a single sticker or stuck scrap of paper that won’t come loose, could be the cause of the ruckus.\n\nYou may be able to pull the dust bunnies through this gap with fine point tweezers rather than removing the whole fan.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/iViJHpQ1qkiiqekY.standard",
@@ -7075,37 +7075,37 @@
         {
           "number": "3",
           "title": "Software Corruption or Conflict",
-          "content": "During the course of using your Mac, something in the ones and zeroes that makes it run might have been lost, or changed in a way that causes inefficiencies. This is commonly a result of a botched update, an app which conflicts with functionality, or even a malicious piece of software.\nStart up in Safe Mode. This minimizes startup processes and attempts some basic repairIf your Mac behaves normally in Safe Mode, it's likely third party software is to blame.Uninstall apps that were installed or updated recently then retest. If you don't know what changes were made recently, check the System Information App. The \"Software\" section has an entire list of installations that can be sorted chronologically.As a last resort, perform a reinstall of the operating system using recovery mode. This should not cause any data loss, but it's always good to be cautious. Check your backups first. (refer to recovery guide if no backup)Erase your disk and reinstall the OS to rule software out entirely. Refrain from restoring any items in your backup until you know the issue is resolved.\nIf your Mac behaves normally in Safe Mode, it's likely third party software is to blame.Uninstall apps that were installed or updated recently then retest. If you don't know what changes were made recently, check the System Information App. The \"Software\" section has an entire list of installations that can be sorted chronologically.\nErase your disk and reinstall the OS to rule software out entirely. Refrain from restoring any items in your backup until you know the issue is resolved."
+          "content": "During the course of using your Mac, something in the ones and zeroes that makes it run might have been lost, or changed in a way that causes inefficiencies.. This is commonly a result of a botched update, an app which conflicts with functionality, or even a malicious piece of software.\n\nStart up in Safe Mode.. This minimizes startup processes and attempts some basic repairIf your Mac behaves normally in Safe Mode, it's likely third party software is to blame.Uninstall apps that were installed or updated recently then retest.\n\nIf you don't know what changes were made recently, check the System Information App.. The \"Software\" section has an entire list of installations that can be sorted chronologically.As a last resort, perform a reinstall of the operating system using recovery mode.\n\nThis should not cause any data loss, but it's always good to be cautious.. Check your backups first. (refer to recovery guide if no backup)Erase your disk and reinstall the OS to rule software out entirely.\n\nRefrain from restoring any items in your backup until you know the issue is resolved.. If your Mac behaves normally in Safe Mode, it's likely third party software is to blame.Uninstall apps that were installed or updated recently then retest.\n\nThe \"Software\" section has an entire list of installations that can be sorted chronologically.. Erase your disk and reinstall the OS to rule software out entirely."
         },
         {
           "number": "4",
           "title": "Malware",
-          "content": "There is a common myth amongst Mac folk that Apple computers don't need Antivirus software—they just \"don't get viruses.\" To some extent this is true, they are less likely to get truly malicious software. But they are still prone to all sorts of junkware that might be harvesting your data and bogging the system down.\nRun a virus scan on your Mac. If you don't currently have any Antivirus software, there are a bevy of free options available. Malwarebytes is often a good first stop to clear out junk, even using the free version.Double check any process that is consuming a disproportionate amount of system resources, Malware often masquerades as part of legitimate software.Steer clear of any software which claims it is a \"one stop shop\" for Mac maintenance. MacKeeper, Advanced Mac Cleaner, Mac Fixer, or any similar sounding program is more likely to cause this issue than resolve it."
+          "content": "There is a common myth amongst Mac folk that Apple computers don't need Antivirus software—they just \"don't get viruses.\" To some extent this is true, they are less likely to get truly malicious software.\n\nBut they are still prone to all sorts of junkware that might be harvesting your data and bogging the system down.. Run a virus scan on your Mac.\n\nIf you don't currently have any Antivirus software, there are a bevy of free options available.. Malwarebytes is often a good first stop to clear out junk, even using the free version.Double check any process that is consuming a disproportionate amount of system resources, Malware often masquerades as part of legitimate software.Steer clear of any software which claims it is a \"one stop shop\" for Mac maintenance.\n\nMacKeeper, Advanced Mac Cleaner, Mac Fixer, or any similar sounding program is more likely to cause this issue than resolve it."
         },
         {
           "number": "5",
           "title": "Poor Heat Transfer",
-          "content": "Heat centered on the CPU, GPU, or both may indicate failures in other parts of the cooling system. Heat cannot be dissipated if systems to move it are inefficient.\nMake sure your heat sink is attached soundly if CPU or GPU temperatures are high. It should be mounted solidly with screws in the corners.To go the extra mile, reapplying thermal paste to your CPU (and GPU if your MacBook has dedicated graphics hardware) can optimize thermal transfer to the heat sink and lower operating temperatures.In rare cases your heat sink may need to be replaced. They don't fail often, but when they do, there will generally be visual indication. Make sure there are no bends, kinks or holes in the attached pipes."
+          "content": "Heat centered on the CPU, GPU, or both may indicate failures in other parts of the cooling system.. Heat cannot be dissipated if systems to move it are inefficient.\n\nMake sure your heat sink is attached soundly if CPU or GPU temperatures are high.. It should be mounted solidly with screws in the corners.To go the extra mile, reapplying thermal paste to your CPU (and GPU if your MacBook has dedicated graphics hardware) can optimize thermal transfer to the heat sink and lower operating temperatures.In rare cases your heat sink may need to be replaced.\n\nThey don't fail often, but when they do, there will generally be visual indication.. Make sure there are no bends, kinks or holes in the attached pipes."
         },
         {
           "number": "6",
           "title": "Faulty Fan",
-          "content": "If you’ve verified the device is clean and your heat sink is sound, make sure the fans themselves are fully functional.\nReally listen to the sound the fans are making. This is best done with the bottom removed. Is it rumbling, clicking or making other noises that are new? Is it running at max speed constantly?Rattling, rumbling, or other atypical fan noises are caused by wear fan components. They are often the only moving part in a modern MacBook, and are subject to long periods of high speed.Non-variable fan speeds, or fans stuck on high can be related to non-receipt of tachometer data. Even if the fans are variable speed, they need to know how fast to spin.For bonus points, see if you can control the speed with a third party app like MacFans or TGPro. If you can set fan speeds with an app, at least you’ll know the fan is capable of getting variable speed signals.Failure of a fan often results in all or nothing behavior. Either the fan is on full blast constantly, or it doesn’t run at all.\nFor bonus points, see if you can control the speed with a third party app like MacFans or TGPro. If you can set fan speeds with an app, at least you’ll know the fan is capable of getting variable speed signals.Failure of a fan often results in all or nothing behavior. Either the fan is on full blast constantly, or it doesn’t run at all."
+          "content": "If you’ve verified the device is clean and your heat sink is sound, make sure the fans themselves are fully functional.. Really listen to the sound the fans are making.\n\nThis is best done with the bottom removed.. Is it rumbling, clicking or making other noises that are new?. Is it running at max speed constantly?Rattling, rumbling, or other atypical fan noises are caused by wear fan components.\n\nThey are often the only moving part in a modern MacBook, and are subject to long periods of high speed.Non-variable fan speeds, or fans stuck on high can be related to non-receipt of tachometer data.. Even if the fans are variable speed, they need to know how fast to spin.For bonus points, see if you can control the speed with a third party app like MacFans or TGPro.\n\nIf you can set fan speeds with an app, at least you’ll know the fan is capable of getting variable speed signals.Failure of a fan often results in all or nothing behavior.. Either the fan is on full blast constantly, or it doesn’t run at all.\n\nFor bonus points, see if you can control the speed with a third party app like MacFans or TGPro."
         },
         {
           "number": "7",
           "title": "Faulty Keyboard Cable",
-          "content": "In MacBook Pro models between 2016 and 2019, issues with the keyboard cable may be accompanied by fan issues. Fans in these models connect to the keyboard’s circuit board and the keyboard cable carries these signals to the board.\nReseat the cable. The end connecting to the logic board is more likely to be at fault, but the end connecting to the keyboard should also be reconnected if possible.Make sure any latches locking the cable in place are present and locked.Replace the cable if you find obvious damage, if reseating does not correct, or if other fixes this far were unsuccessful."
+          "content": "In MacBook Pro models between 2016 and 2019, issues with the keyboard cable may be accompanied by fan issues.. Fans in these models connect to the keyboard’s circuit board and the keyboard cable carries these signals to the board.\n\nReseat the cable.. The end connecting to the logic board is more likely to be at fault, but the end connecting to the keyboard should also be reconnected if possible.Make sure any latches locking the cable in place are present and locked.Replace the cable if you find obvious damage, if reseating does not correct, or if other fixes this far were unsuccessful."
         },
         {
           "number": "8",
           "title": "Bad or Missing Sensor Data",
-          "content": "Most computerized devices are littered with sensors which inform the system about localized temperatures or the voltage or current of connected circuits. If expected sensor data is missing or is outside safe values, the Mac will kick into a protective mode. Fans spin high and the CPU will throttle down. Simply booting your machine might take ages.\nThis issue is typically accompanied by high fan speeds, even if hardware temperatures are low. Running Apple Diagnostics may result in System Management Controller, or SMC related codes. These begin with PFM.Use TGPro or another temperature monitoring app to check for missing or unusual sensor data. Usual culprits are the trackpad or trackpad cable, and the battery. Reseat any cables between components.Check your Battery Health. For a more detailed breakdown than macOS will give you, download Coconut Battery. If you have questions about what your results mean, start a new post at the Answers Forum! If in doubt, replace your battery.A battery issue may also produce errors with the code beginning in PPN for Management Issues in Apple Diagnostics.\nA battery issue may also produce errors with the code beginning in PPN for Management Issues in Apple Diagnostics."
+          "content": "Most computerized devices are littered with sensors which inform the system about localized temperatures or the voltage or current of connected circuits.. If expected sensor data is missing or is outside safe values, the Mac will kick into a protective mode.\n\nFans spin high and the CPU will throttle down.. Simply booting your machine might take ages.\n\nThis issue is typically accompanied by high fan speeds, even if hardware temperatures are low.. Running Apple Diagnostics may result in System Management Controller, or SMC related codes.\n\nThese begin with PFM.Use TGPro or another temperature monitoring app to check for missing or unusual sensor data.. Usual culprits are the trackpad or trackpad cable, and the battery.\n\nReseat any cables between components.Check your Battery Health.. For a more detailed breakdown than macOS will give you, download Coconut Battery.\n\nIf you have questions about what your results mean, start a new post at the Answers Forum!. If in doubt, replace your battery.A battery issue may also produce errors with the code beginning in PPN for Management Issues in Apple Diagnostics.\n\nA battery issue may also produce errors with the code beginning in PPN for Management Issues in Apple Diagnostics."
         },
         {
           "number": "9",
           "title": "Logic Board Fault",
-          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality. Any number of the small components on the board may have failed or become damaged. Logic board fault is a safe assumption of cause if nothing else on this page has worked.\nReplacing the logic board is often the most practical solution for a DIYer whose board has failed. If your board has failed, and you need data, you still have options.\nMost board level issues are a direct result of accidental damage. When it comes to a device that’s built to be portable, it’s a logical outcome. Most of this comes down to visual inspection.\nCheck for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion, or bend. If there are signs of liquid, there’s still hope your Mac can be resurrected.\nEspecially during battery replacement, the components which relay fan data can become damaged. In most cases they are near the edge of the board. on the keyboard side. Any of them could have been knocked loose during reassembly, particularly if the board was removed.\nThese components are among the smallest o the board, making unintentional damage difficult to notice. The location varies on each model. Thoroughly inspect the edges of the board, just to be certain.If these components are missing, mangled or nudged, they will need the ability to solder tiny components in order to repair.\nRegardless of either of these things, board issues do occur. If you're not content to simply replace your board, the tiny components can be repaired with microsoldering. It is an art unto itself, but a worthy endeavor for those who are adventurous. If you’re curious and want to know more about microsoldering, here’s some good reading and some good watching to get you started.",
+          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality.. Any number of the small components on the board may have failed or become damaged.\n\nLogic board fault is a safe assumption of cause if nothing else on this page has worked.. Replacing the logic board is often the most practical solution for a DIYer whose board has failed.\n\nIf your board has failed, and you need data, you still have options.. Most board level issues are a direct result of accidental damage.\n\nWhen it comes to a device that’s built to be portable, it’s a logical outcome.. Most of this comes down to visual inspection.\n\nCheck for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion, or bend.. If there are signs of liquid, there’s still hope your Mac can be resurrected.\n\nEspecially during battery replacement, the components which relay fan data can become damaged.. In most cases they are near the edge of the board. on the keyboard side.\n\nAny of them could have been knocked loose during reassembly, particularly if the board was removed.. These components are among the smallest o the board, making unintentional damage difficult to notice.\n\nThe location varies on each model.. Thoroughly inspect the edges of the board, just to be certain.If these components are missing, mangled or nudged, they will need the ability to solder tiny components in order to repair.\n\nRegardless of either of these things, board issues do occur.. If you're not content to simply replace your board, the tiny components can be repaired with microsoldering.\n\nIt is an art unto itself, but a worthy endeavor for those who are adventurous.. If you’re curious and want to know more about microsoldering, here’s some good reading and some good watching to get you started.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/EV3FjyuDeQWSObde.standard",
@@ -7118,33 +7118,34 @@
     {
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Will+Not+Turn+On/483799?lang=en",
       "title": "MacBook Won't Turn On",
-      "introduction": "There are few electronics problems more disheartening than a device that doesn't power on. Other issues have workarounds. But a device that won't power on can't be circumvented. It feels so final like there are only so many things you can try before you write its death certificate and toss it in the trash. In truth, resurrecting a dead MacBook is more like a mystery novel. A few good clues can make all the difference.",
       "view_statistics": {
-        "past_24_hours": "206",
-        "past_7_days": "1,226",
-        "past_30_days": "5,471",
-        "all_time": "116,811"
+        "past_24_hours": "198",
+        "past_7_days": "1,184",
+        "past_30_days": "5,438",
+        "all_time": "116,968"
       },
+      "introduction": "There are few electronics problems more disheartening than a device that doesn't power on.. Other issues have workarounds.\n\nBut a device that won't power on can't be circumvented.. It feels so final like there are only so many things you can try before you write its death certificate and toss it in the trash.\n\nIn truth, resurrecting a dead MacBook is more like a mystery novel.. A few good clues can make all the difference.",
+      "the_basics": "Before undertaking any of the more time-consuming solutions below, these are a few fundamentals to get you started.Perform a hard reset.. Press and hold your power button for about fifteen seconds, then release it.\n\nWait a few seconds, then try to power it on again.Disconnect any peripherals.. Docks or multi-port hubs are notoriously problematic, especially if they have many items connected.Reset the System Management Controller (or SMC).\n\nThey can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory that contains system settings for the Mac.\n\nResetting it may clear a bad setting.Check for any signs of power.. If you're getting any response here, your issue is more likely to be related to a blank display.Trackpad clicks.\n\nNote: This only applies to MacBook Pros 2015 and newer, MacBook Airs 2018 and newer, and all Retina MacBooks.Keyboard lights are onCAPS Lock LED lights when pressedThe Touch Bar is on.Audible fan spin, or heat exhausting from the vents.The display backlight is on.\n\nThis can be subtle and is best observed in a dark room.. The Apple logo would also be lit if your model has a white Apple logo on the lid.Sound when connecting a charger.",
       "causes": [
         {
           "number": "1",
           "title": "Faulty Power Source",
-          "content": "Your computer itself could be perfectly fine, but you’ve got a faulty charger. Or even your electrical outlet. Be certain to try another charger, if you have one available to you.\nIf it’s a MagSafe model, check to see if the charger light is on. If it is not, it narrows the issue down some. No MagSafe LED points to the charger, Power-In Board, Logic Board, or even the trackpad on some models.Flip the charger the other way (180 degrees from the way you connected it before). Sometimes an issue only exists on one side of the reversible charger plug.USB C models may just need a new cable. Chargers for these no longer have the cable permanently attached to the power brick."
+          "content": "Your computer itself could be perfectly fine, but you’ve got a faulty charger.. Or even your electrical outlet.\n\nBe certain to try another charger, if you have one available to you.. If it’s a MagSafe model, check to see if the charger light is on.\n\nIf it is not, it narrows the issue down some.. No MagSafe LED points to the charger, Power-In Board, Logic Board, or even the trackpad on some models.Flip the charger the other way (180 degrees from the way you connected it before).\n\nSometimes an issue only exists on one side of the reversible charger plug.USB C models may just need a new cable.. Chargers for these no longer have the cable permanently attached to the power brick."
         },
         {
           "number": "2",
           "title": "Battery Fault",
-          "content": "Batteries are nefarious. They fail often, due to their “consumable” nature, but not always in predictable ways. Although they typically die slowly and with diminishing power on time, a bunk battery could absolutely cause a no-power problem.\nDisconnect the battery and try to power it on. Most MacBooks will boot without it. If it powers up, your battery is likely your issue.Note: Some Macs have unconventional means of disconnecting the battery. Consult the Guide for your model to ensure it is done properly.It is normal for Macs to boot slowly with high fan speed in the absence of a connected battery. This is a protective mode that kicks in if data from thermal sensors, like those in the battery, are outside expected values.Check for visual signs of battery age, swelling, or leak. Swollen batteries may manifest as difficulty in using the trackpad or the keyboard. As the battery expands, it exerts upward pressure on the underside of these components.\nNote: Some Macs have unconventional means of disconnecting the battery. Consult the Guide for your model to ensure it is done properly.It is normal for Macs to boot slowly with high fan speed in the absence of a connected battery. This is a protective mode that kicks in if data from thermal sensors, like those in the battery, are outside expected values.\nIf you need to, you can replace your MacBook battery with a quality-tested unit from our store."
+          "content": "Batteries are nefarious.. They fail often, due to their “consumable” nature, but not always in predictable ways.\n\nAlthough they typically die slowly and with diminishing power on time, a bunk battery could absolutely cause a no-power problem.. Disconnect the battery and try to power it on.\n\nMost MacBooks will boot without it.. If it powers up, your battery is likely your issue.Note: Some Macs have unconventional means of disconnecting the battery.\n\nConsult the Guide for your model to ensure it is done properly.It is normal for Macs to boot slowly with high fan speed in the absence of a connected battery.. This is a protective mode that kicks in if data from thermal sensors, like those in the battery, are outside expected values.Check for visual signs of battery age, swelling, or leak.\n\nSwollen batteries may manifest as difficulty in using the trackpad or the keyboard.. As the battery expands, it exerts upward pressure on the underside of these components.\n\nNote: Some Macs have unconventional means of disconnecting the battery.. This is a protective mode that kicks in if data from thermal sensors, like those in the battery, are outside expected values.\n\nIf you need to, you can replace your MacBook battery with a quality-tested unit from our store."
         },
         {
           "number": "3",
           "title": "Firmware Corruption",
-          "content": "If your Mac is from 2018 or newer, it’s possible your MacBook encountered an error or lost power when it was updating the firmware. This might make it appear as though it is not powering on when it just doesn’t have the directions to boot up properly. Direct Firmware Upgrade or DFU mode can help to diagnose or solve this issue.\nPress and hold the power button for a solid twenty seconds. Release the button, wait a few seconds, and attempt to power it on again. This will force a normal boot attempt if your device was inadvertently put into DFU mode.To reinstall a known good copy of the firmware, you will need a second Mac that can run Apple Configurator 2 and a USB C cable.Follow the Apple Support page to get your Mac into DFU mode. You may need to disconnect and reconnect the cable between the two Macs to get Configurator to recognize the device.Note: The procedure for Macs with Apple Silicon processors varies slightly.If your device is not recognized, or will not enter DFU mode, skip ahead to the next section.Attempt a revive first. This will install a new copy of the device firmware. You should get an Apple logo on the device screen at some point during this process.If the Revive is unsuccessful, ensure you have a good backup and try a Restore. Note: This will reinitialize the internal storage. Your data will be erased, you may also need to reinstall the operating system depending on the device model.If you encounter an error during this process, try a different USB cable, internet connection, or both. If you are still unsuccessful, head over to the Answers Forum where you can get some more individual assistance. Make note of any error codes you get. They can help diagnose the underlying issue.\nNote: The procedure for Macs with Apple Silicon processors varies slightly.If your device is not recognized, or will not enter DFU mode, skip ahead to the next section."
+          "content": "If your Mac is from 2018 or newer, it’s possible your MacBook encountered an error or lost power when it was updating the firmware.. This might make it appear as though it is not powering on when it just doesn’t have the directions to boot up properly.\n\nDirect Firmware Upgrade or DFU mode can help to diagnose or solve this issue.. Press and hold the power button for a solid twenty seconds.\n\nRelease the button, wait a few seconds, and attempt to power it on again.. This will force a normal boot attempt if your device was inadvertently put into DFU mode.To reinstall a known good copy of the firmware, you will need a second Mac that can run Apple Configurator 2 and a USB C cable.Follow the Apple Support page to get your Mac into DFU mode.\n\nYou may need to disconnect and reconnect the cable between the two Macs to get Configurator to recognize the device.Note: The procedure for Macs with Apple Silicon processors varies slightly.If your device is not recognized, or will not enter DFU mode, skip ahead to the next section.Attempt a revive first.\n\nThis will install a new copy of the device firmware.. You should get an Apple logo on the device screen at some point during this process.If the Revive is unsuccessful, ensure you have a good backup and try a Restore.\n\nNote: This will reinitialize the internal storage.. Your data will be erased, you may also need to reinstall the operating system depending on the device model.If you encounter an error during this process, try a different USB cable, internet connection, or both.\n\nIf you are still unsuccessful, head over to the Answers Forum where you can get some more individual assistance.. Make note of any error codes you get.\n\nThey can help diagnose the underlying issue.. Note: The procedure for Macs with Apple Silicon processors varies slightly.If your device is not recognized, or will not enter DFU mode, skip ahead to the next section."
         },
         {
           "number": "4",
           "title": "Bad Power-In Board",
-          "content": "MacBook power input comes in several flavors, depending on the model. Whether sporting an old-fashioned barrel connector, one of the three MagSafe varieties, or USB C, it’s a common failure point and the conduit for power to enter the system.\nPerform a thorough visual inspection of the port. Use a flashlight for USB C port interiors. It’s an easy entry point for liquid. Corrosion can live here easily, undetected.Check for signs of corrosion or burn. If anything looks questionable, open up the machine and pull out the affiliated part. USB C ports in particular will benefit from this sort of inspection.USB C ports are commonly damaged by spills. Even if liquid doesn't penetrate the machine's interior, corrosion in the port can spell trouble.MagSafe ports will more often be visibly charred externally.Pay extra attention if you are using a third-party charger. They are significantly more likely to cause damage to the port or your computer.MacBook Airs, have their MagSafe board attached to a general Input Output (I/O) Board (some can be found here), which may need to be replaced if the light on your charger isn’t coming on.These boards are full of test points, (the metallic circles scattered across the board). Due to their proximity to the edge of the machine, they are prone to patina, corrosion, or deterioration.Some of these are purely test points intended to measure the circuit. Others are points where you can tap into an existing electrical path. If the copper has degraded, the line it is on may be broken.Cables connecting these boards to the logic board may also be at fault.\nUSB C ports are commonly damaged by spills. Even if liquid doesn't penetrate the machine's interior, corrosion in the port can spell trouble.MagSafe ports will more often be visibly charred externally.Pay extra attention if you are using a third-party charger. They are significantly more likely to cause damage to the port or your computer.\nThese boards are full of test points, (the metallic circles scattered across the board). Due to their proximity to the edge of the machine, they are prone to patina, corrosion, or deterioration.Some of these are purely test points intended to measure the circuit. Others are points where you can tap into an existing electrical path. If the copper has degraded, the line it is on may be broken.\nMacBook Air IO Board with discolored test points",
+          "content": "MacBook power input comes in several flavors, depending on the model.. Whether sporting an old-fashioned barrel connector, one of the three MagSafe varieties, or USB C, it’s a common failure point and the conduit for power to enter the system.\n\nPerform a thorough visual inspection of the port.. Use a flashlight for USB C port interiors.\n\nIt’s an easy entry point for liquid.. Corrosion can live here easily, undetected.Check for signs of corrosion or burn.\n\nIf anything looks questionable, open up the machine and pull out the affiliated part.. USB C ports in particular will benefit from this sort of inspection.USB C ports are commonly damaged by spills.\n\nEven if liquid doesn't penetrate the machine's interior, corrosion in the port can spell trouble.MagSafe ports will more often be visibly charred externally.Pay extra attention if you are using a third-party charger.\n\nThey are significantly more likely to cause damage to the port or your computer.MacBook Airs, have their MagSafe board attached to a general Input Output (I/O) Board (some can be found here), which may need to be replaced if the light on your charger isn’t coming on.These boards are full of test points, (the metallic circles scattered across the board).\n\nDue to their proximity to the edge of the machine, they are prone to patina, corrosion, or deterioration.Some of these are purely test points intended to measure the circuit.. Others are points where you can tap into an existing electrical path.\n\nIf the copper has degraded, the line it is on may be broken.Cables connecting these boards to the logic board may also be at fault.. USB C ports are commonly damaged by spills.\n\nThey are significantly more likely to cause damage to the port or your computer.. These boards are full of test points, (the metallic circles scattered across the board).\n\nIf the copper has degraded, the line it is on may be broken.. MacBook Air IO Board with discolored test points.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/v5MPPKRNmiTqBwiv.standard",
@@ -7163,7 +7164,7 @@
         {
           "number": "5",
           "title": "Trackpad Malfunction",
-          "content": "Although it seems like an unusual cause for No Power, trackpads, or the trackpad cable is an extremely common cause due to one simple culprit—liquid. The lack of significant protection from liquid in this area makes it a hot spot for corrosion.\nUnplug the trackpad from the logic board and attempt to power it on. You’ll likely get a very slow boot and high fan speeds. This is expected. It is a result of a protective mode Macs use when data from thermal sensors, like the one in the trackpad, are absent.MacBook Air is especially prone to this fault. Remove the battery and check along the edges of the trackpad for signs of liquid. The cable connector here tends to get hit.If the trackpad has been affected by liquid, clean it up with some isopropyl alcohol and a cotton swab, then retest.The metal contacts on the connectors often take a beating in cases of liquid exposure. Replacement of the cable, the trackpad, or both may be necessary. Magnification may be helpful to determine the extent of the damage.",
+          "content": "Although it seems like an unusual cause for No Power, trackpads, or the trackpad cable is an extremely common cause due to one simple culprit—liquid.. The lack of significant protection from liquid in this area makes it a hot spot for corrosion.\n\nUnplug the trackpad from the logic board and attempt to power it on.. You’ll likely get a very slow boot and high fan speeds.\n\nThis is expected.. It is a result of a protective mode Macs use when data from thermal sensors, like the one in the trackpad, are absent.MacBook Air is especially prone to this fault.\n\nRemove the battery and check along the edges of the trackpad for signs of liquid.. The cable connector here tends to get hit.If the trackpad has been affected by liquid, clean it up with some isopropyl alcohol and a cotton swab, then retest.The metal contacts on the connectors often take a beating in cases of liquid exposure.\n\nReplacement of the cable, the trackpad, or both may be necessary.. Magnification may be helpful to determine the extent of the damage.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/jXGZ2w1LTFRcWLYE.standard",
@@ -7174,7 +7175,7 @@
         {
           "number": "6",
           "title": "Faulty Wi-Fi",
-          "content": "Like many other devices, Wi-Fi functionality for MacBooks was added by connecting a dedicated card for wireless internet and Bluetooth. These cards have since become integrated into the logic board itself but can malfunction in either form.\nThese models have a dedicated Wi-Fi or Airport Card. Try removing it and rechecking for power.Be sure to note the order of the antenna cables when you disconnect them. It is not always intuitive.\nThese devices have their Wi-Fi card soldered directly to the logic board. This makes a correct diagnosis more difficult, but not impossible.Check for signs of heat, liquid, or any other damage to the Wi-Fi chip itself or the surrounding areas.If you suspect this may be the issue, you'll want to skip ahead to the \"Logic Board\" section of this page.",
+          "content": "Like many other devices, Wi-Fi functionality for MacBooks was added by connecting a dedicated card for wireless internet and Bluetooth.. These cards have since become integrated into the logic board itself but can malfunction in either form.\n\nThese models have a dedicated Wi-Fi or Airport Card.. Try removing it and rechecking for power.Be sure to note the order of the antenna cables when you disconnect them.\n\nIt is not always intuitive.. These devices have their Wi-Fi card soldered directly to the logic board.\n\nThis makes a correct diagnosis more difficult, but not impossible.Check for signs of heat, liquid, or any other damage to the Wi-Fi chip itself or the surrounding areas.If you suspect this may be the issue, you'll want to skip ahead to the \"Logic Board\" section of this page.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/RgHdhkMJu4d41dKV.medium",
@@ -7185,12 +7186,12 @@
         {
           "number": "7",
           "title": "Faulty Storage",
-          "content": "Believe it or not, a bad hard drive or solid state drive (SSD), can result in no power. Storage has evolved a lot in the last few decades so you'll have to determine which sort of storage your device has first and foremost.\nThese MacBooks contain a \"traditional\" style Hard Drive Disk or HDD in the 2.5\" form factor.Disconnect the hard drive cable from the logic board and recheck for signs of power.If you do get power, reconnect the cable and disconnect the drive itself to isolate the problematic part. Replace whichever part results in no power when connectedYou may want to replace the cable regardless if you have a 2012 Unibody MacBook Pro due to its notoriety for failure.Replacing your existing HDD with a Solid State Drive (SSD) is a great way to give your aging Mac a speed boost, even if you determine it's not the issue.\nYou may want to replace the cable regardless if you have a 2012 Unibody MacBook Pro due to its notoriety for failure.\nThese Macs have a removable SSD which Apple designed in their own proprietary blade style. The number of pins varies slightly depending on the model, but are essentially a smaller board that connects to a slot on the logic board.Remove the SSD and recheck for power.If your device powers on without the driver connected, replace it.Do some research on the various types of replacements since there are a bevy of options.First-party Apple SSDs are available used, third-party vendors also make SSDs in Apple's form factor, and adapters are also available to convert an m.2 style SSD to Apple's slot.\nDo some research on the various types of replacements since there are a bevy of options.First-party Apple SSDs are available used, third-party vendors also make SSDs in Apple's form factor, and adapters are also available to convert an m.2 style SSD to Apple's slot.\nThese Macs have a removable SSD which Apple designed in their own proprietary blade style.\nRemove the SSD and recheck for power.If your device powers on, do some research on the various types of replacements since there are a bevy of options. First-party Apple SSDs are available used. Third-party vendors also made SSDs in Apple's form factor and adapters are also available to convert an m.2 style SSD to Apple's slot.\nNewer models will have their storage soldered onto the logic board, so disconnecting it isn’t an option. The storage itself is unlikely to be the cause in this case anyway, although it may have become collateral damage. Skip ahead to the “Faulty Logic Board” section if you suspect this might be the case."
+          "content": "Believe it or not, a bad hard drive or solid state drive (SSD), can result in no power.. Storage has evolved a lot in the last few decades so you'll have to determine which sort of storage your device has first and foremost.\n\nThese MacBooks contain a \"traditional\" style Hard Drive Disk or HDD in the 2.5\" form factor.Disconnect the hard drive cable from the logic board and recheck for signs of power.If you do get power, reconnect the cable and disconnect the drive itself to isolate the problematic part.\n\nReplace whichever part results in no power when connectedYou may want to replace the cable regardless if you have a 2012 Unibody MacBook Pro due to its notoriety for failure.Replacing your existing HDD with a Solid State Drive (SSD) is a great way to give your aging Mac a speed boost, even if you determine it's not the issue.\n\nYou may want to replace the cable regardless if you have a 2012 Unibody MacBook Pro due to its notoriety for failure.. These Macs have a removable SSD which Apple designed in their own proprietary blade style.\n\nThe number of pins varies slightly depending on the model, but are essentially a smaller board that connects to a slot on the logic board.Remove the SSD and recheck for power.If your device powers on without the driver connected, replace it.Do some research on the various types of replacements since there are a bevy of options.First-party Apple SSDs are available used, third-party vendors also make SSDs in Apple's form factor, and adapters are also available to convert an m.2 style SSD to Apple's slot.\n\nDo some research on the various types of replacements since there are a bevy of options.First-party Apple SSDs are available used, third-party vendors also make SSDs in Apple's form factor, and adapters are also available to convert an m.2 style SSD to Apple's slot.\n\nRemove the SSD and recheck for power.If your device powers on, do some research on the various types of replacements since there are a bevy of options.. First-party Apple SSDs are available used.\n\nThird-party vendors also made SSDs in Apple's form factor and adapters are also available to convert an m.2 style SSD to Apple's slot.. Newer models will have their storage soldered onto the logic board, so disconnecting it isn’t an option.\n\nThe storage itself is unlikely to be the cause in this case anyway, although it may have become collateral damage.. Skip ahead to the “Faulty Logic Board” section if you suspect this might be the case."
         },
         {
           "number": "8",
           "title": "Faulty Logic Board",
-          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality. Any number of the small components on the board may have failed or become damaged. Logic board fault is a safe assumption of cause if nothing else on this page has worked.\nCheck for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion, or bend. If there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed. If your board has failed, and you need data, you still have options.If you’re feeling especially curious, the tiny components on the board can be repaired with microsoldering. It is an art unto itself, but a worthy endeavor. If you’re curious and want to know more about getting into micro soldering, here’s some good reading and some good watching to get you started."
+          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality.. Any number of the small components on the board may have failed or become damaged.\n\nLogic board fault is a safe assumption of cause if nothing else on this page has worked.. Check for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion, or bend.\n\nIf there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed.. If your board has failed, and you need data, you still have options.If you’re feeling especially curious, the tiny components on the board can be repaired with microsoldering.\n\nIt is an art unto itself, but a worthy endeavor.. If you’re curious and want to know more about getting into micro soldering, here’s some good reading and some good watching to get you started."
         }
       ]
     },
@@ -7198,21 +7199,22 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Keyboard+Not+Working/505002?lang=en",
       "title": "MacBook Keyboard Not Working",
       "view_statistics": {
-        "past_24_hours": "111",
-        "past_7_days": "828",
-        "past_30_days": "3,606",
-        "all_time": "72,011"
+        "past_24_hours": "148",
+        "past_7_days": "808",
+        "past_30_days": "3,619",
+        "all_time": "72,128"
       },
+      "the_basics": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Uncheck the box to \"Reopen windows when logging back in.\" This ensures a problematic app or session does not reopen.Reset the PRAM or NVRAM.\n\nThese are terms for a small amount of memory which contains some pre-boot settings for the Mac.. Clearing changes made may restore keyboard function.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings or resolve issues where your Mac is stuck in sleep.Note: An external keyboard may be necessary for these steps, but try on the native keyboard first.\n\nJust because keystrokes aren't appearing, doesn't mean the signals from the keyboard aren't transmitting.",
       "causes": [
         {
           "number": "1",
           "title": "Software Fault",
-          "content": "Macs feature innumerable keyboard shortcuts and configurations that can be inadvertently triggered. Anyone who has let a small child, or a cat interact with their laptop can probably attest to this. There are a few key places to look before staring spitefully into your cats eyes.\nCheck the layout your keyboard is using. If it is referencing key locations from other parts of the world, or alternative configurations for your region, key presses may not output the expected character. Check under System Preferences > Keyboard and make sure the correct country and layout are selected.Pro Tip: Check to see if a flag is displayed in your menu bar in the upper right corner. An unfamiliar flag here is a dead giveaway.Several Accessibility settings also modify keyboard behavior. Check under System Preferences (or System Settings) > Accessibility > Keyboard.\"Mouse Keys\" enable mouse controls with keyboard numbers. Pressing the Option key five times in succession enables or disables it. Toggle this off if it is on when you aren’t expecting it to be.Slow Keys change the response timing. Key presses may not get a response for up to five seconds depending on the delay indicated. Your keyboard may actually be working perfectly, but lagging behind your keystrokes. Turn this off to return to normal function.\nPro Tip: Check to see if a flag is displayed in your menu bar in the upper right corner. An unfamiliar flag here is a dead giveaway.\n\"Mouse Keys\" enable mouse controls with keyboard numbers. Pressing the Option key five times in succession enables or disables it. Toggle this off if it is on when you aren’t expecting it to be.Slow Keys change the response timing. Key presses may not get a response for up to five seconds depending on the delay indicated. Your keyboard may actually be working perfectly, but lagging behind your keystrokes. Turn this off to return to normal function.\nWhen it comes to managing your keyboard, there are more software components at play than you think. Keyboard function is also commonly, and intentionally modified by legitimate software aiming to assist in productivity and ease of use.\nStart up in Safe Mode. This minimizes startup processes and attempts some basic repairs.If your keyboard works properly in Safe Mode, this is likely an issue with a third party app.Uninstall apps that were installed or updated recently then retest. If you aren't sure of this, check the System Information App. The \"Software\" section has an entire list of installations that can be sorted chronologically.\nIf your keyboard works properly in Safe Mode, this is likely an issue with a third party app.Uninstall apps that were installed or updated recently then retest. If you aren't sure of this, check the System Information App. The \"Software\" section has an entire list of installations that can be sorted chronologically.\nYeah, I said it. Macs get viruses too. Although modern versions of macOS make it much more difficult for third party apps to get permissions for things like keyboard access, it's worth running a virus scan. Malwarebytes and Avast have free versions that do a good job of cleaning up any sketchy garbage on your machine.\nUltimately, it's in your best interest to invest in something long term, in which case you'll want to do some research to see which option best suits your needs. MacOS has lots of malware prevention tools, but has nothing natively to remove infections.\nKeeping track of the information on your MacBook is hard work. Data is constantly being written, overwritten, accessed or deleted. Often following an update or power loss, data records may change in ways that are unintentional.\nThe preferences file for keyboard function may be damaged. You will need to attach an external keyboard to resolve this, unless you previously made hidden files visible.Open Finder. Select Go in the Menu Bar.Select the “Go to Folder…” option.In the window that opens, enter ~/Library/Preferences and press return. This folder contains files relating to the settings within your user account.Find com.apple.keyboardtype.plist, and com.apple.keyboardservicesd.plist in this list of files, then put them in the trash (you don’t need to empty it, they just need to be removed from this folder).Restart your computer and retest. Default .plist files will be regenerated, removing any faulty entries or corrupted data.If you're still running into issues, Run a disk repair in Internet recovery. This can help correct damage to the file system that may be interfering with normal function.Perform a reinstall of the operating system using recovery mode. This should not cause any data loss, but it's always good to be cautious. Check your backups first. (refer to recovery guide if no backup)Erase your disk and reinstall the OS to rule software out entirely. Refrain from restoring any items from your backup until you know the issue is resolved.\nOpen Finder. Select Go in the Menu Bar.Select the “Go to Folder…” option.In the window that opens, enter ~/Library/Preferences and press return. This folder contains files relating to the settings within your user account.Find com.apple.keyboardtype.plist, and com.apple.keyboardservicesd.plist in this list of files, then put them in the trash (you don’t need to empty it, they just need to be removed from this folder).Restart your computer and retest. Default .plist files will be regenerated, removing any faulty entries or corrupted data."
+          "content": "Macs feature innumerable keyboard shortcuts and configurations that can be inadvertently triggered.. Anyone who has let a small child, or a cat interact with their laptop can probably attest to this.\n\nThere are a few key places to look before staring spitefully into your cats eyes.. Check the layout your keyboard is using.\n\nIf it is referencing key locations from other parts of the world, or alternative configurations for your region, key presses may not output the expected character.. Check under System Preferences > Keyboard and make sure the correct country and layout are selected.Pro Tip: Check to see if a flag is displayed in your menu bar in the upper right corner.\n\nAn unfamiliar flag here is a dead giveaway.Several Accessibility settings also modify keyboard behavior.. Check under System Preferences (or System Settings) > Accessibility > Keyboard.\"Mouse Keys\" enable mouse controls with keyboard numbers.\n\nPressing the Option key five times in succession enables or disables it.. Toggle this off if it is on when you aren’t expecting it to be.Slow Keys change the response timing.\n\nKey presses may not get a response for up to five seconds depending on the delay indicated.. Your keyboard may actually be working perfectly, but lagging behind your keystrokes.\n\nTurn this off to return to normal function.. Pro Tip: Check to see if a flag is displayed in your menu bar in the upper right corner.\n\nAn unfamiliar flag here is a dead giveaway.. \"Mouse Keys\" enable mouse controls with keyboard numbers.\n\nWhen it comes to managing your keyboard, there are more software components at play than you think.. Keyboard function is also commonly, and intentionally modified by legitimate software aiming to assist in productivity and ease of use.\n\nStart up in Safe Mode.. This minimizes startup processes and attempts some basic repairs.If your keyboard works properly in Safe Mode, this is likely an issue with a third party app.Uninstall apps that were installed or updated recently then retest.\n\nIf you aren't sure of this, check the System Information App.. The \"Software\" section has an entire list of installations that can be sorted chronologically.\n\nIf your keyboard works properly in Safe Mode, this is likely an issue with a third party app.Uninstall apps that were installed or updated recently then retest.. Yeah, I said it.\n\nMacs get viruses too.. Although modern versions of macOS make it much more difficult for third party apps to get permissions for things like keyboard access, it's worth running a virus scan.\n\nMalwarebytes and Avast have free versions that do a good job of cleaning up any sketchy garbage on your machine.. Ultimately, it's in your best interest to invest in something long term, in which case you'll want to do some research to see which option best suits your needs.\n\nMacOS has lots of malware prevention tools, but has nothing natively to remove infections.. Keeping track of the information on your MacBook is hard work.\n\nData is constantly being written, overwritten, accessed or deleted.. Often following an update or power loss, data records may change in ways that are unintentional.\n\nThe preferences file for keyboard function may be damaged.. You will need to attach an external keyboard to resolve this, unless you previously made hidden files visible.Open Finder.\n\nSelect Go in the Menu Bar.Select the “Go to Folder…” option.In the window that opens, enter ~/Library/Preferences and press return.. This folder contains files relating to the settings within your user account.Find com.apple.keyboardtype.plist, and com.apple.keyboardservicesd.plist in this list of files, then put them in the trash (you don’t need to empty it, they just need to be removed from this folder).Restart your computer and retest.\n\nDefault .plist files will be regenerated, removing any faulty entries or corrupted data.If you're still running into issues, Run a disk repair in Internet recovery.. This can help correct damage to the file system that may be interfering with normal function.Perform a reinstall of the operating system using recovery mode.\n\nThis should not cause any data loss, but it's always good to be cautious.. Check your backups first. (refer to recovery guide if no backup)Erase your disk and reinstall the OS to rule software out entirely.\n\nRefrain from restoring any items from your backup until you know the issue is resolved.. Default .plist files will be regenerated, removing any faulty entries or corrupted data."
         },
         {
           "number": "2",
           "title": "Debris in Keys or “The Butterfly Keyboard Effect”",
-          "content": "No matter how precious we are with our electronics, we can’t stop it. Dust, lint and crumbs from your working lunch will wind up in the crevices of your keyboard. When debris winds up under your key cap, it can affect the performance of your keyboard. You may experience things like mushy feeling keys, keys which work intermittently or double keystrokes.\nThis is more likely to affect individual keys than the entire keyboard. If your keyboard isn’t responding at all, skip ahead to the next section.\nRemove key caps on Unibody MacBooksRemove Butterfly style key capsRemove \"Magic Keyboard\" scissor style key capsRemove Small \"Magic Keyboard\" style key caps",
+          "content": "No matter how precious we are with our electronics, we can’t stop it.. Dust, lint and crumbs from your working lunch will wind up in the crevices of your keyboard.\n\nWhen debris winds up under your key cap, it can affect the performance of your keyboard.. You may experience things like mushy feeling keys, keys which work intermittently or double keystrokes.\n\nThis is more likely to affect individual keys than the entire keyboard.. If your keyboard isn’t responding at all, skip ahead to the next section.\n\nRemove key caps on Unibody MacBooksRemove Butterfly style key capsRemove \"Magic Keyboard\" scissor style key capsRemove Small \"Magic Keyboard\" style key caps.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/ge5nniTIeQvVnAqN.standard",
@@ -7227,12 +7229,12 @@
         {
           "number": "3",
           "title": "Battery Swelling",
-          "content": "Lithium ion batteries have a tendency to swell with age, repeat overcharging or underlying issues with the device. This swelling causes internal pressure which may be exerted upward into the keyboard and trackpad.\nThis may be difficult to notice if the onset is gradual, but some keys, or the trackpad may be difficult to press, the space bar especially is prone to this.Check for any signs that your housing is bowing or deforming from swelling. Does it sit flat on a table? Are there gaps in the side of the chassis which let you see into the Mac? All of these are signs your battery has become a “spicy pillow.”If your battery is swollen, take appropriate precautions. Replacing it is a reasonable step, but proceed carefully. Follow the Guide appropriate for your model."
+          "content": "Lithium ion batteries have a tendency to swell with age, repeat overcharging or underlying issues with the device.. This swelling causes internal pressure which may be exerted upward into the keyboard and trackpad.\n\nThis may be difficult to notice if the onset is gradual, but some keys, or the trackpad may be difficult to press, the space bar especially is prone to this.Check for any signs that your housing is bowing or deforming from swelling.\n\nDoes it sit flat on a table?. Are there gaps in the side of the chassis which let you see into the Mac?. All of these are signs your battery has become a “spicy pillow.”If your battery is swollen, take appropriate precautions.\n\nReplacing it is a reasonable step, but proceed carefully.. Follow the Guide appropriate for your model."
         },
         {
           "number": "4",
           "title": "Faulty Trackpad or Trackpad Cable",
-          "content": "I know what you’re thinking. You didn’t come here for fixes to your trackpad, but nearly all MacBooks relay keyboard information via the trackpad cable–even ones with dedicated keyboard connections. Keyboard related components may be on the trackpad itself, or connect to a small daughterboard which handles communications before phoning home to the logic board.\nOpen your MacBook and give the trackpad cable a thorough inspection. You may be able to do this without removing any components other than the bottom panel.This cable travels over the battery in many models. Limited clearance between the bottom panel and the battery leads to trapped debris puncturing the cable, interrupting function.These cables are notorious points of failure in the 2015 13” MacBook Pro. It usually leads to trackpad malfunction as well, but it still bears mentioning.Reseat this cable, on both ends if possible, check the surrounding areas for any signs of liquid entry.Remove the trackpad for this procedure, (except in models where battery removal is necessary to get at the trackpad). The gap around the edge is a common point of entry for moisture.Replace any components affected by liquid. If no liquid is present, reassemble and retest.If the issue is still present after cable replacement, the trackpad itself may be the issue.\nThis cable travels over the battery in many models. Limited clearance between the bottom panel and the battery leads to trapped debris puncturing the cable, interrupting function.These cables are notorious points of failure in the 2015 13” MacBook Pro. It usually leads to trackpad malfunction as well, but it still bears mentioning.\nRemove the trackpad for this procedure, (except in models where battery removal is necessary to get at the trackpad). The gap around the edge is a common point of entry for moisture.Replace any components affected by liquid. If no liquid is present, reassemble and retest.",
+          "content": "I know what you’re thinking.. You didn’t come here for fixes to your trackpad, but nearly all MacBooks relay keyboard information via the trackpad cable–even ones with dedicated keyboard connections.\n\nKeyboard related components may be on the trackpad itself, or connect to a small daughterboard which handles communications before phoning home to the logic board.. Open your MacBook and give the trackpad cable a thorough inspection.\n\nYou may be able to do this without removing any components other than the bottom panel.This cable travels over the battery in many models.. Limited clearance between the bottom panel and the battery leads to trapped debris puncturing the cable, interrupting function.These cables are notorious points of failure in the 2015 13” MacBook Pro.\n\nIt usually leads to trackpad malfunction as well, but it still bears mentioning.Reseat this cable, on both ends if possible, check the surrounding areas for any signs of liquid entry.Remove the trackpad for this procedure, (except in models where battery removal is necessary to get at the trackpad).\n\nThe gap around the edge is a common point of entry for moisture.Replace any components affected by liquid.. If no liquid is present, reassemble and retest.If the issue is still present after cable replacement, the trackpad itself may be the issue.\n\nThis cable travels over the battery in many models.. It usually leads to trackpad malfunction as well, but it still bears mentioning.\n\nRemove the trackpad for this procedure, (except in models where battery removal is necessary to get at the trackpad).. If no liquid is present, reassemble and retest.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/P6eDPM2u6THeHA2e.standard",
@@ -7243,12 +7245,12 @@
         {
           "number": "5",
           "title": "Faulty Keyboard Cable",
-          "content": "In addition to the trackpad cable, the keyboard cable may also be at fault. This is less common in the absence of previous repair, but can certainly be the issue.\nIn MacBook Pro models between 2016 and 2019, issues with the keyboard cable may be accompanied by fan issues. Fans in these models connect to the keyboard’s circuit board and the keyboard cable carries these signals to the board.Reseat the cable. The end connecting to the logic board is more likely to be at fault, but the end connecting to the keyboard should also be reconnected if possible.Make sure any latches locking the cable in place are present and locked.Replace the cable if you find obvious damage, reseating does not correct, or other fixes this far have not worked."
+          "content": "In addition to the trackpad cable, the keyboard cable may also be at fault.. This is less common in the absence of previous repair, but can certainly be the issue.\n\nIn MacBook Pro models between 2016 and 2019, issues with the keyboard cable may be accompanied by fan issues.. Fans in these models connect to the keyboard’s circuit board and the keyboard cable carries these signals to the board.Reseat the cable.\n\nThe end connecting to the logic board is more likely to be at fault, but the end connecting to the keyboard should also be reconnected if possible.Make sure any latches locking the cable in place are present and locked.Replace the cable if you find obvious damage, reseating does not correct, or other fixes this far have not worked."
         },
         {
           "number": "6",
           "title": "Keyboard Is Faulty",
-          "content": "Ultimately, it may come down to an issue with the keyboard itself. This is typically a result of liquid damage, but can occur regardless. MacBook keyboards are often extremely difficult to replace by themselves. They are riveted to the top case in most models. This results in two approaches to this issue.\nThe Mac Laptop Keyboards replacement of the entire top case. This is how Apple handles the repair internally. The assembly includes the palm rest, and keyboard at a minimum. It may also include the battery, trackpad, speakers and touch bar depending on model—hence the weighty price tag.Undertaking the arduous process of removing the keyboard independently is definitely not for everyone. You'll need patience and some ingenuity to get the keyboard out and mount it again, but it's definitely doable if you're up for a challenge.",
+          "content": "Ultimately, it may come down to an issue with the keyboard itself.. This is typically a result of liquid damage, but can occur regardless.\n\nMacBook keyboards are often extremely difficult to replace by themselves.. They are riveted to the top case in most models.\n\nThis results in two approaches to this issue.. The Mac Laptop Keyboards replacement of the entire top case.\n\nThis is how Apple handles the repair internally.. The assembly includes the palm rest, and keyboard at a minimum.\n\nIt may also include the battery, trackpad, speakers and touch bar depending on model—hence the weighty price tag.Undertaking the arduous process of removing the keyboard independently is definitely not for everyone.\n\nYou'll need patience and some ingenuity to get the keyboard out and mount it again, but it's definitely doable if you're up for a challenge.",
           "videos": [
             {
               "url": "https://www.youtube.com/watch?v=W1Purem1NF0",
@@ -7259,40 +7261,42 @@
         {
           "number": "7",
           "title": "Logic Board Fault",
-          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality. Any number of the small components on the board may have failed or become damaged. Logic board fault is a safe assumption of cause if nothing else on this page has worked.\nCheck for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion or bend. If there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed.If you’re feeling especially motivated, the tiny components on the board can be repaired with microsoldering. It is an art unto itself, but a worthy endeavor for those who are adventurous. If you’re curious and want to know more about getting into micro soldering, here’s some good reading and some good watching to get you started.If you don’t want to undertake this yourself, your local repair shop may be able to help! Ask them if they offer this sort of repair, or can recommend someone who does."
+          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality.. Any number of the small components on the board may have failed or become damaged.\n\nLogic board fault is a safe assumption of cause if nothing else on this page has worked.. Check for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion or bend.\n\nIf there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed.If you’re feeling especially motivated, the tiny components on the board can be repaired with microsoldering.\n\nIt is an art unto itself, but a worthy endeavor for those who are adventurous.. If you’re curious and want to know more about getting into micro soldering, here’s some good reading and some good watching to get you started.If you don’t want to undertake this yourself, your local repair shop may be able to help!.\n\nAsk them if they offer this sort of repair, or can recommend someone who does."
         }
       ]
     },
     {
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Black+Screen/478598?lang=en",
       "title": "MacBook Black Screen",
-      "introduction": "Have you ever booted your MacBook and found it unresponsive? If you have encountered a black or white screen while restarting or booting up your MacBook, or you’re simply getting nothing on screen at all, don't panic, it’s possible you’ll even be able to solve your issue without the need for a costly repair.If your Mac doesn’t seem like it’s powering on, you may want to head over to the troubleshooting page for that instead.",
       "view_statistics": {
-        "past_24_hours": "101",
-        "past_7_days": "652",
-        "past_30_days": "2,534",
-        "all_time": "55,863"
+        "past_24_hours": "134",
+        "past_7_days": "665",
+        "past_30_days": "2,499",
+        "all_time": "55,972"
       },
+      "triage": "Troubleshooting is a process that often resembles medical diagnosis.. Certain information can help hone in on a specific problem.\n\nTry these tests to point yourself in the right direction.. Move your cursor around, especially towards the corners, or edges of the display.\n\nTry to get menus to appear.. If you're getting any sort of pointer, your display hardware is working properly.\n\nHave a look at software fixes.. Is your screen lighting up?. Try powering on in a dark room for easier observation.Pro Tip: Macs with a white Apple logo on the lid use the display backlight to illuminate.\n\nIf the Apple lights up, your backlight is working.. Pro Tip: Macs with a white Apple logo on the lid use the display backlight to illuminate.\n\nIf you don’t have any signs of backlight, check for an image on screen by shining a flashlight at your display.. No backlight and no display means you can safely rule out software.Pro Tip: This is easiest to spot during boot up.\n\nThe high contrast between the on screen Apple logo and the background significantly increases visibility.Bonus Pro Tip: If your Mac has the aforementioned white Apple logo on the lid, shine a light through it to emulate your backlight.\n\nCan you see an image now?. Bonus Pro Tip: If your Mac has the aforementioned white Apple logo on the lid, shine a light through it to emulate your backlight.\n\nNo image or backlight?. Connect your Mac to an external display.\n\nYou may need a dock, or an adapter to accomplish this.. If you get normal image on the external monitor, graphics processing is working properly.\n\nGetting trackpad click, but nothing else?. See if the Caps Lock LED lights when you press the key.\n\nIf no, you may have a firmware issue.",
+      "introduction": "Have you ever booted your MacBook and found it unresponsive?. If you have encountered a black or white screen while restarting or booting up your MacBook, or you’re simply getting nothing on screen at all, don't panic, it’s possible you’ll even be able to solve your issue without the need for a costly repair.If your Mac doesn’t seem like it’s powering on, you may want to head over to the troubleshooting page for that instead.",
+      "first_steps": "It’s easy to forget some troubleshooting basics amidst frustration.. Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.\n\nPerform a hard reset.. Press and hold your power button for fifteen seconds, then release.\n\nWait a few seconds, then try to power on again.. This can resolve any minor hang ups in the startup process or resolve a stuck update.Connect, or reconnect your charger.\n\nTry a different port if you have multiple.. This may kick the device out of sleep, or power it on if other methods are not working.Turn up your brightness settings.\n\nIf your Mac has a Touch Bar, the brightness can be adjusted by moving the slider marked with the Sun logo.. If you only have the row of Function Keys, display brightness can be adjusted up or down with F2 or F1, respectively.Disconnect any peripherals.\n\nDocks or multi-port hubs are notoriously problematic, especially if they have many items connected.Reset the PRAM or NVRAM.. These are terms for a small amount of memory which contains system settings for the Mac, including brightness and display resolution.Reset the System Management Controller (or SMC).\n\nThis can clear any bunk startup settings, or resolve issues where your Mac is stuck in sleep.",
       "causes": [
         {
           "number": "1",
           "title": "Buggy Software",
-          "content": "Keeping track of the information on your MacBook is hard work. Data is constantly being written, overwritten, accessed or deleted. Often following an update or power loss, data records may change in ways that are unintentional. This is commonly called data corruption. Even without corruption, software may contain flaws that result in unexpected behavior–including your blank display.\nPower down your Mac and try to launch into Safe Mode. A reboot after entering Safe Mode may be sufficient. Some OS repairs are done as part of this process.See if you get an image in Recovery Mode. Once there, repair the file system. Using Internet Recovery is best since this does not rely on access to the disk you’re repairing.If errors were repaired, restart your Mac and see if the issue is resolved.Reinstall, or upgrade your operating system using Recovery Mode. You can also use a bootable USB installer if you have access to another Mac.If all else fails, make sure you have a backup or come to terms with losing whatever you have stored currently. Erase your drive and reinstall the OS on the newly erased drive..\nIf errors were repaired, restart your Mac and see if the issue is resolved.\nNote: If you do not have a backup, or are not willing to erase the drive, you still have options."
+          "content": "Keeping track of the information on your MacBook is hard work.. Data is constantly being written, overwritten, accessed or deleted.\n\nOften following an update or power loss, data records may change in ways that are unintentional.. This is commonly called data corruption.\n\nEven without corruption, software may contain flaws that result in unexpected behavior–including your blank display.. Power down your Mac and try to launch into Safe Mode.\n\nA reboot after entering Safe Mode may be sufficient.. Some OS repairs are done as part of this process.See if you get an image in Recovery Mode.\n\nOnce there, repair the file system.. Using Internet Recovery is best since this does not rely on access to the disk you’re repairing.If errors were repaired, restart your Mac and see if the issue is resolved.Reinstall, or upgrade your operating system using Recovery Mode.\n\nYou can also use a bootable USB installer if you have access to another Mac.If all else fails, make sure you have a backup or come to terms with losing whatever you have stored currently.. Erase your drive and reinstall the OS on the newly erased drive..\n\nIf errors were repaired, restart your Mac and see if the issue is resolved.. Note: If you do not have a backup, or are not willing to erase the drive, you still have options."
         },
         {
           "number": "2",
           "title": "Firmware Corruption",
-          "content": "If your Mac is from 2018 or newer, it’s possible your MacBook encountered an error or lost power when it was updating the firmware. This might make it appear as though it’s not on, when it just doesn’t have the directions to boot up properly. Direct Firmware Upgrade or DFU mode can help to diagnose or solve this issue.\nPress and hold the power button for a solid twenty seconds. Release the button, wait a few seconds, and attempt to power it on again. This will force a normal boot attempt if your device was inadvertently put into DFU mode.To reinstall a known good copy of the firmware, you will need a second Mac that can run Apple Configurator 2 and a USB C cable.Follow the Apple Support page to get your Mac into DFU mode. You may need to disconnect and reconnect the cable between the two Macs to get Configurator to recognize the device.Note: The procedure for Macs with Apple Silicon processors varies slightly.Attempt a revive first. This will install a new copy of the device firmware. You should get an Apple logo on the device screen at some point during this process. If you do not, your issue is likely the display itself.If the Revive is unsuccessful, ensure you have a good backup and try a Restore.Note: This will reinitialize the internal storage. Your data will be erased, you may also need to reinstall the operating system depending on the device model.If you encounter an error during this process, try a different USB cable, internet connection, or both. If you are still unsuccessful, head over to the Answers Forum where you can get some more individual assistance. Make note of any error codes you get. They can help diagnose the underlying issue.\nNote: The procedure for Macs with Apple Silicon processors varies slightly.\nNote: This will reinitialize the internal storage. Your data will be erased, you may also need to reinstall the operating system depending on the device model."
+          "content": "If your Mac is from 2018 or newer, it’s possible your MacBook encountered an error or lost power when it was updating the firmware.. This might make it appear as though it’s not on, when it just doesn’t have the directions to boot up properly.\n\nDirect Firmware Upgrade or DFU mode can help to diagnose or solve this issue.. Press and hold the power button for a solid twenty seconds.\n\nRelease the button, wait a few seconds, and attempt to power it on again.. This will force a normal boot attempt if your device was inadvertently put into DFU mode.To reinstall a known good copy of the firmware, you will need a second Mac that can run Apple Configurator 2 and a USB C cable.Follow the Apple Support page to get your Mac into DFU mode.\n\nYou may need to disconnect and reconnect the cable between the two Macs to get Configurator to recognize the device.Note: The procedure for Macs with Apple Silicon processors varies slightly.Attempt a revive first.\n\nThis will install a new copy of the device firmware.. You should get an Apple logo on the device screen at some point during this process.\n\nIf you do not, your issue is likely the display itself.If the Revive is unsuccessful, ensure you have a good backup and try a Restore.Note: This will reinitialize the internal storage.. Your data will be erased, you may also need to reinstall the operating system depending on the device model.If you encounter an error during this process, try a different USB cable, internet connection, or both.\n\nIf you are still unsuccessful, head over to the Answers Forum where you can get some more individual assistance.. Make note of any error codes you get.\n\nThey can help diagnose the underlying issue.. Note: The procedure for Macs with Apple Silicon processors varies slightly.\n\nNote: This will reinitialize the internal storage.. Your data will be erased, you may also need to reinstall the operating system depending on the device model."
         },
         {
           "number": "3",
           "title": "Damaged or Faulty Display",
-          "content": "As laptops have continued to get thinner, the likelihood of damage to your display has increased dramatically. Visible damage can be harder to spot than you expect depending on its severity and location. Even without damage, the display may not work properly due to internal faults, damaged or not.\nLook closely at your display for signs of break. Changing your viewing angle may help catch small hairline cracks. .Check the bezel below the display as well. Damage to this area could sever or puncture the fragile cables beneath it.Check internal cables for signs of tears or other damage. Pay special attention to the cables leading from the TCON board to the display. They tend to collect debris and could have punctures or tears causing a variety of display related issues.If you find damage, or software fixes have not made a difference, replacing the display is the most likely solution. Use the appropriate Guide for your model. iFixit may even carry the screen!\nCheck the bezel below the display as well. Damage to this area could sever or puncture the fragile cables beneath it."
+          "content": "As laptops have continued to get thinner, the likelihood of damage to your display has increased dramatically.. Visible damage can be harder to spot than you expect depending on its severity and location.\n\nEven without damage, the display may not work properly due to internal faults, damaged or not.. Look closely at your display for signs of break.\n\nChanging your viewing angle may help catch small hairline cracks. .Check the bezel below the display as well.. Damage to this area could sever or puncture the fragile cables beneath it.Check internal cables for signs of tears or other damage.\n\nPay special attention to the cables leading from the TCON board to the display.. They tend to collect debris and could have punctures or tears causing a variety of display related issues.If you find damage, or software fixes have not made a difference, replacing the display is the most likely solution.\n\nUse the appropriate Guide for your model. iFixit may even carry the screen!. Check the bezel below the display as well.\n\nDamage to this area could sever or puncture the fragile cables beneath it."
         },
         {
           "number": "4",
           "title": "Faulty Flex Cables",
-          "content": "Starting with the 2016 Mac Book Pro family, Apple redesigned the way the display connects to the logic board. The Timing Control (or TCON) board is mounted inside the main housing of the device rather than hiding it under the display bezel. Cabling from the logic board connects to the TCON board, which then transmits signals to the display. In 2018, the MacBook Air redesign incorporated this layout. Well documented issues with this new design layout were observed in the repair community triggering a controversy known as “Flexgate.”\nThese cables are a common fault due to repeat tension from opening and closing the screen. They are also prone to trapping debris that falls in the gap in the hinge area resulting in small cable punctures. This may also be referred to as “Dust Gate.”Inspect the cables for tears or dimples. Even minor damage could cause problems. Tears are common where they may rub against the edge of the TCON board.Even though the cables are the faulty part, the most common fix is replacing the entire display assembly.The cables themselves are extremely difficult to replace. One end is soldered to the TCON board. The other end leads under the back of the display panel, which is not intended to be removed independently.Some folks repair the cables with microsoldering, but this is not a repair for the faint of heart, or the inexperienced. They also tend to face the same failure since soldered on jumper wires don’t flex the same way as the cables they seek to repair.\nFuture iterations of the MacBook Pro contained cables that are slightly longer. These cables are less susceptible to this fault, but do not eliminate it.\nApple offers a Repair Program to resolve this for the 13” 2016 MacBook Pro models, but no others. There are reports of Apple extending this to other 2016 and 2017 models at their discretion, but you will likely have to press them for that sort of service.",
+          "content": "Starting with the 2016 Mac Book Pro family, Apple redesigned the way the display connects to the logic board.. The Timing Control (or TCON) board is mounted inside the main housing of the device rather than hiding it under the display bezel.\n\nCabling from the logic board connects to the TCON board, which then transmits signals to the display.. In 2018, the MacBook Air redesign incorporated this layout.\n\nWell documented issues with this new design layout were observed in the repair community triggering a controversy known as “Flexgate.”. These cables are a common fault due to repeat tension from opening and closing the screen.\n\nThey are also prone to trapping debris that falls in the gap in the hinge area resulting in small cable punctures.. This may also be referred to as “Dust Gate.”Inspect the cables for tears or dimples.\n\nEven minor damage could cause problems.. Tears are common where they may rub against the edge of the TCON board.Even though the cables are the faulty part, the most common fix is replacing the entire display assembly.The cables themselves are extremely difficult to replace.\n\nOne end is soldered to the TCON board.. The other end leads under the back of the display panel, which is not intended to be removed independently.Some folks repair the cables with microsoldering, but this is not a repair for the faint of heart, or the inexperienced.\n\nThey also tend to face the same failure since soldered on jumper wires don’t flex the same way as the cables they seek to repair.. Future iterations of the MacBook Pro contained cables that are slightly longer.\n\nThese cables are less susceptible to this fault, but do not eliminate it.. Apple offers a Repair Program to resolve this for the 13” 2016 MacBook Pro models, but no others.\n\nThere are reports of Apple extending this to other 2016 and 2017 models at their discretion, but you will likely have to press them for that sort of service.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/ILYZNuj1TJomGtl3.medium",
@@ -7303,12 +7307,12 @@
         {
           "number": "5",
           "title": "Faulty Internal Display Cable",
-          "content": "The cable which connects the logic board to the display is an uncommon fault, but as Adam Savage once said, “Failure is always an option.”\nThe Embedded DisplayPort or eDP cable used in MacBook Pros made in 2016 forward and Retina MacBook Airs is short, rigid and unlikely to go bad by itself, but reseating the cable connection is still a good idea.Liquid damage in this area can spell bad news. Check closely for signs of corrosion or liquid exposure here if your issue occurred following a spill.The layout of this connector positions the power line for your display’s backlight next to a line which carries data between the display and the CPU.The backlight line can run in excess of 40 Volts. The CPU data line is 1.8 Volts. If liquid gets into the connector when the display is on and bridges the backlight line into the adjacent data line…. I’m sure you can see why that might be a problem. Generally this is a death sentence for that part of the CPU which can no longer send data signals to the display. Logic board replacement would be necessary in this caseBoth the connections on the TCON board and the connector on the rear of the logic board could be affected. Inspect closely, and thoroughly if you are concerned this might be your issue.\nThe layout of this connector positions the power line for your display’s backlight next to a line which carries data between the display and the CPU.The backlight line can run in excess of 40 Volts. The CPU data line is 1.8 Volts. If liquid gets into the connector when the display is on and bridges the backlight line into the adjacent data line…. I’m sure you can see why that might be a problem. Generally this is a death sentence for that part of the CPU which can no longer send data signals to the display. Logic board replacement would be necessary in this case\nPre-2016 MacBook Pros and Pre-2018 MacBook Airs make use of a different display cable type. Low-Voltage Differential Signaling, or LVDS, is a communications standard often used for analog transmission of video signals.\nReseat the cable connector on the logic board to start. Inspect the connector for pin damage or stuck debris.Verify the cable hasn’t gotten pinched in the hinges of the display or sustained any other damage. An off kilter display or improperly routed cable can cause progressive wear, or sever the cable altogether.Due to its proximity to the edge of the device, these connectors are a hot spot for liquid damage. Be sure to inspect for corrosion if you suspect liquid may have come into play."
+          "content": "The cable which connects the logic board to the display is an uncommon fault, but as Adam Savage once said, “Failure is always an option.”. The Embedded DisplayPort or eDP cable used in MacBook Pros made in 2016 forward and Retina MacBook Airs is short, rigid and unlikely to go bad by itself, but reseating the cable connection is still a good idea.Liquid damage in this area can spell bad news.\n\nCheck closely for signs of corrosion or liquid exposure here if your issue occurred following a spill.The layout of this connector positions the power line for your display’s backlight next to a line which carries data between the display and the CPU.The backlight line can run in excess of 40 Volts.\n\nThe CPU data line is 1.8 Volts.. If liquid gets into the connector when the display is on and bridges the backlight line into the adjacent data line….\n\nI’m sure you can see why that might be a problem.. Generally this is a death sentence for that part of the CPU which can no longer send data signals to the display.\n\nLogic board replacement would be necessary in this caseBoth the connections on the TCON board and the connector on the rear of the logic board could be affected.. Inspect closely, and thoroughly if you are concerned this might be your issue.\n\nThe layout of this connector positions the power line for your display’s backlight next to a line which carries data between the display and the CPU.The backlight line can run in excess of 40 Volts.. Logic board replacement would be necessary in this case.\n\nPre-2016 MacBook Pros and Pre-2018 MacBook Airs make use of a different display cable type.. Low-Voltage Differential Signaling, or LVDS, is a communications standard often used for analog transmission of video signals.\n\nReseat the cable connector on the logic board to start.. Inspect the connector for pin damage or stuck debris.Verify the cable hasn’t gotten pinched in the hinges of the display or sustained any other damage.\n\nAn off kilter display or improperly routed cable can cause progressive wear, or sever the cable altogether.Due to its proximity to the edge of the device, these connectors are a hot spot for liquid damage.\n\nBe sure to inspect for corrosion if you suspect liquid may have come into play."
         },
         {
           "number": "6",
           "title": "Faulty Hall Sensors",
-          "content": "Few people think about the technology used to detect whether their laptop display is open or closed–it’s less sophisticated than you might suspect. Magnets present in the bezel of the display are detected by small sensors mounted in the chassis of the laptop. The lid closes, sensors see a magnetic field, the device gets the cue to sleep. Vice versa when you open it back up–simple, right? Despite the relative simplicity of the mechanism, they can still fail in a number of ways.\nTo test for this issue, see if you can use magnets to trigger the wake signal by running them along the left or right sides of the MacBook’s housing.If you encounter difficulty, try to use a similar method to get a more specific idea of . Run the magnet along the left and right edges of the display, to map the magnets' location.This issue is most common on Retina MacBook Airs. The sensors on these models are mounted in peripheral components rather than on the logic board itself. One sensor is part of the microphone assembly, the other is in the right speaker.In MacBook Pros, at least one sensor is mounted to the logic board itself. These can usually be identified by locating a raised part of the logic board near the left or right edges.",
+          "content": "Few people think about the technology used to detect whether their laptop display is open or closed–it’s less sophisticated than you might suspect.. Magnets present in the bezel of the display are detected by small sensors mounted in the chassis of the laptop.\n\nThe lid closes, sensors see a magnetic field, the device gets the cue to sleep.. Vice versa when you open it back up–simple, right?. Despite the relative simplicity of the mechanism, they can still fail in a number of ways.\n\nTo test for this issue, see if you can use magnets to trigger the wake signal by running them along the left or right sides of the MacBook’s housing.If you encounter difficulty, try to use a similar method to get a more specific idea of .\n\nRun the magnet along the left and right edges of the display, to map the magnets' location.This issue is most common on Retina MacBook Airs.. The sensors on these models are mounted in peripheral components rather than on the logic board itself.\n\nOne sensor is part of the microphone assembly, the other is in the right speaker.In MacBook Pros, at least one sensor is mounted to the logic board itself.. These can usually be identified by locating a raised part of the logic board near the left or right edges.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/AuOEeATu5XuSKFp2.standard",
@@ -7319,12 +7323,12 @@
         {
           "number": "7",
           "title": "Liquid Damage",
-          "content": "Liquid in your electronics can wreak havoc on any system it touches. Aside from lack of power, lack of image or backlight is one of the most common MacBook issues resulting from spill. If at any point, even a little bit of liquid got into your machine and rolled into the wrong spot, you could end up with display problems or worse.\nLiquid damage can affect MacBooks having image issues in three key areas: around the backlight circuit, the display connector and on the TCON board.Liquid damage indicators will almost always be positioned near display components. They don’t tell the whole story, but if one has been triggered, it’s a good clue.Even if you don’t know much about circuit board design, backlight circuits appear in similar places and layouts on nearly all MacBooks. They typically rely on a large number of capacitors in a row. They will be near the display connector on older MacBooks."
+          "content": "Liquid in your electronics can wreak havoc on any system it touches.. Aside from lack of power, lack of image or backlight is one of the most common MacBook issues resulting from spill.\n\nIf at any point, even a little bit of liquid got into your machine and rolled into the wrong spot, you could end up with display problems or worse.. Liquid damage can affect MacBooks having image issues in three key areas: around the backlight circuit, the display connector and on the TCON board.Liquid damage indicators will almost always be positioned near display components.\n\nThey don’t tell the whole story, but if one has been triggered, it’s a good clue.Even if you don’t know much about circuit board design, backlight circuits appear in similar places and layouts on nearly all MacBooks.\n\nThey typically rely on a large number of capacitors in a row.. They will be near the display connector on older MacBooks."
         },
         {
           "number": "8",
           "title": "Logic Board",
-          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality. Any number of the small components on the board may have failed or become damaged. Logic board fault is a safe assumption of cause if nothing else on this page has worked.\nCheck for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion or bend. If there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed. If you’re stuck in this pickle, and you need your data you still have options.If you’re feeling especially motivated, the tiny components on the board can be repaired with microsoldering. It is an art unto itself, but a worthy endeavor for those who are adventurous. If you’re curious and want to know more about getting into micro soldering, here’s some good reading and some good watching to get you started.If you don’t want to undertake this yourself, your local repair shop may be able to help! Ask them if they offer this sort of repair, or can recommend someone who does."
+          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality.. Any number of the small components on the board may have failed or become damaged.\n\nLogic board fault is a safe assumption of cause if nothing else on this page has worked.. Check for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion or bend.\n\nIf there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed.. If you’re stuck in this pickle, and you need your data you still have options.If you’re feeling especially motivated, the tiny components on the board can be repaired with microsoldering.\n\nIt is an art unto itself, but a worthy endeavor for those who are adventurous.. If you’re curious and want to know more about getting into micro soldering, here’s some good reading and some good watching to get you started.If you don’t want to undertake this yourself, your local repair shop may be able to help!.\n\nAsk them if they offer this sort of repair, or can recommend someone who does."
         }
       ]
     },
@@ -7332,16 +7336,17 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Slow/484308?lang=en",
       "title": "MacBook Slow",
       "view_statistics": {
-        "past_24_hours": "38",
-        "past_7_days": "242",
-        "past_30_days": "1,116",
-        "all_time": "22,128"
+        "past_24_hours": "39",
+        "past_7_days": "234",
+        "past_30_days": "1,104",
+        "all_time": "22,160"
       },
+      "the_basics": "Before undertaking any of the more time-consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Especially if you have not done so recently.\n\nBe sure to uncheck the “Reopen windows when logging back in” box in the confirmation pop-up.Check for updates to macOS.. You may be running into a bug that Apple resolved later via an update.If your Mac is on Mojave 10.14 or newer, software updates can be performed within System Preferences.High Sierra 10.13 and older will have software updates in the App Store.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings which the SMC handles.Reset the PRAM or NVRAM.. These are terms for a small amount of memory that contains system settings for the Mac.\n\nResetting it may clear a bad setting.Run Apple’s Diagnostic Suite to check for any blatant errors.. Be aware that this test is designed to optimize quick results.\n\nTrust a failure, but not a pass.",
       "causes": [
         {
           "number": "1",
           "title": "Storage Is Full",
-          "content": "Have you been getting warnings that your device is running low on storage? It’s easy to ignore, but computers need free space to operate properly. Think of it like your sock drawer. You can squish any number of additional pairs of socks in, but eventually, your drawer will stop closing. Your computer might be similarly stuck; constantly needing to rearrange to fit it all. This constant reshuffling can put your computer in a bind.\nInvestigate what is consuming your storage. These options give a visual breakdown of what types of data are on your drive. This can assist in determining what to trash\nOn macOS 13 (Ventura) and newer\nOpen System Settings and select GeneralWithin the General menu select the Storage menu.For a detailed breakdown, clicking the \"i\" icon on any category on the bottom half of this menu will pull up a Finder like window with files and sizes for those items.\nOn macOS 12 (Monterey) and earlier\nClick the Apple logo in the upper left-hand corner of the screen and click “About This Mac.”Select the Storage tab along the top of the window that appears.Pro Tip: For an even more granular breakdown, click “Manage Storage” in the top right corner of this window.If the bulk of your storage is listed as “Other” or “System,” this will require further investigation to pin down. Those categories are used to classify files that don’t fit elsewhere.Use a tool like OmniDisk Sweeper or DiskInventoryX to give you a folder-by-folder overview of your storage. You may need to give the app “Full Disk Access” in your Security settings for the most complete data.Run a repair on your startup disk in internet recovery. This might clear up stubborn errors since your disk is not in use. Internet Recovery runs entirely from RAM.If you continue to get disk full notifications but you seem to have a workable amount of free storage—compare your \"About This Mac\" info to what shows in Disk Utility. Time Machine snapshots may not be clearing out properly if Disk Utility reveals a large discrepancy.If you're constantly running out of space, check to see if your MacBook has an upgradeable hard drive. If your current machine has an HDD consider replacing it with an SSD. They can boost performance dramatically, not to mention better power efficiency and longevity.\nUse a tool like OmniDisk Sweeper or DiskInventoryX to give you a folder-by-folder overview of your storage. You may need to give the app “Full Disk Access” in your Security settings for the most complete data.",
+          "content": "Have you been getting warnings that your device is running low on storage?. It’s easy to ignore, but computers need free space to operate properly.\n\nThink of it like your sock drawer.. You can squish any number of additional pairs of socks in, but eventually, your drawer will stop closing.\n\nYour computer might be similarly stuck; constantly needing to rearrange to fit it all.. This constant reshuffling can put your computer in a bind.\n\nInvestigate what is consuming your storage.. These options give a visual breakdown of what types of data are on your drive.\n\nThis can assist in determining what to trash. On macOS 13 (Ventura) and newer. Open System Settings and select GeneralWithin the General menu select the Storage menu.For a detailed breakdown, clicking the \"i\" icon on any category on the bottom half of this menu will pull up a Finder like window with files and sizes for those items.\n\nOn macOS 12 (Monterey) and earlier. Click the Apple logo in the upper left-hand corner of the screen and click “About This Mac.”Select the Storage tab along the top of the window that appears.Pro Tip: For an even more granular breakdown, click “Manage Storage” in the top right corner of this window.If the bulk of your storage is listed as “Other” or “System,” this will require further investigation to pin down.\n\nThose categories are used to classify files that don’t fit elsewhere.Use a tool like OmniDisk Sweeper or DiskInventoryX to give you a folder-by-folder overview of your storage.. You may need to give the app “Full Disk Access” in your Security settings for the most complete data.Run a repair on your startup disk in internet recovery.\n\nThis might clear up stubborn errors since your disk is not in use.. Internet Recovery runs entirely from RAM.If you continue to get disk full notifications but you seem to have a workable amount of free storage—compare your \"About This Mac\" info to what shows in Disk Utility.\n\nTime Machine snapshots may not be clearing out properly if Disk Utility reveals a large discrepancy.If you're constantly running out of space, check to see if your MacBook has an upgradeable hard drive.\n\nIf your current machine has an HDD consider replacing it with an SSD.. They can boost performance dramatically, not to mention better power efficiency and longevity.\n\nUse a tool like OmniDisk Sweeper or DiskInventoryX to give you a folder-by-folder overview of your storage.. You may need to give the app “Full Disk Access” in your Security settings for the most complete data.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/HaMIFjuh11dqhXmD.standard",
@@ -7352,27 +7357,27 @@
         {
           "number": "2",
           "title": "Malware",
-          "content": "There is a common myth that Apple computers don't need Antivirus software because they just \"don't get viruses.\" To some extent this is true, they are less likely to get truly malicious software. But they are still prone to other exploits and junk apps.\nRun a virus scan on your Mac. If you don't currently have any Antivirus software, there are a bevy of free options available. Malwarebytes is often a good first stop to clear out junk, even using the free version.Steer clear of any software which claims it is a \"one-stop shop\" for Mac maintenance. MacKeeper, Advanced Mac Cleaner, Mac Fixer, or any similar sounding program is more likely to cause this issue than resolve it."
+          "content": "There is a common myth that Apple computers don't need Antivirus software because they just \"don't get viruses.\" To some extent this is true, they are less likely to get truly malicious software.. But they are still prone to other exploits and junk apps.\n\nRun a virus scan on your Mac.. If you don't currently have any Antivirus software, there are a bevy of free options available.\n\nMalwarebytes is often a good first stop to clear out junk, even using the free version.Steer clear of any software which claims it is a \"one-stop shop\" for Mac maintenance.. MacKeeper, Advanced Mac Cleaner, Mac Fixer, or any similar sounding program is more likely to cause this issue than resolve it."
         },
         {
           "number": "3",
           "title": "Multiple Antivirus Programs",
-          "content": "The notion that more protection is better makes logical sense, but in terms of Antivirus software, that isn't the case. Antivirus can be a resource hog in the best of times, but having more than one installed can cause conflict. It may also utilize all your system resources, trying to keep the system safe, leaving none for you to use.\nThe best practice is to pick the one you like most and uninstall all others.Different programs have different benefits. If you're unsure what program to pick, do some research for yourself about features and pitfalls before making a decision."
+          "content": "The notion that more protection is better makes logical sense, but in terms of Antivirus software, that isn't the case.. Antivirus can be a resource hog in the best of times, but having more than one installed can cause conflict.\n\nIt may also utilize all your system resources, trying to keep the system safe, leaving none for you to use.. The best practice is to pick the one you like most and uninstall all others.Different programs have different benefits.\n\nIf you're unsure what program to pick, do some research for yourself about features and pitfalls before making a decision."
         },
         {
           "number": "4",
           "title": "Hardware Is Underpowered",
-          "content": "Although many Macs have capable hardware, you can only ask it to do so much before it gets overwhelmed and locks up. In some ways, it’s a lot like a human brain. Giving it one taxing thing to do is actually easier than giving it twelve things to do simultaneously, even if the twelve things are less demanding.\nCheck the Applications in your startup list. This can be found in the “Users and Groups” menu in System Preferences. Select your user account and click the “Login Items” tab. Use the minus button to remove anything you don’t want to launch every time you log in.Cloud sync apps are often the culprit here.Get a baseline for how much of your system’s resources are in use.Open Activity Monitor. It can be found in the Utilities folder in your Applications menu. Have a look at the percentage of each resource currently in use, and pay attention to CPU and Memory Usage especially.Make note of any process using a large amount of any system resource. Many of the items in this list are part of the operating system and are best left alone, but if a program you are using is high on the list, quit it and retest. If kernel_task seems to be the faulting process, skip ahead to the Overheating Section.If programs vital to your use case are the cause, consider adding additional RAM if you have that option. However, you may be relegated to swapping out your logic board for one with more RAM. Sadly, this is the only upgrade path for nearly all modern MacBooks in need of more RAM or a bulked-up CPU.\nCloud sync apps are often the culprit here.\nOpen Activity Monitor. It can be found in the Utilities folder in your Applications menu. Have a look at the percentage of each resource currently in use, and pay attention to CPU and Memory Usage especially.Make note of any process using a large amount of any system resource. Many of the items in this list are part of the operating system and are best left alone, but if a program you are using is high on the list, quit it and retest. If kernel_task seems to be the faulting process, skip ahead to the Overheating Section."
+          "content": "Although many Macs have capable hardware, you can only ask it to do so much before it gets overwhelmed and locks up.. In some ways, it’s a lot like a human brain.\n\nGiving it one taxing thing to do is actually easier than giving it twelve things to do simultaneously, even if the twelve things are less demanding.. Check the Applications in your startup list.\n\nThis can be found in the “Users and Groups” menu in System Preferences.. Select your user account and click the “Login Items” tab.\n\nUse the minus button to remove anything you don’t want to launch every time you log in.Cloud sync apps are often the culprit here.Get a baseline for how much of your system’s resources are in use.Open Activity Monitor.\n\nIt can be found in the Utilities folder in your Applications menu.. Have a look at the percentage of each resource currently in use, and pay attention to CPU and Memory Usage especially.Make note of any process using a large amount of any system resource.\n\nMany of the items in this list are part of the operating system and are best left alone, but if a program you are using is high on the list, quit it and retest.. If kernel_task seems to be the faulting process, skip ahead to the Overheating Section.If programs vital to your use case are the cause, consider adding additional RAM if you have that option.\n\nHowever, you may be relegated to swapping out your logic board for one with more RAM.. Sadly, this is the only upgrade path for nearly all modern MacBooks in need of more RAM or a bulked-up CPU.\n\nCloud sync apps are often the culprit here.. Open Activity Monitor.\n\nIf kernel_task seems to be the faulting process, skip ahead to the Overheating Section."
         },
         {
           "number": "5",
           "title": "Overheating",
-          "content": "The harder your MacBook is working, the more heat it's generating. If it's generating more heat than components are rated for, your computer may intentionally slow itself down to compensate.\nTo determine the temperatures of internal components, you can use an app to monitor readings from your Mac’s internal sensors. TG Pro has a free trial which can be used for this purpose, the paid version gets you even more helpfulOpen Activity Monitor and see if any processes are utilizing a high percentage of your CPU. Close the corresponding program if it’s a process you recognize as an open application.Don’t get fooled by high “kernel_task” utilization. Kernel task is a process with many functions. One of these is a buffer for processes macOS thinks might be causing high CPU temperatures. If its utilization is high, another process is probably to blame.If temperatures are high, even with nothing much running, it’s time for some routine maintenance. Pop open your MacBook, arm yourself with some compressed air, and show the dust clinging to your fans who’s boss.Make sure your heat sink is attached soundly if CPU or GPU temperatures are high. It should be mounted solidly with screws in the corners.To go the extra mile, reapplying thermal paste to your CPU (and GPU if your MacBook has dedicated graphics hardware) can optimize thermal transfer to the heat sink and lower operating temperatures.In rare cases, your heat sink may need to be replaced. They don't fail often, but when they do, there will generally be visual indications. Make sure there are no bends, kinks, or holes in the attached pipes.\nDon’t get fooled by high “kernel_task” utilization. Kernel task is a process with many functions. One of these is a buffer for processes macOS thinks might be causing high CPU temperatures. If its utilization is high, another process is probably to blame."
+          "content": "The harder your MacBook is working, the more heat it's generating.. If it's generating more heat than components are rated for, your computer may intentionally slow itself down to compensate.\n\nTo determine the temperatures of internal components, you can use an app to monitor readings from your Mac’s internal sensors.. TG Pro has a free trial which can be used for this purpose, the paid version gets you even more helpfulOpen Activity Monitor and see if any processes are utilizing a high percentage of your CPU.\n\nClose the corresponding program if it’s a process you recognize as an open application.Don’t get fooled by high “kernel_task” utilization.. Kernel task is a process with many functions.\n\nOne of these is a buffer for processes macOS thinks might be causing high CPU temperatures.. If its utilization is high, another process is probably to blame.If temperatures are high, even with nothing much running, it’s time for some routine maintenance.\n\nPop open your MacBook, arm yourself with some compressed air, and show the dust clinging to your fans who’s boss.Make sure your heat sink is attached soundly if CPU or GPU temperatures are high.. It should be mounted solidly with screws in the corners.To go the extra mile, reapplying thermal paste to your CPU (and GPU if your MacBook has dedicated graphics hardware) can optimize thermal transfer to the heat sink and lower operating temperatures.In rare cases, your heat sink may need to be replaced.\n\nThey don't fail often, but when they do, there will generally be visual indications.. Make sure there are no bends, kinks, or holes in the attached pipes.\n\nDon’t get fooled by high “kernel_task” utilization.. If its utilization is high, another process is probably to blame."
         },
         {
           "number": "6",
           "title": "Missing Sensor Data",
-          "content": "Most computerized devices are littered with a bevy of sensors that inform the system about localized temperatures or the voltage or current of connected circuits. If sensor data is missing, the Mac will kick into a protective mode. In the mind of a Mac, lack of sensor data means everything could be on fire.\nThis issue is typically accompanied by high fan speeds, even if hardware temperatures are low.Use TGPro or another temperature monitoring app to check for missing sensor data. Usual culprits include the trackpad, battery, and SSD.\nApple diagnostics will usually indicate an SMC error if this is the issue. The System Management Controller or SMC is the board component that receives this sensor data.",
+          "content": "Most computerized devices are littered with a bevy of sensors that inform the system about localized temperatures or the voltage or current of connected circuits.. If sensor data is missing, the Mac will kick into a protective mode.\n\nIn the mind of a Mac, lack of sensor data means everything could be on fire.. This issue is typically accompanied by high fan speeds, even if hardware temperatures are low.Use TGPro or another temperature monitoring app to check for missing sensor data.\n\nUsual culprits include the trackpad, battery, and SSD.. Apple diagnostics will usually indicate an SMC error if this is the issue.\n\nThe System Management Controller or SMC is the board component that receives this sensor data.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/pANbKXgmn5oXKeIZ.medium",
@@ -7383,7 +7388,7 @@
         {
           "number": "7",
           "title": "Faulty Storage",
-          "content": "This occurs most frequently on Unibody MacBooks which make use of Hard Drive Disks, or HDDs. They have been around since the early days of computing, are comparatively inexpensive, and can last for many years if well taken care of. However, laptops are meant to be mobile and the mechanical nature of these drives means they are prone to failure.\nRun Apple Diagnostics or Hardware Check to find blatant hard drive failure. More thorough hard drive testing is often necessary to uncover issues, so trust a failure here, but not a pass.Signs of HDD failure include overall sluggishness, inability to access certain files, and intermittent ability to boot.Clicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive. If any of these sounds are present, open the Mac and power it on again to isolate the noise to the storage drive and not a fan or the disc drive.Check to see if your drive is detected by the Disk Utility function of Recovery Mode. If not, it’s likely to need replacement. Find the Guide for your model and remember you’ll need to reinstall macOS on the new drive.Pro Tip: Consider replacing the HDD with a SSD. This is the modern standard for laptop storage. They are more energy efficient, generate less heat, and support faster speeds. It’s the best way to revitalize an older computer!\nClicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive. If any of these sounds are present, open the Mac and power it on again to isolate the noise to the storage drive and not a fan or the disc drive.",
+          "content": "This occurs most frequently on Unibody MacBooks which make use of Hard Drive Disks, or HDDs.. They have been around since the early days of computing, are comparatively inexpensive, and can last for many years if well taken care of.\n\nHowever, laptops are meant to be mobile and the mechanical nature of these drives means they are prone to failure.. Run Apple Diagnostics or Hardware Check to find blatant hard drive failure.\n\nMore thorough hard drive testing is often necessary to uncover issues, so trust a failure here, but not a pass.Signs of HDD failure include overall sluggishness, inability to access certain files, and intermittent ability to boot.Clicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive.\n\nIf any of these sounds are present, open the Mac and power it on again to isolate the noise to the storage drive and not a fan or the disc drive.Check to see if your drive is detected by the Disk Utility function of Recovery Mode.\n\nIf not, it’s likely to need replacement.. Find the Guide for your model and remember you’ll need to reinstall macOS on the new drive.Pro Tip: Consider replacing the HDD with a SSD.\n\nThis is the modern standard for laptop storage.. They are more energy efficient, generate less heat, and support faster speeds.\n\nIt’s the best way to revitalize an older computer!. Clicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive.\n\nIf any of these sounds are present, open the Mac and power it on again to isolate the noise to the storage drive and not a fan or the disc drive.",
           "videos": [
             {
               "url": "https://www.youtube.com/watch?v=XwYSdD4fyRU",
@@ -7394,30 +7399,31 @@
         {
           "number": "8",
           "title": "Faulty Fan",
-          "content": "Have you noticed recently that your Mac which used to sound like a jet engine is suspiciously silent? Or it’s making a weird noise it didn’t use to? In a modern MacBook, the fan is the only moving part. Mechanical noises are nearly always fan-related. A malfunctioning fan could mean excess heat. Excess heat equals subpar performance.\nFan errors are often detected by Apple Diagnostics. If you get an error that starts with “PPF” this points to fan failure.If the fan is making an unusual noise, replace it.If the fan is not spinning or seems erratic, disconnect and reconnect any affected fan connectors. Make sure the latch on the connector is present and locked. If your latch is missing, this can cause intermittent connection issues.On MacBook Pros 2016-2019, fans connect to the keyboard’s circuit board. The keyboard cable is responsible for carrying fan signals to the logic board. If replacing fans does not resolve the issue, your keyboard cable may be at fault."
+          "content": "Have you noticed recently that your Mac which used to sound like a jet engine is suspiciously silent?. Or it’s making a weird noise it didn’t use to?. In a modern MacBook, the fan is the only moving part.\n\nMechanical noises are nearly always fan-related.. A malfunctioning fan could mean excess heat.\n\nExcess heat equals subpar performance.. Fan errors are often detected by Apple Diagnostics.\n\nIf you get an error that starts with “PPF” this points to fan failure.If the fan is making an unusual noise, replace it.If the fan is not spinning or seems erratic, disconnect and reconnect any affected fan connectors.\n\nMake sure the latch on the connector is present and locked.. If your latch is missing, this can cause intermittent connection issues.On MacBook Pros 2016-2019, fans connect to the keyboard’s circuit board.\n\nThe keyboard cable is responsible for carrying fan signals to the logic board.. If replacing fans does not resolve the issue, your keyboard cable may be at fault."
         }
       ]
     },
     {
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Folder+With+Question+Mark/484463?lang=en",
       "title": "MacBook Folder With Question Mark",
-      "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Perform a hard reset. Press and hold your power button for about fifteen seconds, then release. Wait a few seconds, then try to power on again. This can resolve any minor hang ups in the startup process.Reset the System Management Controller (or SMC). The can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM. These are terms for a small amount of memory which contains system settings for the Mac. Clearing it resets the default startup disk, amongst other settings.If you have a 2012 13\" Unibody MacBook Pro, consider foregoing additional triage and replace your hard drive cable. They are notorious for failure on this model. There was an Apple Service Program at one time which covered this repair, but it has since expired leaving the repair up to you.",
       "view_statistics": {
-        "past_24_hours": "32",
-        "past_7_days": "188",
-        "past_30_days": "983",
-        "all_time": "26,120"
+        "past_24_hours": "44",
+        "past_7_days": "200",
+        "past_30_days": "978",
+        "all_time": "26,160"
       },
+      "introduction": "It seems logical to expect that opening your MacBook would lead to your usual login screen.. Or perhaps the Apple logo and a progress bar.\n\nBut what if instead you're faced with a mysterious flashing folder, and no other information.. This folder with a question mark icon, indicates that your MacBook cannot detect an operating system.\n\nIf it can't find that, your log in screen is out of the question.",
+      "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Perform a hard reset.. Press and hold your power button for about fifteen seconds, then release.\n\nWait a few seconds, then try to power on again.. This can resolve any minor hang ups in the startup process.Reset the System Management Controller (or SMC).\n\nThe can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory which contains system settings for the Mac.\n\nClearing it resets the default startup disk, amongst other settings.If you have a 2012 13\" Unibody MacBook Pro, consider foregoing additional triage and replace your hard drive cable.. They are notorious for failure on this model.\n\nThere was an Apple Service Program at one time which covered this repair, but it has since expired leaving the repair up to you.",
       "causes": [
         {
           "number": "1",
           "title": "Data Corruption",
-          "content": "Keeping track of the information on your MacBook is hard work. Data is constantly being written, overwritten, accessed or deleted. Often following an update or power loss, data records may change in ways that are unintentional. These changes may affect the most basic of things like identifying and launching the Operating System\nTry to repair the file system. Use Internet Recovery since this does not rely on access to the disk you’re repairing.Reinstall, or upgrade your operating system using recovery mode. A bootable USB installer is another option if you have access to another Mac or recovery mode does not work.If all else fails, make sure you have a backup or come to terms with losing whatever you have stored currently. Erase your drive and start from scratch.If you do not have a backup and are not willing to erase the drive, you still have options. See the MacBook Data Recovery Guide before you call it a loss.\nIf you do not have a backup and are not willing to erase the drive, you still have options. See the MacBook Data Recovery Guide before you call it a loss."
+          "content": "Keeping track of the information on your MacBook is hard work.. Data is constantly being written, overwritten, accessed or deleted.\n\nOften following an update or power loss, data records may change in ways that are unintentional.. These changes may affect the most basic of things like identifying and launching the Operating System. Try to repair the file system.\n\nUse Internet Recovery since this does not rely on access to the disk you’re repairing.Reinstall, or upgrade your operating system using recovery mode.. A bootable USB installer is another option if you have access to another Mac or recovery mode does not work.If all else fails, make sure you have a backup or come to terms with losing whatever you have stored currently.\n\nErase your drive and start from scratch.If you do not have a backup and are not willing to erase the drive, you still have options.. See the MacBook Data Recovery Guide before you call it a loss.\n\nIf you do not have a backup and are not willing to erase the drive, you still have options."
         },
         {
           "number": "2",
           "title": "Faulty Storage",
-          "content": "These MacBooks make use of the tried and true Hard Drive Disk, or HDD. They have been around since the early days of computing, are comparatively inexpensive, and can last for many years if well taken care of. However laptops are meant to be mobile and the mechanical nature of these drives means they are prone to failure.\nRun Apple Diagnostics or Hardware Check to find blatant hard drive failure. More thorough hard drive testing is often necessary to uncover issues, so trust a failure here, but not a pass.Signs of HDD failure include overall sluggishness, inability to access certain files, intermittent ability to boot.Clicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive. If any of these sounds are present, open the Mac and power on again to isolate the noise to the storage drive and not a fan or the disc drive.Check to see if your drive is detected the Disk Utility function of Recovery Mode. If not, it’s likely to need replacement. Find the Guide for your model and remember you’ll need to reinstall macOS on the new drive.Pro Tip: Consider replacing the HDD with a Solid State Drive, or SSD. This is the modern standard for laptop storage.They are more energy efficient, generate less heat, and support faster speeds. It’s the best way to revitalize an older computer!\nClicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive. If any of these sounds are present, open the Mac and power on again to isolate the noise to the storage drive and not a fan or the disc drive.\nThese Macs have a removable Solid State Drive, or SSD connected to the board. These cables can wear out leaving a good hard drive with no way to communicate. If there is any double as to which component is at fault, replace both the drive and the cable.If you have a model with a factory installed SSD, these connections are made directly to the logic board via a soldered on slot. Skip ahead to the “Faulty Logic Board” portion of this page for more info.",
+          "content": "These MacBooks make use of the tried and true Hard Drive Disk, or HDD.. They have been around since the early days of computing, are comparatively inexpensive, and can last for many years if well taken care of.\n\nHowever laptops are meant to be mobile and the mechanical nature of these drives means they are prone to failure.. Run Apple Diagnostics or Hardware Check to find blatant hard drive failure.\n\nMore thorough hard drive testing is often necessary to uncover issues, so trust a failure here, but not a pass.Signs of HDD failure include overall sluggishness, inability to access certain files, intermittent ability to boot.Clicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive.\n\nIf any of these sounds are present, open the Mac and power on again to isolate the noise to the storage drive and not a fan or the disc drive.Check to see if your drive is detected the Disk Utility function of Recovery Mode.\n\nIf not, it’s likely to need replacement.. Find the Guide for your model and remember you’ll need to reinstall macOS on the new drive.Pro Tip: Consider replacing the HDD with a Solid State Drive, or SSD.\n\nThis is the modern standard for laptop storage.They are more energy efficient, generate less heat, and support faster speeds.. It’s the best way to revitalize an older computer!. Clicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive.\n\nIf any of these sounds are present, open the Mac and power on again to isolate the noise to the storage drive and not a fan or the disc drive.. These Macs have a removable Solid State Drive, or SSD connected to the board.\n\nThese cables can wear out leaving a good hard drive with no way to communicate.. If there is any double as to which component is at fault, replace both the drive and the cable.If you have a model with a factory installed SSD, these connections are made directly to the logic board via a soldered on slot.\n\nSkip ahead to the “Faulty Logic Board” portion of this page for more info.",
           "videos": [
             {
               "url": "https://www.youtube.com/watch?v=XwYSdD4fyRU",
@@ -7428,7 +7434,7 @@
         {
           "number": "3",
           "title": "Faulty LifeBoat Connector",
-          "content": "On 2016 and 2017 MacBook Pros Apple made an attempt to allow easier data recovery on these models . There is a connector on these logic boards which do not seem to go anywhere and have no attached cables—only a screwed in metal cowling. This mystery connector allows Apple or anyone with the proper adapter to tap into storage circuits to retrieve data if the device fails—hence LifeBoat.\nDespite its intended purpose, it also serves vital board functions. All logic board circuits for the SSD are completed by the presence of this connector. To get proper boot, it has to be be present, otherwise none of the circuits will have an electrical path from one side of the connector to the other. You’ll need to source a new one if it’s been misplaced.Remove and reseat this connector. It is unlikely to resolve the problem, but if you’ve gotten this far, it’s worth a potentially simple solution and can uncover unnoticed liquid damage.",
+          "content": "On 2016 and 2017 MacBook Pros Apple made an attempt to allow easier data recovery on these models .. There is a connector on these logic boards which do not seem to go anywhere and have no attached cables—only a screwed in metal cowling.\n\nThis mystery connector allows Apple or anyone with the proper adapter to tap into storage circuits to retrieve data if the device fails—hence LifeBoat.. Despite its intended purpose, it also serves vital board functions.\n\nAll logic board circuits for the SSD are completed by the presence of this connector.. To get proper boot, it has to be be present, otherwise none of the circuits will have an electrical path from one side of the connector to the other.\n\nYou’ll need to source a new one if it’s been misplaced.Remove and reseat this connector.. It is unlikely to resolve the problem, but if you’ve gotten this far, it’s worth a potentially simple solution and can uncover unnoticed liquid damage.",
           "images": [
             {
               "url": "https://guide-images.cdn.ifixit.com/igi/1iqZaZASSPMcH5tN.standard",
@@ -7439,40 +7445,40 @@
         {
           "number": "4",
           "title": "Faulty Logic Board",
-          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality. Any number of the small components on the board may have failed or become damaged. Logic board fault is a safe assumption of cause if nothing else on this page has worked.\nCheck for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion or bend. If there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed. If your board is at fault, and you need data, you still have options.If you’re feeling especially curious, the tiny components on the board can be repaired with microsoldering. It is an art unto itself, but a worthy endeavor for those who are adventurous. Interested? Check out this intro! Jessa’s YouTube channel is also fantastic and has loads of real time repairs. If you can't do this sort of repair yourself, give your local repair shop a call and see if they can help. Even if they can’t, they may be able to recommend someone who can."
+          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality.. Any number of the small components on the board may have failed or become damaged.\n\nLogic board fault is a safe assumption of cause if nothing else on this page has worked.. Check for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion or bend.\n\nIf there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed.. If your board is at fault, and you need data, you still have options.If you’re feeling especially curious, the tiny components on the board can be repaired with microsoldering.\n\nIt is an art unto itself, but a worthy endeavor for those who are adventurous.. Check out this intro!. Jessa’s YouTube channel is also fantastic and has loads of real time repairs.\n\nIf you can't do this sort of repair yourself, give your local repair shop a call and see if they can help.. Even if they can’t, they may be able to recommend someone who can."
         }
       ]
     },
     {
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Stuck+On+Loading+Screen/486734?lang=en",
       "title": "MacBook Stuck On Loading Screen",
-      "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Consider how long you've been waiting. Patience is key. Sometimes a Mac is doing a software update, but you don't realize because there's no hallmark \"Estimated time\" and a grossly incorrect approximation under it. Give it another 15 minutes.Put a sticky note or some tape on the display with its edge aligned with the progress bar so you can tell if it's made any progress.If your waiting isn't fruitful, perform a force shutdown of your Mac. Press and hold the power button for fifteen seconds. Don't be fooled by a black screen, keep holding for a few seconds even past that. Then try and power back up again.Disconnect all peripherals before power on.Perform both an SMC and an NVRAM reset. This clears many settings used during startup and can correct a faulty configuration.Run a repair on your startup disk using Internet Recovery.Run Apple’s Diagnostic Suite to check for any blatant errors. Be aware that this test is designed to optimize quick results. Trust a failure, but not a pass.",
       "view_statistics": {
-        "past_24_hours": "17",
+        "past_24_hours": "24",
         "past_7_days": "106",
         "past_30_days": "484",
-        "all_time": "12,843"
+        "all_time": "12,860"
       },
+      "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Consider how long you've been waiting.. Patience is key.\n\nSometimes a Mac is doing a software update, but you don't realize because there's no hallmark \"Estimated time\" and a grossly incorrect approximation under it.. Give it another 15 minutes.Put a sticky note or some tape on the display with its edge aligned with the progress bar so you can tell if it's made any progress.If your waiting isn't fruitful, perform a force shutdown of your Mac.\n\nPress and hold the power button for fifteen seconds.. Don't be fooled by a black screen, keep holding for a few seconds even past that.\n\nThen try and power back up again.Disconnect all peripherals before power on.Perform both an SMC and an NVRAM reset.. This clears many settings used during startup and can correct a faulty configuration.Run a repair on your startup disk using Internet Recovery.Run Apple’s Diagnostic Suite to check for any blatant errors.\n\nBe aware that this test is designed to optimize quick results.. Trust a failure, but not a pass.",
       "causes": [
         {
           "number": "1",
           "title": "Software Corruption or Conflict",
-          "content": "During the course of using your Mac, something in the ones and zeroes that makes it run might have been lost, or changed in a way that causes inefficiencies. This is commonly a result of a botched update, an app which conflicts with functionality, or even a malicious piece of software.\nStart up in Safe Mode. This minimizes startup processes and attempts some basic repairs. Press an holding Shift immediately after the power button during startup. You may need to log in twice in Safe Mode. Safe Boot will appear in the upper right corner of the login screen.Note: Apple Silicon based Macs use a modified process for this. When the machine is powered down, press and hold the power button until \"Loading startup options\" appears on screen. Select your disk, then press and hold shift to present the \"Continue in Safe Mode\" option.If your Mac boots all the way in Safe mode, it's likely third party software causing the hang during normal boot. Narrowing this down can be hit or missUninstall apps that were installed or updated recently then retest. If you don't know what changes were made recently, check the System Information App. The \"Software\" section has an entire list of installations that can be sorted chronologically.As a last resort, perform a reinstall of the operating system using recovery mode. This should not cause any data loss, but it's always good to be cautious. Check your backups first. (refer to recovery guide if no backup)Erase your disk and reinstall the OS to rule software out entirely. Refrain from restoring any items from your backup until you know the issue is resolved.\nNote: Apple Silicon based Macs use a modified process for this. When the machine is powered down, press and hold the power button until \"Loading startup options\" appears on screen. Select your disk, then press and hold shift to present the \"Continue in Safe Mode\" option.If your Mac boots all the way in Safe mode, it's likely third party software causing the hang during normal boot. Narrowing this down can be hit or missUninstall apps that were installed or updated recently then retest. If you don't know what changes were made recently, check the System Information App. The \"Software\" section has an entire list of installations that can be sorted chronologically.\nErase your disk and reinstall the OS to rule software out entirely. Refrain from restoring any items from your backup until you know the issue is resolved."
+          "content": "During the course of using your Mac, something in the ones and zeroes that makes it run might have been lost, or changed in a way that causes inefficiencies.. This is commonly a result of a botched update, an app which conflicts with functionality, or even a malicious piece of software.\n\nStart up in Safe Mode.. This minimizes startup processes and attempts some basic repairs.\n\nPress an holding Shift immediately after the power button during startup.. You may need to log in twice in Safe Mode.\n\nSafe Boot will appear in the upper right corner of the login screen.Note: Apple Silicon based Macs use a modified process for this.. When the machine is powered down, press and hold the power button until \"Loading startup options\" appears on screen.\n\nSelect your disk, then press and hold shift to present the \"Continue in Safe Mode\" option.If your Mac boots all the way in Safe mode, it's likely third party software causing the hang during normal boot.\n\nNarrowing this down can be hit or missUninstall apps that were installed or updated recently then retest.. If you don't know what changes were made recently, check the System Information App.\n\nThe \"Software\" section has an entire list of installations that can be sorted chronologically.As a last resort, perform a reinstall of the operating system using recovery mode.. This should not cause any data loss, but it's always good to be cautious.\n\nCheck your backups first. (refer to recovery guide if no backup)Erase your disk and reinstall the OS to rule software out entirely.. Refrain from restoring any items from your backup until you know the issue is resolved.\n\nNote: Apple Silicon based Macs use a modified process for this.. The \"Software\" section has an entire list of installations that can be sorted chronologically.\n\nErase your disk and reinstall the OS to rule software out entirely."
         },
         {
           "number": "2",
           "title": "Storage Is Full",
-          "content": "Have you been getting warnings that your device is running low on storage? It’s easy to ignore, but computerized devices also need some free space to operate properly. Think of it like your sock drawer. You can squish any number of additional pairs of socks in, but eventually your drawer will stop closing. Your computer might be stuck in this same situation; constantly needing to rearrange to find a way to fit it all. This incessant reshuffling can put your computer in a bind.\nCheck the amount of storage you're using in Recovery Mode. The Disk Utility option will give you a read on this.Run a repair on your startup disk. Using Internet Recovery is best, but not mandatory. This might clear up stubborn errors since your disk is not in use. Internet Recovery runs from entirely from RAM.If your storage is full, there are still ways to clear it even the Mac won't boot. Most methods for data recovery also apply to data removal. Transfer files off your drive, or delete unnecessary ones altogether to free up space."
+          "content": "Have you been getting warnings that your device is running low on storage?. It’s easy to ignore, but computerized devices also need some free space to operate properly.\n\nThink of it like your sock drawer.. You can squish any number of additional pairs of socks in, but eventually your drawer will stop closing.\n\nYour computer might be stuck in this same situation; constantly needing to rearrange to find a way to fit it all.. This incessant reshuffling can put your computer in a bind.\n\nCheck the amount of storage you're using in Recovery Mode.. The Disk Utility option will give you a read on this.Run a repair on your startup disk.\n\nUsing Internet Recovery is best, but not mandatory.. This might clear up stubborn errors since your disk is not in use.\n\nInternet Recovery runs from entirely from RAM.If your storage is full, there are still ways to clear it even the Mac won't boot.. Most methods for data recovery also apply to data removal.\n\nTransfer files off your drive, or delete unnecessary ones altogether to free up space."
         },
         {
           "number": "3",
           "title": "Missing Sensor Data",
-          "content": "Most computerized devices are littered with a bevy of sensors which inform the system about localized temperatures or the voltage or current of connected circuits. If sensor data is missing, Macs kick into a protective mode. In the mind of a Mac, lack of sensor data means everything could be on fire.\nThis issue is typically accompanied by high fan speeds, even if hardware temperatures are low.Your Mac will likely boot in this state given enough time, but it will be extremely slow. Common culprits are the trackpad and battery. Run Apple Diagnostics to attempt to narrow down the issue."
+          "content": "Most computerized devices are littered with a bevy of sensors which inform the system about localized temperatures or the voltage or current of connected circuits.. If sensor data is missing, Macs kick into a protective mode.\n\nIn the mind of a Mac, lack of sensor data means everything could be on fire.. This issue is typically accompanied by high fan speeds, even if hardware temperatures are low.Your Mac will likely boot in this state given enough time, but it will be extremely slow.\n\nCommon culprits are the trackpad and battery.. Run Apple Diagnostics to attempt to narrow down the issue."
         },
         {
           "number": "4",
           "title": "Faulty Storage",
-          "content": "This occurs most frequently on Unibody MacBooks which make use of the tried and true Hard Drive Disk, or HDD. They have been around since the early days of computing, are comparatively inexpensive, and can last for many years if well taken care of. However laptops are meant to be mobile and the mechanical nature of these drives means they are prone to failure.\nRun Apple Diagnostics or Hardware Check to find blatant hard drive failure. More thorough hard drive testing is often necessary to uncover issues, so trust a failure here, but not a pass.Signs of storage failure include overall sluggishness, inability to access certain files, intermittent ability to boot.Clicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive. If any of these sounds are present, open the Mac and power on again to isolate the noise to the storage drive and not a fan or the disc drive.Check to see if your drive is detected the Disk Utility function of Recovery Mode. If not, it’s likely to need replacement. Find the Guide for your model and remember you’ll need to reinstall macOS on the new drive.Pro Tip: Consider replacing the HDD with a Solid State Drive, or SSD. This is the modern standard for laptop storage. They are more energy efficient, generate less heat, and support faster speeds. It’s the best way to revitalize an older computer!\nClicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive. If any of these sounds are present, open the Mac and power on again to isolate the noise to the storage drive and not a fan or the disc drive.",
+          "content": "This occurs most frequently on Unibody MacBooks which make use of the tried and true Hard Drive Disk, or HDD.. They have been around since the early days of computing, are comparatively inexpensive, and can last for many years if well taken care of.\n\nHowever laptops are meant to be mobile and the mechanical nature of these drives means they are prone to failure.. Run Apple Diagnostics or Hardware Check to find blatant hard drive failure.\n\nMore thorough hard drive testing is often necessary to uncover issues, so trust a failure here, but not a pass.Signs of storage failure include overall sluggishness, inability to access certain files, intermittent ability to boot.Clicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive.\n\nIf any of these sounds are present, open the Mac and power on again to isolate the noise to the storage drive and not a fan or the disc drive.Check to see if your drive is detected the Disk Utility function of Recovery Mode.\n\nIf not, it’s likely to need replacement.. Find the Guide for your model and remember you’ll need to reinstall macOS on the new drive.Pro Tip: Consider replacing the HDD with a Solid State Drive, or SSD.\n\nThis is the modern standard for laptop storage.. They are more energy efficient, generate less heat, and support faster speeds.\n\nIt’s the best way to revitalize an older computer!. Clicking, beeping, scratching, buzzing or rattling coming from the area to the right of the trackpad point to mechanical failure of the drive.\n\nIf any of these sounds are present, open the Mac and power on again to isolate the noise to the storage drive and not a fan or the disc drive.",
           "videos": [
             {
               "url": "https://www.youtube.com/watch?v=XwYSdD4fyRU",
@@ -7483,15 +7489,15 @@
         {
           "number": "5",
           "title": "Faulty Storage Connection",
-          "content": "Even if your hard drive is working properly, if it cannot communicate with the logic board, it’s not much good. It would simply be sending ones and zeroes into the ether.\nModels with an HDD installed will have a cable to carry the signal to the board. These cables can wear out leaving a good hard drive with no way to communicate. If there is any double as to which component is at fault, replace both the drive and the cable.If you have a model with a factory installed SSD, these connections are made directly to the logic board via a soldered on slot. Skip ahead to the “Faulty Logic Board” portion of this page for more info."
+          "content": "Even if your hard drive is working properly, if it cannot communicate with the logic board, it’s not much good.. It would simply be sending ones and zeroes into the ether.\n\nModels with an HDD installed will have a cable to carry the signal to the board.. These cables can wear out leaving a good hard drive with no way to communicate.\n\nIf there is any double as to which component is at fault, replace both the drive and the cable.If you have a model with a factory installed SSD, these connections are made directly to the logic board via a soldered on slot.\n\nSkip ahead to the “Faulty Logic Board” portion of this page for more info."
         },
         {
           "number": "6",
           "title": "Faulty Logic Board",
-          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality. Any number of the small components on the board may have failed or become damaged. Logic board fault is a safe assumption of cause if nothing else on this page has worked.\nCheck for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion or bend. If there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed. If your board is at fault, and you need data, you still have options.If you’re feeling especially curious, the tiny components on the board can be repaired with microsoldering. It is an art unto itself, but a worthy endeavor for those who are adventurous. Interested? Check out this intro! If you can't do this sort of repair yourself, give your local repair shop a call and see if they can help. Even if they can’t, they may be able to recommend someone who can."
+          "content": "The logic board is the hub for the vast majority of a MacBook’s functionality.. Any number of the small components on the board may have failed or become damaged.\n\nLogic board fault is a safe assumption of cause if nothing else on this page has worked.. Check for obvious signs of a board issue - burned or cracked components, liquid residue, corrosion or bend.\n\nIf there are signs of liquid, there’s still hope your Mac can be resurrected.Replacing the logic board is often the most practical solution for a DIYer whose board has failed.. If your board is at fault, and you need data, you still have options.If you’re feeling especially curious, the tiny components on the board can be repaired with microsoldering.\n\nIt is an art unto itself, but a worthy endeavor for those who are adventurous.. Check out this intro!. If you can't do this sort of repair yourself, give your local repair shop a call and see if they can help.\n\nEven if they can’t, they may be able to recommend someone who can."
         }
       ]
     }
   ],
-  "crawl_timestamp": "2025-07-03 22:25:12"
+  "crawl_timestamp": "2025-07-04 16:48:44"
 }

@@ -1045,18 +1045,13 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             # 提取统计数据
             statistics = self.extract_page_statistics(soup)
 
-            # 重构统计数据结构 - 将统计数据插入到introduction之后
+            # 重构统计数据结构 - 将view_statistics移动到title下面
             # 重新构建troubleshooting_data，确保字段顺序正确
             ordered_ts_data = {}
             ordered_ts_data["url"] = troubleshooting_data["url"]
             ordered_ts_data["title"] = troubleshooting_data["title"]
 
-            # 添加动态提取的字段（按页面实际字段名称）
-            for key, value in troubleshooting_data.items():
-                if key not in ["url", "title", "causes", "images", "videos"] and value:
-                    ordered_ts_data[key] = value
-
-            # 将统计数据插入（如果有的话）
+            # 将统计数据紧跟在title后面（如果有的话）
             if statistics:
                 # 创建view_statistics对象，只包含时间相关的统计
                 view_stats = {}
@@ -1075,6 +1070,11 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                     ordered_ts_data["completed"] = statistics['completed']
                 if 'favorites' in statistics:
                     ordered_ts_data["favorites"] = statistics['favorites']
+
+            # 添加动态提取的字段（按页面实际字段名称）
+            for key, value in troubleshooting_data.items():
+                if key not in ["url", "title", "causes", "images", "videos"] and value:
+                    ordered_ts_data[key] = value
 
             # 添加其他字段
             if "causes" in troubleshooting_data and troubleshooting_data["causes"]:
@@ -1314,46 +1314,226 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             return []
 
     def extract_dynamic_sections(self, soup):
-        """动态提取页面上的真实字段名称和内容，避免重复"""
+        """动态提取页面上的真实字段名称和内容，基于实际页面结构，确保字段分离和无重复"""
         sections = {}
         seen_content = set()  # 用于去重
+        processed_elements = set()  # 记录已处理的元素，避免重复处理
 
         try:
-            # 查找所有可能的标题元素
-            headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+            # 查找主要内容区域，避免导航和页脚
+            main_content = soup.find('main') or soup.find('article') or soup.find('div', class_=lambda x: x and 'content' in str(x).lower())
+            if not main_content:
+                main_content = soup
+
+            # 首先通过ID和标题文本精确定位各个独立部分
+            section_mappings = [
+                ('introduction', ['#introduction']),
+                ('first_steps', ['#Section_First_Steps']),
+                ('triage', ['#Section_Triage'])
+            ]
+
+            # 特殊处理triage：先单独提取
+            triage_element = main_content.select_one('#Section_Triage')
+            if triage_element:
+                print(f"找到triage元素: {triage_element.name}, ID: {triage_element.get('id', '')}")
+                if triage_element.name == 'h3':
+                    content = self.extract_triage_content_specifically(triage_element, main_content)
+                    if content and content.strip():
+                        if not self.is_content_duplicate(content, seen_content):
+                            sections['triage'] = content.strip()
+                            seen_content.add(content.strip())
+                            processed_elements.add(id(triage_element))
+                            print(f"特殊提取triage字段: ({len(content)} 字符)")
+                        else:
+                            print("Triage内容与已有内容重复，跳过")
+                    else:
+                        print("Triage内容为空")
+                else:
+                    print(f"Triage元素不是h3标签: {triage_element.name}")
+            else:
+                print("未找到#Section_Triage元素")
+
+            for field_name, selectors in section_mappings:
+                found = False
+                for selector in selectors:
+                    section_element = main_content.select_one(selector)
+                    if section_element and id(section_element) not in processed_elements:
+                        content = self.extract_section_content_precisely(section_element, main_content, field_name)
+                        if content and content.strip():
+                            # 检查内容是否与已有内容重复
+                            if not self.is_content_duplicate(content, seen_content):
+                                sections[field_name] = content.strip()
+                                seen_content.add(content.strip())
+                                processed_elements.add(id(section_element))
+                                print(f"精确提取字段: {field_name} ({len(content)} 字符)")
+                                found = True
+                                break
+
+                # 如果通过ID没找到，尝试通过标题文本查找
+                if not found:
+                    target_texts = {
+                        'introduction': ['introduction'],  # 只匹配完全的introduction标题
+                        'first_steps': ['first steps', 'before undertaking'],
+                        'triage': ['triage']
+                    }
+
+                    if field_name in target_texts:
+                        for heading in main_content.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+                            heading_text = heading.get_text().strip().lower()
+                            # 对于introduction，只匹配完全相同的标题
+                            if field_name == 'introduction':
+                                if heading_text == 'introduction':
+                                    if id(heading) not in processed_elements:
+                                        content = self.extract_section_content_precisely(heading, main_content, field_name)
+                                        if content and content.strip():
+                                            # 额外检查：确保内容不是作者信息
+                                            if not self._is_author_or_meta_content(content):
+                                                if not self.is_content_duplicate(content, seen_content):
+                                                    sections[field_name] = content.strip()
+                                                    seen_content.add(content.strip())
+                                                    processed_elements.add(id(heading))
+                                                    print(f"通过标题提取字段: {field_name} ({len(content)} 字符)")
+                                                    found = True
+                                                    break
+                                            else:
+                                                print(f"跳过作者信息，不作为{field_name}提取")
+                            else:
+                                # 对于其他字段，使用原来的逻辑
+                                if any(target in heading_text for target in target_texts[field_name]):
+                                    if id(heading) not in processed_elements:
+                                        content = self.extract_section_content_precisely(heading, main_content, field_name)
+                                        if content and content.strip():
+                                            if not self.is_content_duplicate(content, seen_content):
+                                                sections[field_name] = content.strip()
+                                                seen_content.add(content.strip())
+                                                processed_elements.add(id(heading))
+                                                print(f"通过标题提取字段: {field_name} ({len(content)} 字符)")
+                                                found = True
+                                                break
+
+                # 特殊处理introduction：只有在页面上真实存在Introduction标题时才尝试提取
+                if not found and field_name == 'introduction':
+                    # 先检查页面是否真的有Introduction标题
+                    intro_heading_exists = False
+                    intro_heading = None
+
+                    # 使用更直接的方法检查Introduction标题是否存在
+                    for heading in main_content.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+                        heading_text = heading.get_text().strip().lower()
+                        if heading_text == 'introduction':
+                            intro_heading_exists = True
+                            intro_heading = heading
+                            break
+
+                    # 只有在确实存在Introduction标题时才尝试提取
+                    if intro_heading_exists and intro_heading:
+                        print(f"找到Introduction标题，尝试提取内容...")
+                        # 直接从Introduction标题后提取内容
+                        intro_content = self.extract_content_under_heading_strict(intro_heading, main_content, processed_elements)
+                        if not intro_content or len(intro_content.strip()) < 50:
+                            # 如果直接提取失败，尝试从页面开头提取
+                            intro_content = self._extract_introduction_from_page_start(main_content, processed_elements, soup)
+
+                        if intro_content and intro_content.strip():
+                            # 确保内容不是作者信息
+                            if not self._is_author_or_meta_content(intro_content):
+                                if not self.is_content_duplicate(intro_content, seen_content):
+                                    sections[field_name] = intro_content.strip()
+                                    seen_content.add(intro_content.strip())
+                                    processed_elements.add(id(intro_heading))
+                                    print(f"成功提取introduction: ({len(intro_content)} 字符)")
+                                    found = True
+                                else:
+                                    print(f"Introduction内容重复，跳过")
+                            else:
+                                print(f"Introduction内容是作者信息，跳过")
+                        else:
+                            print(f"Introduction内容为空或太短，跳过")
+                    else:
+                        print(f"页面上不存在Introduction标题，跳过{field_name}提取")
+
+                # 特殊处理triage：它可能在first_steps的div容器内
+                if not found and field_name == 'triage':
+                    # 查找first_steps容器内的triage标题
+                    first_steps_div = main_content.select_one('#Section_First_Steps')
+                    if first_steps_div:
+                        triage_heading = first_steps_div.find('h3', string=lambda text: text and 'triage' in text.lower())
+                        if triage_heading and id(triage_heading) not in processed_elements:
+                            content = self.extract_content_under_heading_strict(triage_heading, main_content, processed_elements)
+                            if content and content.strip():
+                                if not self.is_content_duplicate(content, seen_content):
+                                    sections[field_name] = content.strip()
+                                    seen_content.add(content.strip())
+                                    processed_elements.add(id(triage_heading))
+                                    print(f"从first_steps容器提取字段: {field_name} ({len(content)} 字符)")
+                                    found = True
+
+            # 然后查找其他可能的独立标题部分
+            headings = main_content.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 
             for heading in headings:
-                heading_text = heading.get_text().strip().lower()
+                if id(heading) in processed_elements:
+                    continue
+
+                heading_text = heading.get_text().strip()
+                heading_text_lower = heading_text.lower()
 
                 # 跳过不相关的标题
-                if any(skip_word in heading_text for skip_word in [
-                    'causes', 'related pages', 'additional resources', 'buy', 'purchase',
-                    'tools', 'parts', 'comments', 'share', 'social'
+                if any(skip_word in heading_text_lower for skip_word in [
+                    'causes', 'related pages', 'additional resources', 'related problems',
+                    'related answers', 'buy', 'purchase', 'tools', 'parts', 'comments',
+                    'share', 'social', 'view statistics', 'past 24 hours', 'past 7 days',
+                    'all time', 'haven\'t found', 'browse our forum', 'select my model',
+                    'find your parts', 'view guide', 'view all', 'macbook black screen'
                 ]):
                     continue
 
-                # 识别可能的字段名称
-                field_name = None
-                if 'introduction' in heading_text or 'overview' in heading_text:
-                    field_name = heading_text.replace(' ', '_')
-                elif 'first' in heading_text and 'step' in heading_text:
-                    field_name = heading_text.replace(' ', '_')
-                elif any(keyword in heading_text for keyword in [
-                    'getting started', 'before you begin', 'preparation', 'initial steps'
-                ]):
-                    field_name = heading_text.replace(' ', '_')
+                # 跳过数字编号的causes
+                if re.match(r'^\d+\s*$', heading_text_lower.strip()):
+                    continue
 
-                if field_name:
-                    # 提取该标题下的内容
-                    content = self.extract_content_under_heading(heading, soup)
-                    if content and content not in seen_content:
-                        # 清理字段名称
-                        field_name = re.sub(r'[^\w_]', '_', field_name)
-                        field_name = re.sub(r'_+', '_', field_name).strip('_')
-                        sections[field_name] = content
-                        seen_content.add(content)
-                        if self.verbose:
-                            print(f"动态提取字段: {field_name} ({len(content)} 字符)")
+                # 动态识别标题 - 更严格的验证
+                field_name = None
+
+                # 严格匹配 introduction - 只有完全匹配"Introduction"标题的才被认为是 introduction
+                if heading_text_lower == 'introduction' and 'introduction' not in sections:
+                    # 额外验证：确保这个标题下有实际的介绍性内容
+                    test_content = self.extract_content_under_heading_strict(heading, main_content, set())
+                    if test_content and len(test_content) > 50:
+                        # 检查内容是否真的是介绍性的，而不是其他类型的内容
+                        if not self._is_author_or_meta_content(test_content):
+                            field_name = 'introduction'
+
+                elif 'first steps' in heading_text_lower and 'first_steps' not in sections:
+                    field_name = 'first_steps'
+                elif heading_text_lower == 'triage' and 'triage' not in sections:
+                    field_name = 'triage'
+                elif heading_text_lower in ['getting started', 'before you begin', 'preparation']:
+                    field_name = heading_text_lower.replace(' ', '_')
+                else:
+                    # 对于其他有意义的标题，但要排除明显不相关的内容
+                    if (len(heading_text) > 3 and len(heading_text) < 100 and
+                        not any(exclude_word in heading_text_lower for exclude_word in [
+                            'about the author', 'author', 'contributor', 'last updated',
+                            'acmt certification', 'technician', 'cobbled together'
+                        ])):
+                        field_name = re.sub(r'[^\w\s]', '', heading_text).strip()
+                        field_name = re.sub(r'\s+', '_', field_name).lower()
+                        if len(field_name) > 50:
+                            field_name = field_name[:50]
+
+                if field_name and field_name not in sections:
+                    content = self.extract_content_under_heading_strict(heading, main_content, processed_elements)
+                    if content and content.strip():
+                        # 额外验证：确保内容不是作者信息或其他元数据
+                        if not self._is_author_or_meta_content(content):
+                            if not self.is_content_duplicate(content, seen_content):
+                                sections[field_name] = content.strip()
+                                seen_content.add(content.strip())
+                                processed_elements.add(id(heading))
+                                print(f"动态提取字段: {field_name} ({len(content)} 字符)")
+                        else:
+                            print(f"跳过作者或元数据内容: {field_name}")
 
             return sections
 
@@ -1361,51 +1541,1174 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             print(f"动态提取字段时发生错误: {str(e)}")
             return {}
 
-    def extract_content_under_heading(self, heading, soup):
-        """提取标题下的内容，直到下一个同级或更高级标题"""
+    def _is_author_or_meta_content(self, content):
+        """检测内容是否是作者信息或元数据"""
+        if not content:
+            return False
+
+        content_lower = content.lower()
+
+        # 检测作者信息的特征
+        author_indicators = [
+            'acmt certification', 'certification', 'technician', 'cobbled together',
+            'touchpad is entirely the wrong color', 'three separate machines',
+            'despite holding', 'maybe specifically because of this',
+            'says everything you need to know about me', 'mac technician',
+            'contributor', 'last updated on', 'and 1 contributor',
+            'and 2 contributors', 'and 3 contributors', 'and 4 contributors',
+            'and 5 contributors', 'and 6 contributors', 'and 7 contributors'
+        ]
+
+        # 检测元数据的特征
+        meta_indicators = [
+            'last updated', 'contributors', 'updated on', 'written by',
+            'authored by', 'created by', 'edited by'
+        ]
+
+        # 如果内容包含作者或元数据指标，认为是作者/元数据内容
+        if any(indicator in content_lower for indicator in author_indicators + meta_indicators):
+            return True
+
+        # 检测特定的作者信息模式
+        author_patterns = [
+            r'despite\s+holding.*certification',
+            r'macbook.*cobbled\s+together.*machines',
+            r'touchpad.*wrong\s+color',
+            r'says\s+everything.*about\s+me.*technician'
+        ]
+
+        if any(re.search(pattern, content_lower) for pattern in author_patterns):
+            return True
+
+        return False
+
+    def extract_section_content_precisely(self, element, main_content, section_type):
+        """精确提取特定部分的内容，避免包含其他部分的内容，增强边界检测"""
+        try:
+            content_parts = []
+            seen_texts = set()
+
+            # 如果element是div容器，直接提取其内部内容
+            if element.name == 'div':
+                # 对于div容器，提取其内部的文本内容，但排除子标题部分
+                for child in element.find_all(['p', 'div', 'ul', 'ol', 'li', 'span'], recursive=True):
+                    # 跳过包含causes编号的内容
+                    if child.get_text().strip().startswith(('1', '2', '3', '4', '5', '6', '7', '8')) and len(child.get_text().strip()) < 50:
+                        continue
+
+                    # 跳过子标题区域
+                    if child.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+                        continue
+
+                    if not self.is_commercial_content(child):
+                        # 检查内容边界
+                        child_text = child.get_text().strip()
+                        if self._should_stop_extraction(child_text, section_type, content_parts):
+                            print(f"在{section_type}部分检测到内容边界，停止提取: {child_text[:100]}...")
+                            break
+                        self._extract_text_from_element_strict(child, content_parts, seen_texts)
+
+                # 特殊处理：如果是first_steps，需要排除triage部分
+                if section_type == 'first_steps':
+                    # 查找triage标题，如果找到则在该位置截断内容
+                    triage_element = element.find('h3', string=lambda text: text and 'triage' in text.lower())
+                    if triage_element:
+                        # 移除triage及其后面的内容
+                        filtered_parts = []
+                        for part in content_parts:
+                            if 'troubleshooting is a process' in part.lower():
+                                break
+                            filtered_parts.append(part)
+                        content_parts = filtered_parts
+
+                # 使用全面去重函数处理内容
+                final_content_parts = self.comprehensive_content_deduplication(content_parts)
+                return '\n\n'.join(final_content_parts) if final_content_parts else ""
+
+            elif element.name and element.name.startswith('h'):
+                # 如果element是标题，提取标题下的内容
+                return self.extract_content_under_heading_strict(element, main_content, set())
+
+            else:
+                # 其他情况，尝试提取文本内容
+                text = element.get_text().strip()
+                if text and len(text) > 20:
+                    return text
+                return ""
+
+        except Exception as e:
+            print(f"精确提取{section_type}内容时发生错误: {str(e)}")
+            return ""
+
+    def extract_content_under_heading_strict(self, heading, main_content, processed_elements):
+        """严格提取标题下的内容，避免重复和交叉，增强边界检测 - 支持各种HTML结构"""
         content_parts = []
         seen_texts = set()
 
         try:
+            heading_level = int(heading.name[1]) if heading.name and heading.name.startswith('h') else 3
+            heading_text = heading.get_text().strip().lower()
+
+            print(f"开始提取标题 '{heading_text}' 下的内容...")
+
+            # 方法1：查找直接的兄弟元素
             current = heading.next_sibling
-            heading_level = int(heading.name[1])  # 获取标题级别 (h1->1, h2->2, etc.)
+            found_content = False
 
             while current:
-                if hasattr(current, 'name'):
+                if hasattr(current, 'name') and current.name:
+                    # 遇到同级或更高级标题时停止
+                    if (current.name.startswith('h') and
+                        len(current.name) == 2 and current.name[1].isdigit() and
+                        int(current.name[1]) <= heading_level):
+                        print(f"遇到同级标题 {current.name}，停止提取")
+                        break
+
+                    # 跳过已处理的元素
+                    if id(current) in processed_elements:
+                        current = current.next_sibling
+                        continue
+
+                    if current.name in ['p', 'div', 'ul', 'ol', 'li', 'section']:
+                        if not self.is_commercial_content(current):
+                            # 检查内容边界 - 避免混入其他部分的内容
+                            element_text = current.get_text().strip()
+                            if self._should_stop_extraction(element_text, heading_text, content_parts):
+                                print(f"检测到内容边界，停止提取: {element_text[:100]}...")
+                                break
+
+                            # 提取内容
+                            if element_text and len(element_text) > 10:
+                                self._extract_text_from_element_strict(current, content_parts, seen_texts)
+                                found_content = True
+                                print(f"从 {current.name} 提取内容: {element_text[:100]}...")
+
+                current = current.next_sibling
+
+            # 方法2：如果方法1没有找到内容，尝试查找标题所在容器的后续内容
+            if not found_content:
+                print("方法1未找到内容，尝试方法2...")
+                parent_container = heading.parent
+                if parent_container:
+                    # 查找标题后面的所有段落和内容元素
+                    all_elements = parent_container.find_all(['p', 'div', 'ul', 'ol', 'section'], recursive=True)
+                    heading_found = False
+
+                    for elem in all_elements:
+                        # 找到标题后开始提取
+                        if not heading_found:
+                            if elem.find(heading):
+                                heading_found = True
+                            continue
+
+                        # 检查是否遇到下一个标题
+                        if elem.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+                            next_heading = elem.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+                            if next_heading and next_heading != heading:
+                                next_level = int(next_heading.name[1]) if next_heading.name.startswith('h') else 6
+                                if next_level <= heading_level:
+                                    print(f"方法2遇到下一个标题，停止提取")
+                                    break
+
+                        # 提取内容
+                        if not self.is_commercial_content(elem):
+                            element_text = elem.get_text().strip()
+                            if element_text and len(element_text) > 10:
+                                if not self._should_stop_extraction(element_text, heading_text, content_parts):
+                                    self._extract_text_from_element_strict(elem, content_parts, seen_texts)
+                                    found_content = True
+                                    print(f"方法2从 {elem.name} 提取内容: {element_text[:100]}...")
+                                else:
+                                    print(f"方法2检测到内容边界，停止提取")
+                                    break
+
+            # 最终去重和清理 - 使用新的全面去重函数
+            final_content_parts = self.comprehensive_content_deduplication(content_parts)
+            result = '\n\n'.join(final_content_parts) if final_content_parts else ""
+
+            if result:
+                print(f"成功提取内容，总长度: {len(result)} 字符")
+            else:
+                print("未提取到任何内容")
+
+            return result
+
+        except Exception as e:
+            print(f"严格提取标题下内容时发生错误: {str(e)}")
+            return ""
+
+    def _should_stop_extraction(self, element_text, heading_text, content_parts):
+        """检测是否应该停止内容提取，避免混入其他部分的内容"""
+        if not element_text or len(element_text) < 20:
+            return False
+
+        element_text_lower = element_text.lower()
+
+        # 检测明显的部分分隔符
+        section_separators = [
+            'causes', 'related pages', 'about the author', 'additional resources',
+            'see also', 'external links', 'references', 'further reading',
+            'troubleshooting steps', 'next steps', 'conclusion'
+        ]
+
+        # 如果遇到明显的部分分隔符，停止提取
+        for separator in section_separators:
+            if element_text_lower.strip().startswith(separator):
+                return True
+
+        # 特殊检测：如果当前是triage部分，检测特定的结束模式
+        if 'triage' in heading_text:
+            # 检测triage部分的典型结束模式
+            triage_end_patterns = [
+                'the layout of this connector',  # 这是混入的其他内容的开始
+                'liquid in your electronics',    # 液体损坏相关内容
+                'even if you don\'t know much about circuit board',  # 电路板相关内容
+                'backlight circuits appear in similar places',  # 背光电路相关内容
+                'they typically rely on a large number of capacitors'  # 电容器相关内容
+            ]
+
+            for pattern in triage_end_patterns:
+                if pattern in element_text_lower:
+                    return True
+
+        # 检测内容主题的突然变化
+        if content_parts:
+            # 获取已有内容的主要关键词
+            existing_content = ' '.join(content_parts).lower()
+
+            # 如果当前元素包含与已有内容完全不相关的技术术语，可能是混入的内容
+            technical_terms = [
+                'connector positions', 'power line', 'data between the display and cpu',
+                'capacitors in a row', 'display connector', 'circuit board design'
+            ]
+
+            for term in technical_terms:
+                if term in element_text_lower and term not in existing_content:
+                    # 进一步验证：如果这个技术术语出现在一个明显不相关的上下文中
+                    if len(element_text) > 100 and 'firmware issue' not in element_text_lower:
+                        return True
+
+        return False
+
+    def _clean_and_deduplicate_content(self, content_parts):
+        """清理和去重内容"""
+        if not content_parts:
+            return ""
+
+        # 合并所有内容
+        full_text = '\n\n'.join(content_parts)
+
+        # 按段落分割，同时处理单个换行符分隔的内容
+        paragraphs = []
+        for part in content_parts:
+            # 先按双换行符分割
+            double_split = [p.strip() for p in part.split('\n\n') if p.strip()]
+            for p in double_split:
+                # 再按单换行符分割，但保持相关内容在一起
+                if '\n' in p and len(p) > 100:  # 长段落可能包含多个句子
+                    # 按句子分割并重新组合
+                    sentences = [s.strip() for s in re.split(r'[.!?]\s+', p) if s.strip()]
+                    if sentences:
+                        paragraphs.append('. '.join(sentences) + '.')
+                else:
+                    paragraphs.append(p)
+
+        # 去重段落 - 使用更严格的去重逻辑
+        unique_paragraphs = []
+        seen_normalized = set()
+        seen_sentences = set()
+
+        for paragraph in paragraphs:
+            if len(paragraph) > 20:  # 只保留有意义的段落
+                normalized = re.sub(r'\s+', ' ', paragraph.lower()).strip()
+
+                # 检查整个段落是否重复
+                is_duplicate = False
+                for seen in seen_normalized:
+                    if self._calculate_text_similarity(normalized, seen) > 0.9:
+                        is_duplicate = True
+                        break
+
+                if not is_duplicate:
+                    # 检查句子级别的重复
+                    paragraph_sentences = [s.strip() for s in re.split(r'[.!?]\s+', paragraph) if s.strip()]
+                    new_sentences = []
+
+                    for sentence in paragraph_sentences:
+                        if len(sentence) > 15:  # 只检查有意义的句子
+                            sentence_normalized = re.sub(r'\s+', ' ', sentence.lower()).strip()
+
+                            # 检查这个句子是否已经出现过
+                            sentence_duplicate = False
+                            for seen_sentence in seen_sentences:
+                                if self._calculate_text_similarity(sentence_normalized, seen_sentence) > 0.95:
+                                    sentence_duplicate = True
+                                    break
+
+                            if not sentence_duplicate:
+                                new_sentences.append(sentence)
+                                seen_sentences.add(sentence_normalized)
+
+                    # 如果有新的句子，重新组合段落
+                    if new_sentences:
+                        new_paragraph = '. '.join(new_sentences)
+                        if not new_paragraph.endswith('.'):
+                            new_paragraph += '.'
+                        unique_paragraphs.append(new_paragraph)
+                        seen_normalized.add(normalized)
+
+        return '\n\n'.join(unique_paragraphs)
+
+    def _super_clean_and_deduplicate(self, content_parts):
+        """超强力去重和清理内容"""
+        if not content_parts:
+            return ""
+
+        # 合并所有内容
+        full_text = '\n\n'.join(content_parts)
+
+        # 按句子分割所有内容
+        all_sentences = []
+        for part in content_parts:
+            # 按句子分割
+            sentences = re.split(r'[.!?]\s+', part)
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if len(sentence) > 15:  # 只保留有意义的句子
+                    all_sentences.append(sentence)
+
+        # 去重句子
+        unique_sentences = []
+        seen_normalized = set()
+
+        for sentence in all_sentences:
+            # 标准化句子用于比较
+            normalized = re.sub(r'\s+', ' ', sentence.lower()).strip()
+
+            # 检查是否重复
+            is_duplicate = False
+            for seen in seen_normalized:
+                if self._calculate_text_similarity(normalized, seen) > 0.95:
+                    is_duplicate = True
+                    break
+
+            if not is_duplicate:
+                unique_sentences.append(sentence)
+                seen_normalized.add(normalized)
+
+        # 重新组合成段落
+        if not unique_sentences:
+            return ""
+
+        # 将句子重新组合成段落，每3-5个句子一个段落
+        paragraphs = []
+        current_paragraph = []
+
+        for i, sentence in enumerate(unique_sentences):
+            current_paragraph.append(sentence)
+
+            # 每3-5个句子组成一个段落，或者到达最后一个句子
+            if len(current_paragraph) >= 3 and (
+                i == len(unique_sentences) - 1 or
+                len(current_paragraph) >= 5 or
+                sentence.endswith(('?', '!')) or
+                (i < len(unique_sentences) - 1 and
+                 any(keyword in unique_sentences[i+1].lower() for keyword in
+                     ['perform', 'reset', 'try', 'check', 'if', 'connect', 'disconnect']))
+            ):
+                paragraph_text = '. '.join(current_paragraph)
+                if not paragraph_text.endswith('.'):
+                    paragraph_text += '.'
+                paragraphs.append(paragraph_text)
+                current_paragraph = []
+
+        # 如果还有剩余的句子，组成最后一个段落
+        if current_paragraph:
+            paragraph_text = '. '.join(current_paragraph)
+            if not paragraph_text.endswith('.'):
+                paragraph_text += '.'
+            paragraphs.append(paragraph_text)
+
+        return '\n\n'.join(paragraphs)
+
+    def _extract_introduction_from_page_start(self, main_content, processed_elements, soup=None):
+        """从页面开头提取introduction内容 - 增强版本，支持更多页面布局"""
+        try:
+            intro_parts = []
+            seen_texts = set()
+
+            # 跳过通用的网站文本
+            generic_texts = [
+                'learn how to fix just about anything',
+                'share solutions and get help',
+                'get a sneak peek inside',
+                'your destination for tech repair',
+                'help teach people to make'
+            ]
+
+            # 方法1：查找页面开头的段落，但要避免步骤相关内容
+            all_paragraphs = main_content.select("p")
+
+            # 扩展的introduction指标，包含更多可能的描述性文本
+            intro_indicators = [
+                'macbook', 'problem', 'issue', 'error', 'screen', 'display',
+                'boot', 'startup', 'turn on', 'power', 'folder', 'question mark',
+                'loading', 'stuck', 'black screen', 'won\'t', 'not working',
+                'have you ever', 'if you have', 'when your', 'this guide',
+                'before you', 'if your', 'troubleshooting', 'symptom', 'experiencing',
+                'don\'t panic', 'it\'s possible', 'you may', 'this can happen',
+                'operating system', 'disk', 'drive', 'storage', 'data corruption',
+                'hard drive', 'ssd', 'startup disk', 'it seems logical', 'expect that',
+                'what if instead', 'faced with', 'mysterious', 'flashing'
+            ]
+
+            for p in all_paragraphs[:25]:  # 增加检查范围到25个段落
+                if id(p) in processed_elements:
+                    continue
+
+                p_text = p.get_text().strip()
+
+                # 跳过通用网站文本
+                if any(generic in p_text.lower() for generic in generic_texts):
+                    continue
+
+                # 如果遇到步骤内容或其他section标题，停止收集
+                if any(stop_word in p_text.lower() for stop_word in
+                       ['step 1', 'what you need', 'tools', 'parts', 'first steps', 'triage', 'causes']):
+                    break
+
+                # 跳过太短的文本 - 降低最小长度要求
+                if len(p_text) < 30:
+                    continue
+
+                # 跳过商业内容
+                if self.is_commercial_content(p):
+                    continue
+
+                # 检查是否是真正的介绍性内容
+                has_intro_indicator = any(indicator in p_text.lower() for indicator in intro_indicators)
+
+                # 如果没有明确指标，检查是否是描述性文本
+                if not has_intro_indicator:
+                    descriptive_patterns = [
+                        r'if\s+you.*?(?:encounter|experience|see|find|have)',
+                        r'when.*?(?:boot|start|turn|power)',
+                        r'this.*?(?:issue|problem|error|guide)',
+                        r'you.*?(?:may|might|can|should)',
+                        r'don\'t\s+panic',
+                        r'it\'s\s+possible',
+                        r'keeping\s+track.*?macbook',
+                        r'data.*?(?:corruption|records|change)',
+                        r'operating\s+system'
+                    ]
+
+                    if any(re.search(pattern, p_text.lower()) for pattern in descriptive_patterns):
+                        has_intro_indicator = True
+
+                # Special case: For pages without clear intro, look for problem-specific content
+                page_title = soup.select_one('h1')
+                if page_title and not has_intro_indicator:
+                    title_text = page_title.get_text().lower()
+                    if 'folder' in title_text and 'question mark' in title_text:
+                        # For folder with question mark, look for content about data/disk issues
+                        if any(keyword in p_text.lower() for keyword in
+                               ['data', 'disk', 'drive', 'storage', 'operating system', 'corruption']):
+                            has_intro_indicator = True
+
+                if not has_intro_indicator:
+                    continue
+
+                # 清理文本
+                p_text = re.sub(r'\n\s*\n+', '\n\n', p_text)
+                p_text = re.sub(r'[ \t]+', ' ', p_text)
+                p_text = p_text.strip()
+
+                # 检查重复
+                if not self._is_text_duplicate_enhanced(p_text, seen_texts):
+                    intro_parts.append(p_text)
+                    seen_texts.add(p_text)
+                    processed_elements.add(id(p))
+
+                    # 如果已经收集到足够的内容，停止
+                    if len('\n\n'.join(intro_parts)) > 400:  # 增加内容长度限制
+                        break
+
+            # 方法2：如果方法1没有找到足够内容，在页面特定区域查找介绍性内容
+            if len('\n\n'.join(intro_parts)) < 100:
+                print("方法1未找到足够introduction内容，尝试方法2...")
+
+                # 限制搜索范围到页面的前半部分，避免获取causes或其他部分的内容
+                # 查找页面标题后的前几个段落，但要避免causes部分
+                page_title = soup.select_one("h1")
+                if page_title:
+                    # 从标题开始，查找后续的段落，但在遇到causes相关内容前停止
+                    title_parent = page_title.parent
+                    search_area = title_parent if title_parent else main_content
+
+                    # 获取标题后的段落，但限制数量避免获取causes内容
+                    all_paragraphs_method2 = search_area.select("p")[:15]  # 只检查前15个段落
+                else:
+                    # 如果没有找到标题，限制在页面前部分
+                    all_paragraphs_method2 = main_content.select("p")[:10]  # 只检查前10个段落
+
+                for p in all_paragraphs_method2:
+                    if id(p) in processed_elements:
+                        continue
+
+                    p_text = p.get_text().strip()
+
+                    # 跳过太短的文本
+                    if len(p_text) < 30:
+                        continue
+
+                    # 跳过通用网站文本
+                    if any(generic in p_text.lower() for generic in generic_texts):
+                        continue
+
+                    # 严格验证：确保内容与当前页面标题相关
+                    page_title_text = ""
+                    if page_title:
+                        page_title_text = page_title.get_text().lower()
+
+                    # 检查段落是否与页面主题相关
+                    is_relevant_to_page = False
+                    if page_title_text:
+                        # 提取页面主题关键词
+                        title_keywords = []
+                        if 'black screen' in page_title_text:
+                            title_keywords = ['black screen', 'display', 'screen', 'boot', 'startup']
+                        elif 'folder' in page_title_text and 'question mark' in page_title_text:
+                            title_keywords = ['folder', 'question mark', 'operating system', 'disk', 'startup']
+                        elif 'stuck' in page_title_text and 'loading' in page_title_text:
+                            title_keywords = ['loading', 'stuck', 'boot', 'startup', 'progress']
+                        elif 'slow' in page_title_text:
+                            title_keywords = ['slow', 'performance', 'speed', 'lag']
+                        elif 'won\'t turn on' in page_title_text or 'will not turn on' in page_title_text:
+                            title_keywords = ['power', 'turn on', 'boot', 'startup']
+
+                        # 检查段落是否包含相关关键词
+                        if title_keywords and any(keyword in p_text.lower() for keyword in title_keywords):
+                            is_relevant_to_page = True
+
+                    # 排除明显属于其他问题的内容
+                    exclude_patterns = [
+                        r'storage.*full.*sock drawer',  # 存储空间问题的特征文本
+                        r'think of it like your sock drawer',
+                        r'squish.*pairs of socks',
+                        r'drawer will stop closing'
+                    ]
+
+                    is_excluded = any(re.search(pattern, p_text.lower()) for pattern in exclude_patterns)
+
+                    if is_excluded:
+                        print(f"排除不相关内容: {p_text[:100]}...")
+                        continue
+
+                    # 检查是否包含介绍性内容
+                    has_intro_indicator = any(indicator in p_text.lower() for indicator in intro_indicators)
+
+                    # 如果没有明确指标，检查是否是描述性文本
+                    if not has_intro_indicator:
+                        descriptive_patterns = [
+                            r'it\s+seems\s+logical',
+                            r'expect\s+that.*?macbook',
+                            r'what\s+if\s+instead',
+                            r'faced\s+with.*?mysterious',
+                            r'if\s+you.*?(?:encounter|experience|see|find|have)',
+                            r'when.*?(?:boot|start|turn|power)',
+                            r'this.*?(?:issue|problem|error|guide)',
+                            r'you.*?(?:may|might|can|should)',
+                            r'keeping\s+track.*?macbook',
+                            r'data.*?(?:corruption|records|change)',
+                            r'operating\s+system'
+                        ]
+
+                        if any(re.search(pattern, p_text.lower()) for pattern in descriptive_patterns):
+                            has_intro_indicator = True
+
+                    # 只有在内容相关且有介绍指标时才添加
+                    if has_intro_indicator and (is_relevant_to_page or not page_title_text):
+                        # 清理文本
+                        p_text = re.sub(r'\n\s*\n+', '\n\n', p_text)
+                        p_text = re.sub(r'[ \t]+', ' ', p_text)
+                        p_text = p_text.strip()
+
+                        # 检查重复
+                        if not self._is_text_duplicate_enhanced(p_text, seen_texts):
+                            intro_parts.append(p_text)
+                            seen_texts.add(p_text)
+                            processed_elements.add(id(p))
+                            print(f"方法2找到相关introduction内容: {p_text[:100]}...")
+
+                            # 如果已经收集到足够的内容，停止
+                            if len('\n\n'.join(intro_parts)) > 300:
+                                break
+
+            # 使用新的去重函数处理最终结果
+            if intro_parts:
+                final_intro_parts = self.comprehensive_content_deduplication(intro_parts)
+                return '\n\n'.join(final_intro_parts) if final_intro_parts else ""
+
+            return ""
+
+        except Exception as e:
+            print(f"从页面开头提取introduction时发生错误: {str(e)}")
+            return ""
+
+    def _extract_text_from_element_strict(self, element, content_parts, seen_texts):
+        """严格的文本提取，避免重复内容"""
+        try:
+            if self.is_commercial_content(element):
+                print(f"跳过商业内容: {element.get_text().strip()[:50]}...")
+                return
+
+            text = element.get_text().strip()
+            if text and len(text) > 20:
+                # 清理文本格式，但保留段落分隔
+                text = re.sub(r'\n\s*\n+', '\n\n', text)
+                text = re.sub(r'[ \t]+', ' ', text)
+                text = text.strip()
+
+                # 排除导航和无关内容 - 使用更精确的模式避免误过滤
+                skip_patterns = [
+                    'related pages', 'buy now', 'purchase', 'add to cart',
+                    'register', 'menu', 'navigation', 'view guide',
+                    'find your parts', 'select my model', 'view all',
+                    'past 24 hours', 'past 7 days', 'all time',
+                    'browse our forum', 'haven\'t found'
+                    # 移除 'login' 因为正常内容可能包含 'login screen'
+                    # 移除 'causes' 因为它可能误过滤正常内容
+                ]
+
+                skip_found = False
+                for skip_word in skip_patterns:
+                    if skip_word in text.lower():
+                        print(f"跳过包含'{skip_word}'的内容: {text[:50]}...")
+                        skip_found = True
+                        break
+
+                if not skip_found:
+                    # 强化去重逻辑：检查句子级别的重复
+                    if not self._is_text_duplicate_enhanced(text, seen_texts):
+                        content_parts.append(text)
+                        seen_texts.add(text)
+                        print(f"成功添加文本: {text[:50]}...")
+                    else:
+                        print(f"跳过重复文本: {text[:50]}...")
+            else:
+                print(f"跳过太短的文本: {text[:50]}...")
+
+        except Exception as e:
+            print(f"严格提取文本时发生错误: {str(e)}")
+
+    def _is_text_duplicate_enhanced(self, new_text, seen_texts):
+        """增强的重复检测，检查句子级别的重复 - 修复版本，更严格的去重"""
+        try:
+            # 将文本分割成句子
+            new_sentences = [s.strip() for s in re.split(r'[.!?]\s+', new_text) if s.strip()]
+            normalized_new = re.sub(r'\s+', ' ', new_text.lower()).strip()
+
+            # 如果文本太短，直接检查是否已存在
+            if len(normalized_new) < 50:
+                for seen_text in seen_texts:
+                    normalized_seen = re.sub(r'\s+', ' ', seen_text.lower()).strip()
+                    if normalized_new == normalized_seen or normalized_new in normalized_seen:
+                        return True
+                return False
+
+            for seen_text in seen_texts:
+                normalized_seen = re.sub(r'\s+', ' ', seen_text.lower()).strip()
+
+                # 1. 检查整体相似度 - 降低阈值，更严格
+                if self._calculate_text_similarity(normalized_new, normalized_seen) > 0.6:
+                    return True
+
+                # 2. 检查是否一个文本包含另一个文本
+                if normalized_new in normalized_seen or normalized_seen in normalized_new:
+                    return True
+
+                # 3. 检查句子级别的重复 - 更严格的阈值
+                seen_sentences = [s.strip() for s in re.split(r'[.!?]\s+', seen_text) if s.strip()]
+
+                # 如果新文本的大部分句子都在已有文本中出现过，认为是重复
+                duplicate_count = 0
+                for new_sentence in new_sentences:
+                    if len(new_sentence) > 10:  # 只检查有意义的句子
+                        normalized_new_sentence = re.sub(r'\s+', ' ', new_sentence.lower()).strip()
+                        for seen_sentence in seen_sentences:
+                            if len(seen_sentence) > 10:
+                                normalized_seen_sentence = re.sub(r'\s+', ' ', seen_sentence.lower()).strip()
+                                # 检查完全匹配或高度相似
+                                if (normalized_new_sentence == normalized_seen_sentence or
+                                    normalized_new_sentence in normalized_seen_sentence or
+                                    normalized_seen_sentence in normalized_new_sentence or
+                                    self._calculate_text_similarity(normalized_new_sentence, normalized_seen_sentence) > 0.85):
+                                    duplicate_count += 1
+                                    break
+
+                # 如果超过40%的句子重复，认为是重复内容 - 降低阈值，更严格
+                if new_sentences and duplicate_count / len(new_sentences) > 0.4:
+                    return True
+
+            return False
+        except:
+            return False
+
+    def is_content_duplicate(self, content, seen_content):
+        """检查内容是否与已有内容重复 - 修复版本，更严格的去重"""
+        try:
+            normalized_content = re.sub(r'\s+', ' ', content.lower()).strip()
+
+            # 如果内容为空或太短，跳过
+            if not normalized_content or len(normalized_content) < 20:
+                return False
+
+            for seen in seen_content:
+                normalized_seen = re.sub(r'\s+', ' ', seen.lower()).strip()
+
+                # 1. 检查完全匹配
+                if normalized_content == normalized_seen:
+                    return True
+
+                # 2. 检查包含关系
+                if normalized_content in normalized_seen or normalized_seen in normalized_content:
+                    return True
+
+                # 3. 检查相似度 - 降低阈值，更严格
+                if self._calculate_text_similarity(normalized_content, normalized_seen) > 0.6:
+                    return True
+
+                # 4. 检查句子级别的重复
+                content_sentences = [s.strip() for s in re.split(r'[.!?]\s+', normalized_content) if s.strip()]
+                seen_sentences = [s.strip() for s in re.split(r'[.!?]\s+', normalized_seen) if s.strip()]
+
+                if content_sentences and seen_sentences:
+                    duplicate_count = 0
+                    for content_sentence in content_sentences:
+                        if len(content_sentence) > 15:
+                            for seen_sentence in seen_sentences:
+                                if len(seen_sentence) > 15:
+                                    if (content_sentence == seen_sentence or
+                                        content_sentence in seen_sentence or
+                                        seen_sentence in content_sentence or
+                                        self._calculate_text_similarity(content_sentence, seen_sentence) > 0.8):
+                                        duplicate_count += 1
+                                        break
+
+                    # 如果超过30%的句子重复，认为是重复内容
+                    if duplicate_count / len(content_sentences) > 0.3:
+                        return True
+
+            return False
+        except:
+            return False
+
+    def comprehensive_content_deduplication(self, content_parts):
+        """全面的内容去重，防止任何形式的重复"""
+        if not content_parts:
+            return []
+
+        try:
+            # 第一步：基本清理和标准化，同时过滤商业内容
+            cleaned_parts = []
+            for part in content_parts:
+                if isinstance(part, str) and part.strip():
+                    # 检查是否包含商业内容
+                    commercial_patterns = [
+                        r'\$\d+\.\d+',  # 价格信息
+                        r'\d+\s+reviews?',  # 评论数量
+                        r'macbook\s+pro:.*display.*not\s+recognized',  # 特定链接文本
+                        r'display\s+backlight\s+cables',  # 产品名称
+                        r'retina\s+\(\d{4}-\d{4}\)',  # 产品型号年份
+                        r'buy\s*$',  # 购买链接
+                        r'precision\s+tweezers\s+set',  # 工具产品
+                    ]
+
+                    is_commercial = any(re.search(pattern, part.lower()) for pattern in commercial_patterns)
+
+                    if not is_commercial:
+                        # 清理文本格式
+                        cleaned = re.sub(r'\n\s*\n+', '\n\n', part.strip())
+                        cleaned = re.sub(r'[ \t]+', ' ', cleaned)
+                        if len(cleaned) > 15:  # 只保留有意义的内容
+                            cleaned_parts.append(cleaned)
+
+            if not cleaned_parts:
+                return []
+
+            # 第二步：句子级别的去重 - 改进版本
+            all_sentences = []
+            seen_sentences = set()
+
+            for part in cleaned_parts:
+                # 更精确的句子分割，处理多种情况
+                sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', part)
+                for sentence in sentences:
+                    sentence = sentence.strip()
+                    if len(sentence) > 15:
+                        # 移除句末标点符号进行比较
+                        sentence_for_comparison = re.sub(r'[.!?]+$', '', sentence).strip()
+                        normalized = re.sub(r'\s+', ' ', sentence_for_comparison.lower()).strip()
+
+                        # 检查是否已存在相似句子 - 更严格的去重
+                        is_duplicate = False
+                        for seen_sentence in seen_sentences:
+                            # 完全相同
+                            if normalized == seen_sentence:
+                                is_duplicate = True
+                                break
+                            # 一个句子完全包含另一个（长度差异不大时）
+                            elif (len(normalized) > 30 and len(seen_sentence) > 30 and
+                                  abs(len(normalized) - len(seen_sentence)) < 20):
+                                if (normalized in seen_sentence or seen_sentence in normalized):
+                                    is_duplicate = True
+                                    break
+                            # 高相似度
+                            elif self._calculate_text_similarity(normalized, seen_sentence) > 0.9:
+                                is_duplicate = True
+                                break
+
+                        if not is_duplicate:
+                            all_sentences.append(sentence)
+                            seen_sentences.add(normalized)
+
+            # 第三步：重新组织成段落，并进行段落内去重
+            if not all_sentences:
+                return []
+
+            # 将句子重新组合成段落，避免过短的段落，同时确保段落内无重复
+            paragraphs = []
+            current_paragraph = []
+            current_length = 0
+            paragraph_seen_sentences = set()
+
+            for sentence in all_sentences:
+                # 检查这个句子是否已经在当前段落中
+                sentence_normalized = re.sub(r'\s+', ' ', sentence.lower()).strip()
+                sentence_normalized = re.sub(r'[.!?]+$', '', sentence_normalized).strip()
+
+                if sentence_normalized not in paragraph_seen_sentences:
+                    current_paragraph.append(sentence)
+                    paragraph_seen_sentences.add(sentence_normalized)
+                    current_length += len(sentence)
+
+                    # 如果当前段落足够长，或者遇到明显的段落分隔符，结束当前段落
+                    if (current_length > 200 or
+                        sentence.endswith('.') and len(current_paragraph) >= 2):
+                        paragraph_text = '. '.join(current_paragraph)
+                        if not paragraph_text.endswith('.'):
+                            paragraph_text += '.'
+                        paragraphs.append(paragraph_text)
+                        current_paragraph = []
+                        current_length = 0
+                        paragraph_seen_sentences = set()
+
+            # 处理剩余的句子
+            if current_paragraph:
+                paragraph_text = '. '.join(current_paragraph)
+                if not paragraph_text.endswith('.'):
+                    paragraph_text += '.'
+                paragraphs.append(paragraph_text)
+
+            # 第四步：段落级别的最终去重
+            final_paragraphs = []
+            seen_paragraph_hashes = set()
+
+            for paragraph in paragraphs:
+                normalized = re.sub(r'\s+', ' ', paragraph.lower()).strip()
+                paragraph_hash = hash(normalized)
+
+                if paragraph_hash not in seen_paragraph_hashes:
+                    # 检查与已有段落的相似度
+                    is_similar = False
+                    for existing_para in final_paragraphs:
+                        existing_normalized = re.sub(r'\s+', ' ', existing_para.lower()).strip()
+                        if self._calculate_text_similarity(normalized, existing_normalized) > 0.7:
+                            is_similar = True
+                            break
+
+                    if not is_similar:
+                        final_paragraphs.append(paragraph)
+                        seen_paragraph_hashes.add(paragraph_hash)
+
+            return final_paragraphs
+
+        except Exception as e:
+            print(f"全面去重时发生错误: {str(e)}")
+            return content_parts
+
+    def _calculate_text_similarity(self, text1, text2):
+        """计算两个文本的相似度"""
+        try:
+            if not text1 or not text2:
+                return 0
+
+            # 如果文本长度差异很大，相似度较低
+            len_ratio = min(len(text1), len(text2)) / max(len(text1), len(text2))
+            if len_ratio < 0.5:
+                return 0
+
+            # 计算单词级别的相似度
+            words1 = set(text1.split())
+            words2 = set(text2.split())
+
+            if not words1 or not words2:
+                return 0
+
+            intersection = words1.intersection(words2)
+            union = words1.union(words2)
+
+            return len(intersection) / len(union) if union else 0
+        except:
+            return 0
+
+    def extract_triage_content_specifically(self, triage_heading, main_content):
+        """专门提取Triage部分的内容"""
+        try:
+            content_parts = []
+            seen_texts = set()
+
+            print(f"开始提取Triage内容，标题: {triage_heading.get_text().strip()}")
+
+            # 方法1: 查找triage标题所在的容器，然后提取该容器内triage标题后的所有内容
+            triage_container = triage_heading.parent
+            if triage_container:
+                print(f"Triage容器: {triage_container.name}, class: {triage_container.get('class', [])}")
+
+                # 查找triage标题在容器中的位置
+                all_elements = list(triage_container.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'ul', 'ol']))
+                triage_index = -1
+
+                for i, element in enumerate(all_elements):
+                    if element == triage_heading:
+                        triage_index = i
+                        print(f"找到triage标题位置: 索引 {i}")
+                        break
+
+                if triage_index >= 0:
+                    # 提取triage标题后的内容，直到遇到下一个标题或容器结束
+                    for i in range(triage_index + 1, len(all_elements)):
+                        element = all_elements[i]
+
+                        # 如果遇到标题，停止
+                        if element.name and element.name.startswith('h'):
+                            print(f"遇到下一个标题: {element.get_text().strip()[:50]}，停止")
+                            break
+
+                        if element.name in ['p', 'div', 'ul', 'ol', 'li']:
+                            if not self.is_commercial_content(element):
+                                text = element.get_text().strip()
+                                if text and len(text) > 20:
+                                    # 检查是否应该停止提取（边界检测）
+                                    if self._should_stop_extraction(text, 'triage', content_parts):
+                                        print(f"在Triage部分检测到内容边界，停止提取: {text[:100]}...")
+                                        break
+
+                                    # 清理文本格式
+                                    text = re.sub(r'\n\s*\n+', '\n', text)
+                                    text = re.sub(r'[ \t]+', ' ', text)
+                                    text = text.strip()
+
+                                    # 排除明显的导航内容
+                                    if not any(skip in text.lower() for skip in ['causes', 'buggy software', 'firmware corruption']):
+                                        if text not in seen_texts:
+                                            content_parts.append(text)
+                                            seen_texts.add(text)
+                                            print(f"添加Triage内容: {text[:100]}...")
+
+            # 方法2: 如果方法1没有找到足够内容，尝试从页面内容中直接搜索triage相关内容
+            if len('\n'.join(content_parts)) < 100:
+                print("方法1内容不足，尝试方法2 - 搜索triage相关内容...")
+                content_parts = []
+                seen_texts = set()
+
+                # 在整个页面中查找包含triage关键内容的段落
+                all_paragraphs = main_content.find_all(['p', 'div', 'li'])
+                for para in all_paragraphs:
+                    text = para.get_text().strip()
+                    if text and len(text) > 50 and len(text) < 2000:  # 限制长度，避免提取整页内容
+                        # 检查是否包含triage相关的关键词
+                        triage_keywords = [
+                            'troubleshooting is a process', 'medical diagnosis', 'cursor around',
+                            'screen lighting up', 'backlight', 'flashlight', 'external display',
+                            'trackpad click', 'caps lock led'
+                        ]
+
+                        # 排除明显不相关的内容
+                        exclude_keywords = [
+                            'fix your stuff', 'repair guides', 'answers forum', 'teardowns',
+                            'community', 'store', 'tools', 'parts', 'buy', 'purchase',
+                            'buggy software', 'firmware corruption', 'damaged or faulty',
+                            'faulty flex cables', 'liquid damage', 'logic board',
+                            'additional resources', 'related answers', 'related problems'
+                        ]
+
+                        if (any(keyword in text.lower() for keyword in triage_keywords) and
+                            not any(exclude in text.lower() for exclude in exclude_keywords)):
+                            if not self.is_commercial_content(para):
+                                # 额外检查：排除商业产品信息和链接
+                                commercial_patterns = [
+                                    r'\$\d+\.\d+',  # 价格信息
+                                    r'\d+\s+reviews?',  # 评论数量
+                                    r'macbook\s+pro:.*display.*not\s+recognized',  # 特定链接文本
+                                    r'display\s+backlight\s+cables',  # 产品名称
+                                    r'retina\s+\(\d{4}-\d{4}\)',  # 产品型号年份
+                                ]
+
+                                is_commercial = any(re.search(pattern, text.lower()) for pattern in commercial_patterns)
+
+                                if not is_commercial:
+                                    # 检查是否应该停止提取（边界检测）
+                                    if self._should_stop_extraction(text, 'triage', content_parts):
+                                        print(f"方法2在Triage部分检测到内容边界，跳过: {text[:100]}...")
+                                        continue
+
+                                    # 清理文本格式
+                                    text = re.sub(r'\n\s*\n+', '\n', text)
+                                    text = re.sub(r'[ \t]+', ' ', text)
+                                    text = text.strip()
+
+                                    if text not in seen_texts:
+                                        content_parts.append(text)
+                                        seen_texts.add(text)
+                                        print(f"方法2找到triage内容: {text[:100]}...")
+                                else:
+                                    print(f"排除商业内容: {text[:100]}...")
+
+            # 使用全面去重函数处理triage内容
+            if content_parts:
+                final_triage_parts = self.comprehensive_content_deduplication(content_parts)
+                result = '\n\n'.join(final_triage_parts) if final_triage_parts else ""
+            else:
+                result = ""
+
+            print(f"Triage内容提取完成，总长度: {len(result)} 字符")
+            return result
+
+        except Exception as e:
+            print(f"提取Triage内容时发生错误: {str(e)}")
+            return ""
+
+    def extract_content_under_heading(self, heading, soup):
+        """提取标题下的内容，直到下一个同级或更高级标题，改进版本"""
+        content_parts = []
+        seen_texts = set()
+
+        try:
+            heading_level = int(heading.name[1])  # 获取标题级别 (h1->1, h2->2, etc.)
+
+            # 方法1: 通过next_sibling遍历
+            current = heading.next_sibling
+            while current:
+                if hasattr(current, 'name') and current.name:
                     # 如果遇到同级或更高级标题，停止
-                    if (current.name and current.name.startswith('h') and
+                    if (current.name.startswith('h') and
+                        len(current.name) == 2 and current.name[1].isdigit() and
                         int(current.name[1]) <= heading_level):
                         break
 
-                    # 提取文本内容
-                    if current.name in ['p', 'div', 'ul', 'ol', 'li']:
-                        # 检查是否是商业内容
-                        if self.is_commercial_content(current):
-                            current = current.next_sibling
-                            continue
+                    # 提取有意义的内容元素
+                    if current.name in ['p', 'div', 'ul', 'ol', 'li', 'section', 'article']:
+                        self._extract_text_from_element(current, content_parts, seen_texts)
 
-                        text = current.get_text().strip()
-                        if text and len(text) > 10 and text not in seen_texts:
-                            # 清理文本格式
-                            text = re.sub(r'\n\s*\n', '\n', text)
-                            text = re.sub(r'[ \t]+', ' ', text)
-                            text = text.strip()
-
-                            # 排除明显的导航或无关内容
-                            if not any(skip_word in text.lower() for skip_word in [
-                                'related pages', 'buy now', 'purchase', 'add to cart',
-                                'login', 'register', 'menu', 'navigation'
-                            ]):
-                                content_parts.append(text)
-                                seen_texts.add(text)
+                elif hasattr(current, 'string') and current.string:
+                    # 处理纯文本节点
+                    text = current.string.strip()
+                    if text and len(text) > 10 and text not in seen_texts:
+                        content_parts.append(text)
+                        seen_texts.add(text)
 
                 current = current.next_sibling
+
+            # 方法2: 如果通过sibling没找到足够内容，尝试查找heading后面的内容区域
+            if len('\n'.join(content_parts)) < 100:
+                content_parts = []
+                seen_texts = set()
+
+                # 查找heading的父容器
+                parent = heading.parent
+                if parent:
+                    # 在父容器中查找heading之后的所有内容
+                    heading_found = False
+                    for element in parent.find_all(['p', 'div', 'ul', 'ol', 'section']):
+                        if heading_found:
+                            # 检查是否遇到下一个标题
+                            next_heading = element.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+                            if next_heading and int(next_heading.name[1]) <= heading_level:
+                                break
+
+                            self._extract_text_from_element(element, content_parts, seen_texts)
+                        elif element == heading or heading in element.find_all():
+                            heading_found = True
 
             return '\n\n'.join(content_parts) if content_parts else ""
 
         except Exception as e:
             print(f"提取标题下内容时发生错误: {str(e)}")
             return ""
+
+    def _extract_text_from_element(self, element, content_parts, seen_texts):
+        """从元素中提取文本内容的辅助方法"""
+        try:
+            # 检查是否是商业内容或推广内容
+            if self.is_commercial_content(element):
+                return
+
+            text = element.get_text().strip()
+            if text and len(text) > 10:
+                # 清理文本格式
+                text = re.sub(r'\n\s*\n+', '\n', text)
+                text = re.sub(r'[ \t]+', ' ', text)
+                text = text.strip()
+
+                # 排除明显的导航或无关内容
+                skip_patterns = [
+                    'related pages', 'buy now', 'purchase', 'add to cart',
+                    'login', 'register', 'menu', 'navigation', 'view guide',
+                    'find your parts', 'select my model', 'view all',
+                    'past 24 hours', 'past 7 days', 'all time',
+                    'browse our forum', 'haven\'t found'
+                ]
+
+                if not any(skip_word in text.lower() for skip_word in skip_patterns):
+                    # 进一步检查是否是有意义的内容
+                    if len(text) > 20 and not re.match(r'^[\d\s\$\.\,\%]+$', text):
+                        # 更严格的去重：检查是否与已有内容有显著重叠
+                        is_duplicate = False
+                        normalized_text = re.sub(r'\s+', ' ', text.lower()).strip()
+
+                        for seen_text in seen_texts:
+                            normalized_seen = re.sub(r'\s+', ' ', seen_text.lower()).strip()
+                            # 如果新文本与已有文本有80%以上的重叠，认为是重复
+                            if len(normalized_text) > 50 and len(normalized_seen) > 50:
+                                overlap = self._calculate_text_overlap(normalized_text, normalized_seen)
+                                if overlap > 0.8:
+                                    is_duplicate = True
+                                    break
+
+                        if not is_duplicate:
+                            content_parts.append(text)
+                            seen_texts.add(text)
+
+        except Exception as e:
+            print(f"从元素提取文本时发生错误: {str(e)}")
+
+    def _calculate_text_overlap(self, text1, text2):
+        """计算两个文本的重叠度"""
+        try:
+            # 简单的重叠度计算：计算共同单词的比例
+            words1 = set(text1.split())
+            words2 = set(text2.split())
+
+            if not words1 or not words2:
+                return 0
+
+            intersection = words1.intersection(words2)
+            union = words1.union(words2)
+
+            return len(intersection) / len(union) if union else 0
+        except:
+            return 0
 
 
 
@@ -1614,16 +2917,20 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                             content_parts.append(text)
                             seen_texts.add(normalized_text)
 
-            # 合并内容并格式化
+            # 使用全面去重函数处理内容
             if content_parts:
-                full_content = '\n'.join(content_parts)
-                # 最终清理
-                full_content = re.sub(r'\n\s*\n', '\n', full_content)  # 移除多余空行
-                full_content = full_content.strip()
+                # 使用改进的去重逻辑
+                deduplicated_parts = self.comprehensive_content_deduplication(content_parts)
+                if deduplicated_parts:
+                    full_content = '\n\n'.join(deduplicated_parts)
+                    full_content = full_content.strip()
 
-                if self.verbose:
-                    print(f"提取到内容长度: {len(full_content)} 字符")
-                return full_content
+                    if self.verbose:
+                        print(f"去重后内容长度: {len(full_content)} 字符")
+                    return full_content
+                else:
+                    print("去重后无有效内容")
+                    return ""
             else:
                 print("未找到有效内容")
                 return ""

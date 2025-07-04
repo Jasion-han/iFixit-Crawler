@@ -2,6 +2,8 @@
 
 该爬虫用于爬取[iFixit英文网站](https://www.ifixit.com/)上的设备信息、维修指南和故障排除内容。
 
+**🎉 v2.1重大更新**：新增智能内容验证机制，确保只提取页面上真实存在的内容，杜绝虚假字段，大幅提升数据质量和可靠性。
+
 ## 功能特点
 
 - **全面内容爬取**：支持设备基本信息、维修指南详细内容、故障排除页面的完整爬取
@@ -77,28 +79,34 @@
   ],
   "troubleshooting": [                                    // 故障排除内容
     {
-      "title": "iPad Troubleshooting",                   // 故障排除标题
-      "url": "https://www.ifixit.com/Wiki/iPad_Troubleshooting",
-      "content": "If your iPad won't turn on...",         // 故障排除文本内容
-      "images": [                                         // 相关图片
+      "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Won't+Turn+On/483799",
+      "title": "MacBook Won't Turn On",                   // 故障排除标题
+      "view_statistics": {                               // 浏览统计（如果有）
+        "past_24_hours": "188",
+        "past_7_days": "1,174",
+        "past_30_days": "5,428",
+        "all_time": "116,958"
+      },
+      "introduction": "There are few electronics problems more disheartening...", // 介绍内容（仅当页面真实存在时）
+      "the_basics": "Before undertaking any of the more time-consuming solutions...", // 基础步骤（动态字段名）
+      "triage": "Troubleshooting is a process that often resembles medical diagnosis...", // 诊断步骤（如果有）
+      "causes": [                                         // 故障原因列表
         {
-          "url": "https://guide-images.cdn.ifixit.com/igi/abc.medium.jpg",
-          "alt": "iPad power button",
-          "title": "Power button location"
-        }
-      ],
-      "videos": [                                         // 相关视频
-        {
-          "url": "https://www.youtube.com/watch?v=xyz",
-          "type": "youtube",
-          "title": "iPad repair tutorial"
-        }
-      ],
-      "documents": [                                      // 相关文档
-        {
-          "url": "https://www.ifixit.com/Guide/How+to+Reset+iPad/123",
-          "title": "How to Reset iPad",
-          "type": "guide"
+          "number": "1",
+          "title": "Faulty Power Source",
+          "content": "Your computer itself could be perfectly fine, but you've got a faulty charger...",
+          "images": [                                     // 该原因相关的图片
+            {
+              "url": "https://guide-images.cdn.ifixit.com/igi/abc.medium.jpg",
+              "alt": "Power adapter connection"
+            }
+          ],
+          "videos": [                                     // 该原因相关的视频
+            {
+              "url": "https://www.youtube.com/watch?v=xyz",
+              "title": "Testing power adapter"
+            }
+          ]
         }
       ]
     }
@@ -386,7 +394,12 @@ python3 crawler.py --debug
 3. **访问频率**：为避免对服务器造成压力，爬虫添加了随机延迟（1-2秒）
 4. **Robots.txt遵守**：爬虫会检查并遵守robots.txt规则，跳过被禁止的URL
 5. **内容过滤**：爬虫会自动跳过"创建指南"等非产品页面，以及各种无关内容（如"翻译"、"贡献者"、"论坛问题"等）
-6. **输出控制**：
+6. **内容验证**（v2.1重要更新）：
+   - **真实性保证**：爬虫只提取页面上真实存在的内容，绝不添加虚假字段
+   - **字段验证**：每个字段都经过严格验证，确保对应的标题在页面上真实存在
+   - **内容纯净**：自动排除作者信息、元数据、商业推广等非主要内容
+   - **边界检测**：精确识别不同内容区域的边界，防止内容混合和污染
+7. **输出控制**：
    - **增强版爬虫**：默认静默模式，使用 `--verbose` 或 `-v` 启用详细输出
    - **其他爬虫**：使用 `--debug` 启用调试模式
    - 所有爬虫都支持 `--help` 或 `-h` 显示帮助信息
@@ -397,24 +410,38 @@ python3 crawler.py --debug
 8. **说明书链接**：当产品页面没有PDF文档时，会尝试提取视频指南链接作为说明书链接
 
 ### 增强版爬虫特点
-9. **内容质量控制**：
-   - 自动排除Related Pages区域内容
-   - 排除评论区和社交分享等无关内容
-   - 去除重复内容（使用哈希去重机制）
-   - 只提取Troubleshooting标题之下的内容，不包含标题之前的内容
-   - 自动排除商业推广内容和购买链接
-10. **多媒体资源提取**：
+9. **智能内容验证机制**（v2.1新增）：
+   - **真实性验证**：只提取页面上真实存在的内容，不添加虚假字段
+   - **Introduction精确提取**：只有在页面存在"Introduction"标题时才提取introduction字段
+   - **作者信息过滤**：自动识别并排除作者信息、元数据等非主要内容
+   - **内容边界检测**：精确识别不同section的边界，防止内容混合
+   - **动态字段识别**：根据页面实际结构动态提取字段（如first_steps、the_basics、triage等）
+   - **HTML结构适配**：支持各种HTML结构的内容提取，不局限于特定的DOM结构
+10. **高级去重机制**：
+    - **多层次去重**：使用哈希、文本相似度、句子级别等多种去重算法
+    - **内容重叠检测**：防止不同section之间的内容重复
+    - **智能文本清理**：保留段落结构的同时去除多余空白和重复内容
+11. **内容质量控制**：
+    - 自动排除Related Pages区域内容
+    - 排除评论区和社交分享等无关内容
+    - 只提取Troubleshooting标题之下的内容，不包含标题之前的内容
+    - 自动排除商业推广内容和购买链接
+    - 过滤导航菜单、页脚等非主要内容
+12. **多媒体资源提取**：
     - 图片：优先提取medium格式，过滤图标和缩略图
     - 视频：支持YouTube、Vimeo等平台的嵌入视频和链接
     - 文档：支持PDF、Word文档以及iFixit指南链接
-11. **数据结构规范**：
-    - 故障排除内容使用统一的字段结构：`content`、`images`、`videos`、`documents`
+    - 媒体内容关联：将图片和视频与对应的故障原因关联
+13. **数据结构规范**：
+    - 故障排除内容使用统一的字段结构：动态字段 + `causes`数组
+    - 每个cause包含独立的`images`和`videos`数组
     - 移除旧版本的`problems`、`solutions`、`related_guides`字段
-12. **智能数据提取**：
+14. **智能数据提取**：
     - 从API获取准确的时间和难度信息
     - 提取真实的浏览量、完成数、收藏数等统计数据
     - 动态提取页面字段，适应不同页面结构
-13. **输出控制**：
+    - 支持各种HTML结构的内容提取（不仅限于直接兄弟元素）
+15. **输出控制**：
     - 默认静默模式，不显示详细调试信息
     - 使用 `--verbose` 或 `-v` 启用详细输出模式
     - 详细模式显示API调用、内容提取、统计信息等调试信息
@@ -447,6 +474,9 @@ python3 crawler.py --debug
 ## 文件说明
 
 - `enhanced_crawler.py` - **增强版爬虫**（推荐），支持完整内容爬取，包括设备信息、维修指南和故障排除内容
+  - **v2.1新增**：智能内容验证机制，确保数据真实性和纯净度
+  - **v2.1新增**：动态字段识别，适应不同页面结构
+  - **v2.1新增**：高级去重算法，防止内容重复和混合
   - 支持静默模式和详细输出模式
   - 智能数据提取和API调用
   - 自动排除商业内容和推广信息
@@ -466,6 +496,7 @@ python3 crawler.py --debug
 ## 推荐使用方式
 
 1. **完整内容爬取**：使用 `enhanced_crawler.py` 获取设备的完整信息，包括维修指南和故障排除内容
+   - **v2.1优势**：智能内容验证，确保提取的数据真实可靠，无虚假字段
    - 日常使用：`python3 enhanced_crawler.py MacBook_Pro_17%22_Unibody`
    - 调试模式：`python3 enhanced_crawler.py --verbose MacBook_Pro_17%22_Unibody`
 2. **快速产品信息**：使用 `easy_crawler.py` 快速获取单个产品的基本信息
@@ -528,6 +559,15 @@ python3 tree_crawler.py --debug MacBook
 | 调试模式 | ✅ | ✅ | ✅ | ✅ |
 
 ## 最近更新
+
+### v2.1 - 内容验证与质量控制重大升级
+- **智能内容验证**：只提取页面上真实存在的内容，杜绝虚假字段
+- **Introduction精确提取**：修复Introduction内容提取逻辑，支持各种HTML结构
+- **作者信息过滤**：自动识别并排除作者信息、元数据等非主要内容
+- **动态字段识别**：根据页面实际结构动态提取字段（introduction、first_steps、the_basics、triage等）
+- **高级去重机制**：多层次去重算法，防止内容重复和混合
+- **内容边界检测**：精确识别不同section边界，确保数据纯净
+- **媒体内容关联**：将图片和视频与对应的故障原因关联
 
 ### v2.0 - 输出控制优化
 - **增强版爬虫**：新增静默模式和详细输出模式控制
