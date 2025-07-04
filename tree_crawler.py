@@ -5,7 +5,7 @@
 树形结构爬虫工具
 将iFixit网站的设备分类以层级树形结构展示
 用法: python tree_crawler.py [URL或设备名]
-示例: python tree_crawler.py https://zh.ifixit.com/Device/Television
+示例: python tree_crawler.py https://www.ifixit.com/Device/Television
       python tree_crawler.py Television
 """
 
@@ -18,7 +18,7 @@ import re
 from crawler import IFixitCrawler
 
 class TreeCrawler(IFixitCrawler):
-    def __init__(self, base_url="https://zh.ifixit.com"):
+    def __init__(self, base_url="https://www.ifixit.com"):
         super().__init__(base_url)
         self.tree_data = {}  # 存储树形结构数据
         
@@ -64,7 +64,7 @@ class TreeCrawler(IFixitCrawler):
             }
             
             # 依次构建每一级的URL和名称
-            current_url_parts = ["https://zh.ifixit.com"]
+            current_url_parts = ["https://www.ifixit.com"]
             
             for i, crumb_name in enumerate(breadcrumbs):
                 # 处理第一级别(通常是"设备")
@@ -908,18 +908,18 @@ def process_input(input_text):
         parts = input_text.split("/")
         name = parts[-1].replace("_", " ")
         if not input_text.startswith("https://"):
-            return "https://zh.ifixit.com" + input_text, name
+            return "https://www.ifixit.com" + input_text, name
         return input_text, name
     
     # 否则视为设备名/产品名，构建URL
     # 先检查是否包含空格，如果有，替换为下划线用于URL
     processed_input = input_text.replace(" ", "_")
-    return f"https://zh.ifixit.com/Device/{processed_input}", input_text
+    return f"https://www.ifixit.com/Device/{processed_input}", input_text
 
 def print_usage():
     print("使用方法:")
     print("python tree_crawler.py [URL或设备名]")
-    print("例如: python tree_crawler.py https://zh.ifixit.com/Device/Television")
+    print("例如: python tree_crawler.py https://www.ifixit.com/Device/Television")
     print("      python tree_crawler.py Television")
 
 def main():
@@ -934,7 +934,7 @@ def main():
         print("=" * 60)
         print("\n请输入要爬取的iFixit产品名称或URL:")
         print("例如: 70UK6570PUB            - 指定产品型号")
-        print("      https://zh.ifixit.com/Device/70UK6570PUB - 指定产品URL")
+        print("      https://www.ifixit.com/Device/70UK6570PUB - 指定产品URL")
         print("      Television             - 电视类别")
         print("      Electronics            - 电子产品类别")
         

@@ -433,6 +433,9 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             # 提取时间和难度信息
             time_difficulty = self.extract_time_and_difficulty(soup, guide_url)
 
+            # 提取What you need部分
+            what_you_need = self.extract_what_you_need(soup, guide_url)
+
             # 提取统计数据
             statistics = self.extract_page_statistics(soup)
 
@@ -449,6 +452,10 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                 ordered_guide_data["difficulty"] = time_difficulty["difficulty"]
 
             ordered_guide_data["introduction"] = guide_data["introduction"]
+
+            # 添加What you need部分（如果有的话）
+            if what_you_need:
+                ordered_guide_data["what_you_need"] = what_you_need
 
             # 将统计数据插入到introduction之后（如果有的话）
             if statistics:
@@ -483,6 +490,213 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         except Exception as e:
             print(f"提取指南内容时发生错误: {str(e)}")
             return None
+
+    def clean_product_name(self, text):
+        """清理产品名称，移除价格、评分等无关信息"""
+        if not text:
+            return ""
+
+        # 移除价格信息
+        text = re.sub(r'\$[\d.,]+.*$', '', text).strip()
+        # 移除评分信息
+        text = re.sub(r'[\d.]+\s*out of.*$', '', text).strip()
+        text = re.sub(r'Sale price.*$', '', text).strip()
+        text = re.sub(r'Rated [\d.]+.*$', '', text).strip()
+        # 移除常见的无关词汇
+        unwanted_words = ['View', 'view', '查看', 'Add to cart', '添加到购物车', 'Buy', 'Sale', 'Available']
+        for word in unwanted_words:
+            if text.strip() == word:
+                return ""
+
+        # 移除描述性文本
+        text = re.sub(r'This kit contains.*$', '', text).strip()
+        text = re.sub(r'Available for sale.*$', '', text).strip()
+
+        return text.strip()
+
+    def extract_what_you_need(self, soup, guide_url=None):
+        """提取指南页面的'What you need'部分内容，支持动态内容"""
+        what_you_need = {}
+
+        try:
+            # 如果内容是动态加载的，尝试使用Playwright获取完整页面
+            if guide_url:
+                try:
+                    from playwright.sync_api import sync_playwright
+
+                    with sync_playwright() as p:
+                        browser = p.chromium.launch(headless=True)
+                        page = browser.new_page()
+
+                        # 设置请求头
+                        page.set_extra_http_headers({
+                            'Accept-Language': 'en-US,en;q=0.9',
+                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                        })
+
+                        # 导航到页面并等待加载
+                        page.goto(guide_url, wait_until='networkidle')
+
+                        # 等待一下确保动态内容加载完成
+                        page.wait_for_timeout(3000)
+
+                        # 获取页面HTML
+                        html_content = page.content()
+                        browser.close()
+
+                        # 重新解析HTML
+                        from bs4 import BeautifulSoup
+                        soup = BeautifulSoup(html_content, 'html.parser')
+
+                except Exception as e:
+                    if self.verbose:
+                        print(f"使用Playwright获取页面失败，使用原始soup: {str(e)}")
+
+            # 查找"What you need"部分的标题
+            what_you_need_keywords = [
+                "What you need", "what you need", "WHAT YOU NEED",
+                "你所需要的", "所需工具", "需要的工具", "Tools and Parts"
+            ]
+
+            what_you_need_section = None
+
+            # 方法1：通过标题文本查找
+            for keyword in what_you_need_keywords:
+                headers = soup.find_all(string=lambda text: text and keyword in text)
+                for header in headers:
+                    parent = header.parent
+                    if parent and parent.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+                        # 找到标题后，查找其父容器
+                        container = parent.parent
+                        if container:
+                            what_you_need_section = container
+                            break
+                if what_you_need_section:
+                    break
+
+            # 方法2：通过常见的CSS类名查找
+            if not what_you_need_section:
+                selectors = [
+                    ".what-you-need", ".tools-parts", ".requirements",
+                    ".guide-requirements", ".needed-items"
+                ]
+                for selector in selectors:
+                    section = soup.select_one(selector)
+                    if section:
+                        what_you_need_section = section
+                        break
+
+            if not what_you_need_section:
+                return what_you_need
+
+            # 在找到的区域内查找分类和产品
+            # 查找所有可能的分类标题
+            category_keywords = [
+                'Tools', 'Parts', 'Fix Kit', 'Kit', 'Components', 'Fix Kits',
+                '工具', '配件', '零件', '套件', '修复工具包'
+            ]
+
+            category_elements = []
+            for keyword in category_keywords:
+                elements = what_you_need_section.find_all(['h2', 'h3', 'h4', 'h5', 'p'],
+                                                         string=lambda text: text and keyword in text.strip())
+                category_elements.extend(elements)
+
+            # 如果没有找到明确的分类，查找所有段落和标题
+            if not category_elements:
+                category_elements = what_you_need_section.find_all(['p', 'h2', 'h3', 'h4', 'h5'])
+
+            processed_categories = set()  # 避免重复处理相同的分类
+
+            for category_elem in category_elements:
+                category_text = category_elem.get_text().strip()
+
+                # 跳过太短或无意义的文本
+                if len(category_text) < 2 or category_text.lower() in ['view', 'more', '更多', 'see', 'all']:
+                    continue
+
+                # 确定分类名称
+                category_name = category_text
+
+                # 避免重复处理相同的分类
+                if category_name in processed_categories:
+                    continue
+                processed_categories.add(category_name)
+
+                # 查找该分类下的产品列表
+                items = []
+
+                # 方法1：查找分类元素后面的列表项
+                next_element = category_elem.find_next_sibling()
+                while next_element and len(items) < 20:  # 限制最多20个产品
+                    if next_element.name == 'ul' or next_element.name == 'list':
+                        # 找到列表，提取产品链接
+                        product_links = next_element.find_all('a', href=lambda x: x and '/products/' in x)
+                        for link in product_links:
+                            item_text = link.get_text().strip()
+                            # 清理产品名称
+                            item_text = self.clean_product_name(item_text)
+                            if item_text and len(item_text) > 2 and item_text not in items:
+                                items.append(item_text)
+                        break
+                    elif next_element.name in ['h2', 'h3', 'h4', 'h5', 'p'] and any(
+                        cat in next_element.get_text() for cat in category_keywords
+                    ):
+                        # 遇到下一个分类，停止
+                        break
+                    next_element = next_element.find_next_sibling()
+
+                # 方法2：在分类元素的父容器中查找产品
+                if not items:
+                    # 查找分类元素后面的兄弟元素中的产品
+                    current = category_elem
+                    for _ in range(10):  # 最多查找10个兄弟元素
+                        current = current.find_next_sibling()
+                        if not current:
+                            break
+
+                        # 如果遇到下一个分类标题，停止
+                        if current.name in ['h2', 'h3', 'h4', 'h5', 'p'] and any(
+                            cat in current.get_text() for cat in category_keywords
+                        ):
+                            break
+
+                        # 查找当前元素中的产品链接
+                        product_links = current.find_all('a', href=lambda x: x and '/products/' in x)
+                        for link in product_links:
+                            item_text = link.get_text().strip()
+                            item_text = self.clean_product_name(item_text)
+                            if item_text and len(item_text) > 2 and item_text not in items:
+                                items.append(item_text)
+
+                # 如果找到了产品，添加到结果中
+                if items:
+                    what_you_need[category_name] = items
+
+            # 如果没有找到分类，尝试直接提取所有产品
+            if not what_you_need:
+                all_product_links = what_you_need_section.find_all('a', href=lambda x: x and '/products/' in x)
+                if all_product_links:
+                    items = []
+                    for link in all_product_links:
+                        item_text = link.get_text().strip()
+                        # 清理产品名称
+                        item_text = re.sub(r'\$[\d.,]+.*$', '', item_text).strip()
+                        item_text = re.sub(r'[\d.]+\s*out of.*$', '', item_text).strip()
+                        item_text = re.sub(r'Sale price.*$', '', item_text).strip()
+                        if item_text and len(item_text) > 2:
+                            items.append(item_text)
+
+                    if items:
+                        # 去重
+                        items = list(dict.fromkeys(items))
+                        what_you_need["Items"] = items
+
+        except Exception as e:
+            if self.verbose:
+                print(f"提取What you need部分时发生错误: {str(e)}")
+
+        return what_you_need
 
     def extract_time_and_difficulty(self, soup, guide_url=None):
         """从页面中提取真实的时间和难度信息"""

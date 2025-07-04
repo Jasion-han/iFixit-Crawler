@@ -9,11 +9,18 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Replace the AirPort Antenna in your MacBook Pro to get a clear signal and get back to watching cat videos.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "9",
-        "past_7_days": "47",
-        "past_30_days": "96",
-        "all_time": "17,017"
+        "past_24_hours": "16",
+        "past_7_days": "56",
+        "past_30_days": "105",
+        "all_time": "17,026"
       },
       "completed": "9",
       "favorites": "14",
@@ -211,8 +218,18 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Having issues with wireless connectivity? The problem could lie inside the AirPort Board.\n\nThis guide will show you how to replace the AirPort card installed in the display frame of the Early 2009 and Mid 2009 MacBook Pro 17\" Unibody. This guide does not apply to the Mid 2010 and Late 2011 MacBook Pro 17\" Unibody. The AirPort card in the later models is mounted beside the optical drive.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ],
+        "Parts": [
+          "MacBook Pro 15\"/17\" Unibody (2008‑2009) Airport Extreme Card"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "7",
+        "past_24_hours": "5",
         "past_7_days": "33",
         "past_30_days": "85",
         "all_time": "22,559"
@@ -439,11 +456,18 @@
       "time_required": "15 - 45 minutes",
       "difficulty": "Moderate",
       "introduction": "",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "iFixit Opening Tool",
+          "Tri‑point Y0 Screwdriver"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "20",
-        "past_7_days": "62",
-        "past_30_days": "265",
-        "all_time": "330,467"
+        "past_24_hours": "18",
+        "past_7_days": "65",
+        "past_30_days": "268",
+        "all_time": "330,470"
       },
       "completed": "208",
       "favorites": "81",
@@ -508,8 +532,17 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace your Bluetooth board.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early‑Mid 2009) Bluetooth Board"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "4",
+        "past_24_hours": "2",
         "past_7_days": "14",
         "past_30_days": "51",
         "all_time": "23,491"
@@ -593,8 +626,18 @@
       "time_required": "1 hour",
       "difficulty": "Difficult",
       "introduction": "iSight acting more like iBlind? Maybe it's time for a new camera. Use this guide to replace a faulty camera.",
+      "what_you_need": {
+        "Tools": [
+          "Heat Gun",
+          "Heavy‑Duty Suction Cups (Pair)",
+          "iFixit Opening Picks set of 6",
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "12",
+        "past_24_hours": "6",
         "past_7_days": "25",
         "past_30_days": "57",
         "all_time": "11,710"
@@ -943,6 +986,16 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace the camera board.",
+      "what_you_need": {
+        "Tools": [
+          "Heat Gun",
+          "Heavy‑Duty Suction Cups (Pair)",
+          "iFixit Opening Picks set of 6",
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "2",
         "past_7_days": "7",
@@ -1301,6 +1354,16 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "If your camera seems to be acting strange, it may be the fault of the camera cable. If you find that the Wi-Fi connection works only when the display is in a certain position, your camera/AirPort cable may be the culprit. Use this guide to replace a broken or damaged cable.",
+      "what_you_need": {
+        "Tools": [
+          "Heat Gun",
+          "Heavy‑Duty Suction Cups (Pair)",
+          "iFixit Opening Picks set of 6",
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "2",
         "past_7_days": "7",
@@ -1693,6 +1756,13 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Maybe it's cracked. Maybe it's old. Either way, a nasty looking clutch cover is not good. Use this guide to replace the clutch/hinge cover.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "1",
         "past_7_days": "6",
@@ -1871,11 +1941,23 @@
       "time_required": "30 minutes - 1 hour",
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace your MacBook Pro's display assembly.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early‑Mid 2009) Display Assembly",
+          "MacBook Pro 17\" Unibody (Early 2011) Display Assembly",
+          "MacBook Pro 17\" Unibody (Late 2011) Display Assembly"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "5",
-        "past_7_days": "22",
-        "past_30_days": "79",
-        "all_time": "74,296"
+        "past_24_hours": "8",
+        "past_7_days": "26",
+        "past_30_days": "83",
+        "all_time": "74,300"
       },
       "completed": "43",
       "favorites": "24",
@@ -2031,11 +2113,25 @@
       "time_required": "10 - 30 minutes",
       "difficulty": "Moderate",
       "introduction": "There are many benefits to adding a second drive (either HDD or SSD) to your laptop, such as improved speeds, greater storage space, and less heartache when installing new software. Use this guide to install one using our optical bay hard drive enclosure.\n\nWarning! If you have an older 3.0 Gb/s (SATA II) based system you need to make sure the drive you use is able to run at this slower speed. Review your drives spec sheet, make sure it clearly lists compatibility with 3.0 Gb/s (SATA II) systems. Most drives sold today are fixed speed 6.0 Gb/s (SATA III) which won’t work in 3.0 Gb/s (SATA II) systems properly.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "500 GB SSD Hybrid 2.5\" Hard Drive (Upgrade Kit)",
+          "Unibody Laptop Dual Drive",
+          "Crucial BX500 500GB SSD"
+        ],
+        "Fix Kit": [
+          "500 GB SSD"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "12",
-        "past_7_days": "24",
-        "past_30_days": "81",
-        "all_time": "66,568"
+        "past_24_hours": "13",
+        "past_7_days": "25",
+        "past_30_days": "82",
+        "all_time": "66,569"
       },
       "completed": "68",
       "favorites": "62",
@@ -2230,11 +2326,17 @@
       "time_required": "No estimate",
       "difficulty": "Difficult",
       "introduction": "Did your MacBook Pro stop recognizing express cards? Use this guide to replace the express card cage.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "2",
-        "past_7_days": "6",
-        "past_30_days": "24",
-        "all_time": "12,447"
+        "past_24_hours": "4",
+        "past_7_days": "8",
+        "past_30_days": "26",
+        "all_time": "12,449"
       },
       "completed": "6",
       "favorites": "9",
@@ -2481,11 +2583,24 @@
       "time_required": "15 - 25 minutes",
       "difficulty": "Easy",
       "introduction": "Replace the missing feet for your MacBook Pro 17\".",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Tweezers",
+          "Adhesive Cleanup Kit (Set of 12)"
+        ],
+        "Parts": [
+          "MacBook and MacBook Pro Unibody Plastic Feet"
+        ],
+        "Fix Kit": [
+          "MacBook and MacBook Pro Unibody Plastic Feet"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "2",
-        "past_7_days": "7",
-        "past_30_days": "31",
-        "all_time": "2,503"
+        "past_24_hours": "3",
+        "past_7_days": "8",
+        "past_30_days": "32",
+        "all_time": "2,504"
       },
       "completed": "10",
       "favorites": "1",
@@ -2569,6 +2684,16 @@
       "time_required": "No estimate",
       "difficulty": "Difficult",
       "introduction": "Have you ever wondered how your display seems to work just fine, despite the huge cracks running across the front of it? Likely, you have just cracked the protective glass covering the LCD. Use this guide to remove a damaged or cracked display glass.",
+      "what_you_need": {
+        "Tools": [
+          "Heat Gun",
+          "Heavy‑Duty Suction Cups (Pair)",
+          "iFixit Opening Picks set of 6",
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "1",
         "past_7_days": "10",
@@ -2832,11 +2957,29 @@
       "time_required": "15 - 30 minutes",
       "difficulty": "Moderate",
       "introduction": "Use this guide to install a new hard drive in your MacBook Pro 17\" Unibody for more storage space.\n\nWarning! If you have an older 3.0 Gb/s (SATA II) based system you need to make sure the drive you use is able to run at this slower speed. Review your drives spec sheet, make sure it clearly lists compatibility with 3.0 Gb/s (SATA II) systems. Most drives sold today are fixed speed 6.0 Gb/s (SATA III) which won’t work in 3.0 Gb/s (SATA II) systems properly.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "T6 Torx Screwdriver"
+        ],
+        "Parts": [
+          "Crucial BX500 500GB SSD",
+          "500 GB SSD Hybrid 2.5\" Hard Drive (Upgrade Kit)",
+          "500 GB 5400 RPM 2.5\" Hard Drive",
+          "1 TB 5400 RPM 2.5\" Hard Drive",
+          "MacBook Pro 17\" Unibody Hard Drive Bracket",
+          "Universal Drive Adapter"
+        ],
+        "Fix Kits": [
+          "MacBook and MacBook Pro (Non‑Retina) SSD Upgrade Kit",
+          "500 GB SSD"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "11",
-        "past_7_days": "37",
-        "past_30_days": "214",
-        "all_time": "274,049"
+        "past_24_hours": "17",
+        "past_7_days": "44",
+        "past_30_days": "221",
+        "all_time": "274,056"
       },
       "completed": "242",
       "favorites": "95",
@@ -2919,11 +3062,19 @@
       "time_required": "20 - 45 minutes",
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace the hard drive bracket nearest the front edge of the MacBook Pro 17\" Unibody.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody Front Hard Drive Bracket"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "2",
-        "past_7_days": "7",
-        "past_30_days": "36",
-        "all_time": "4,803"
+        "past_24_hours": "3",
+        "past_7_days": "8",
+        "past_30_days": "37",
+        "all_time": "4,804"
       },
       "completed": "10",
       "favorites": "6",
@@ -3015,6 +3166,15 @@
       "time_required": "15 - 30 minutes",
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace a hard drive cable that is torn or has broken connectors.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early 2011) Hard Drive Cable"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "2",
         "past_7_days": "7",
@@ -3118,6 +3278,17 @@
       "time_required": "1 - 3 hours",
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace your MacBook Pro's heat sink. Before reinstalling the heat sink, it is essential to apply a new layer of thermal paste.",
+      "what_you_need": {
+        "Tools": [
+          "Arctic Silver ArctiClean",
+          "Arctic Silver Thermal Paste",
+          "Phillips #000 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early‑Mid 2009) Heat Sink"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "3",
         "past_7_days": "19",
@@ -3360,11 +3531,25 @@
       "time_required": "2 - 3 hours",
       "difficulty": "Difficult",
       "introduction": "A cracked LCD is no fun at all. Colors go wonky, things don't look right, it's an overall bad experience. Mysterious white lines and faded displays can often be fixed by replacing the LCD. Use this guide to help you out.",
+      "what_you_need": {
+        "Tools": [
+          "Heat Gun",
+          "Heavy‑Duty Suction Cups (Pair)",
+          "iFixit Opening Picks set of 6",
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody LCD Panel",
+          "MacBook Pro 17\" Unibody LVDS Display Cable"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "7",
-        "past_7_days": "34",
-        "past_30_days": "145",
-        "all_time": "75,206"
+        "past_24_hours": "8",
+        "past_7_days": "35",
+        "past_30_days": "146",
+        "all_time": "75,207"
       },
       "completed": "32",
       "favorites": "17",
@@ -3686,6 +3871,13 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Does your display have a hard time staying upright? Nobody like a floppy display. Use this guide to replace the left clutch hinge.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "0",
         "past_7_days": "6",
@@ -3882,11 +4074,21 @@
       "time_required": "10 - 20 minutes",
       "difficulty": "Moderate",
       "introduction": "Computer running hot? Use this guide to replace a burned-out fan.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early‑Mid 2009) Left Fan",
+          "MacBook Pro 17\" Unibody (Mid 2010‑Late 2011) Left Fan"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "0",
-        "past_7_days": "5",
-        "past_30_days": "37",
-        "all_time": "24,006"
+        "past_24_hours": "1",
+        "past_7_days": "6",
+        "past_30_days": "38",
+        "all_time": "24,007"
       },
       "completed": "32",
       "favorites": "14",
@@ -3953,6 +4155,16 @@
       "time_required": "1 - 2 hours",
       "difficulty": "Difficult",
       "introduction": "Left side of your MacBook Pro mute? Use this guide to replace the left speaker.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early‑Mid 2009) Left Speaker"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "1",
         "past_7_days": "9",
@@ -4197,8 +4409,25 @@
       "time_required": "1 - 2 hours",
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace your MacBook Pro's logic board. Before reattaching the heat sink, it is essential to apply a new layer of thermal paste.",
+      "what_you_need": {
+        "Tools": [
+          "Arctic Silver ArctiClean",
+          "Arctic Silver Thermal Paste",
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early 2009) 2.66 GHz Logic Board",
+          "MacBook Pro 17\" Unibody (Mid 2009) 2.8 GHz Logic Board",
+          "MacBook Pro 17\" Unibody (Mid 2009) 3.06 GHz Logic Board",
+          "MacBook Pro 17\" Unibody (Mid 2010) 2.66 GHz Logic Board",
+          "MacBook Pro 17\" Unibody (Early 2011) 2.2 GHz Logic Board",
+          "MacBook Pro 17\" Unibody (Early 2011) 2.3 GHz Logic Board",
+          "MacBook Pro 17\" Unibody (Late 2011) 2.4 GHz Logic Board"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "6",
+        "past_24_hours": "5",
         "past_7_days": "22",
         "past_30_days": "118",
         "all_time": "141,901"
@@ -4473,6 +4702,18 @@
       "time_required": "3 minutes",
       "difficulty": "Easy",
       "introduction": "Cancel: I did not complete this guide.\n\n20 other people completed this guide.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early‑Mid 2009) Lower Case",
+          "MacBook Pro Unibody Lower Case Screw Set"
+        ],
+        "Fix Kit": [
+          "MacBook Pro Unibody Lower Case Screw Set"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "2",
         "past_7_days": "8",
@@ -4508,6 +4749,16 @@
       "time_required": "45 minutes - 2 hours",
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace the DC-in board on your MacBook Pro.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early‑Mid 2009) MagSafe DC-In Board",
+          "MacBook Pro 17\" Unibody (Mid 2010 Late 2011) MagSafe DC‑In Board"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "1",
         "past_7_days": "12",
@@ -4734,11 +4985,17 @@
       "time_required": "No estimate",
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace a non-functional microphone.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "0",
-        "past_7_days": "8",
-        "past_30_days": "43",
-        "all_time": "9,299"
+        "past_24_hours": "1",
+        "past_7_days": "9",
+        "past_30_days": "44",
+        "all_time": "9,300"
       },
       "completed": "4",
       "favorites": "11",
@@ -4978,6 +5235,16 @@
       "time_required": "1 - 2 hours",
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace your MacBook Pro's optical drive. The Bluetooth board and optical drive cable are not included with a new optical drive.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "Unibody Laptop Dual Drive",
+          "SATA USB Adapter"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "1",
         "past_7_days": "12",
@@ -5122,6 +5389,15 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Use this guide to replace your MacBook Pro's optical drive cable.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody SATA SuperDrive Cable"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "0",
         "past_7_days": "5",
@@ -5249,8 +5525,25 @@
       "time_required": "10 minutes",
       "difficulty": "Easy",
       "introduction": "Use this guide to replace your MacBook Pro's RAM.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver"
+        ],
+        "Parts": [
+          "PC3‑8500 4 GB RAM Chip",
+          "PC3‑8500 2 GB RAM Chip",
+          "PC3‑8500 1 GB RAM Chip"
+        ],
+        "Fix Kits": [
+          "MacBook Pro 17\" Unibody (Early 2009) Memory Maxxer RAM Upgrade Kit",
+          "MacBook Pro 17\" Unibody (Mid 2009) Memory Maxxer RAM Upgrade Kit",
+          "MacBook Pro 17\" Unibody (Mid 2010) Memory Maxxer RAM Upgrade Kit",
+          "MacBook Pro 17\" Unibody (Early 2011) Memory Maxxer RAM Upgrade Kit",
+          "MacBook Pro 17\" Unibody (Late 2011) Memory Maxxer RAM Upgrade Kit"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "6",
+        "past_24_hours": "5",
         "past_7_days": "20",
         "past_30_days": "81",
         "all_time": "97,837"
@@ -5304,6 +5597,13 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "This guide will help you replace the rear display bezel.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "2",
         "past_7_days": "5",
@@ -5739,6 +6039,13 @@
       "time_required": "30 minutes - 2 hours",
       "difficulty": "Moderate",
       "introduction": "Does your display have a hard time staying upright? Nobody likes a floppy display. Use this guide to replace the right clutch hinge.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "0",
         "past_7_days": "17",
@@ -5934,11 +6241,21 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Running hot? Use this guide to replace a worn-out right fan.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger"
+        ],
+        "Parts": [
+          "MacBook Pro 15\" Unibody (2.53 GHz Mid 2009) or 17\" Unibody (Early/Mid 2009) Right Fan",
+          "MacBook Pro 17\" Unibody (Mid 2010‑Late 2011) Right Fan"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "4",
-        "past_7_days": "8",
-        "past_30_days": "22",
-        "all_time": "23,930"
+        "past_24_hours": "1",
+        "past_7_days": "9",
+        "past_30_days": "23",
+        "all_time": "23,931"
       },
       "completed": "33",
       "favorites": "13",
@@ -6005,6 +6322,16 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "No sound from the right side of your MacBook Pro? Use this guide to replace the subwoofer and right speaker assembly.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "iFixit Opening Tool",
+          "Spudger"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Early‑Mid 2009) Subwoofer/Right Speaker"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "0",
         "past_7_days": "4",
@@ -6156,6 +6483,21 @@
       "time_required": "1 - 3 hours",
       "difficulty": "Difficult",
       "introduction": "Use this guide to replace your MacBook Pro's upper case. Replacing the upper case requires removal of most components inside your computer, including the display assembly.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "iFixit Opening Tool",
+          "Spudger",
+          "T6 Torx Screwdriver",
+          "Y1 Tri‑point Screwdriver"
+        ],
+        "Parts": [
+          "MacBook Pro 17\" Unibody (Mid 2010) Upper Case",
+          "MacBook Pro 17\" Unibody (Early 2011) Upper Case",
+          "MacBook Pro 17\" Unibody (Early‑Mid 2009) Upper Case",
+          "MacBook Pro 17\" Unibody (Early 2009‑Late 2011) Trackpad"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "3",
         "past_7_days": "10",
@@ -6577,11 +6919,19 @@
       "time_required": "24 Hours",
       "difficulty": "Difficult",
       "introduction": "",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver",
+          "Y1 Tri‑point Screwdriver"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "6",
-        "past_7_days": "35",
-        "past_30_days": "201",
-        "all_time": "421,015"
+        "past_24_hours": "3",
+        "past_7_days": "36",
+        "past_30_days": "202",
+        "all_time": "421,016"
       },
       "favorites": "158",
       "videos": [],
@@ -6808,8 +7158,15 @@
       "time_required": "40 minutes",
       "difficulty": "Moderate",
       "introduction": "MacBook Pro 17\" Unibody 2.2GHz early 2011 Duo\n\nVibrating noise from new MacBook Pro ?\n\nRattling fan ? Overheating ?",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "T6 Torx Screwdriver",
+          "Large Needle Nose Pliers"
+        ]
+      },
       "view_statistics": {
-        "past_24_hours": "3",
+        "past_24_hours": "1",
         "past_7_days": "9",
         "past_30_days": "34",
         "all_time": "10,090"
@@ -6908,11 +7265,19 @@
       "time_required": "2 - 8 hours",
       "difficulty": "Very difficult",
       "introduction": "In this guide, You’ll learn how to reclaim the use of your laptop’s screen, so it can continue to serve you for decades to come.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver"
+        ],
+        "Parts": [
+          "Zip Ties"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "5",
-        "past_7_days": "18",
-        "past_30_days": "65",
-        "all_time": "2,541"
+        "past_7_days": "20",
+        "past_30_days": "67",
+        "all_time": "2,543"
       },
       "favorites": "1",
       "videos": [],
@@ -7049,10 +7414,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Fan+Loud/506012?lang=en",
       "title": "MacBook Fan Loud",
       "view_statistics": {
-        "past_24_hours": "398",
-        "past_7_days": "2,717",
-        "past_30_days": "8,290",
-        "all_time": "55,872"
+        "past_24_hours": "361",
+        "past_7_days": "2,757",
+        "past_30_days": "8,330",
+        "all_time": "55,912"
       },
       "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Especially if you have not done so recently.\n\nFor the best results, uncheck the “Reopen windows when logging back in” box in the confirmation pop up.Check for updates to macOS.. You may be running into a bug which Apple resolved later via update.If your Mac is on Mojave 10.14 or newer, software updates can be performed within System Preferences.High Sierra 10.13 and older will have software updates in the App Store.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory which contains system settings for the Mac.\n\nResetting it may clear a bad setting.Run Apple’s Diagnostic Suite to check for any blatant errors.. High fan speed can manifest in errors with the fans themselves, the System Management Controller (SMC) or Power Management systems.",
       "causes": [
@@ -7119,10 +7484,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Will+Not+Turn+On/483799?lang=en",
       "title": "MacBook Won't Turn On",
       "view_statistics": {
-        "past_24_hours": "198",
-        "past_7_days": "1,184",
-        "past_30_days": "5,438",
-        "all_time": "116,968"
+        "past_24_hours": "200",
+        "past_7_days": "1,203",
+        "past_30_days": "5,457",
+        "all_time": "116,987"
       },
       "introduction": "There are few electronics problems more disheartening than a device that doesn't power on.. Other issues have workarounds.\n\nBut a device that won't power on can't be circumvented.. It feels so final like there are only so many things you can try before you write its death certificate and toss it in the trash.\n\nIn truth, resurrecting a dead MacBook is more like a mystery novel.. A few good clues can make all the difference.",
       "the_basics": "Before undertaking any of the more time-consuming solutions below, these are a few fundamentals to get you started.Perform a hard reset.. Press and hold your power button for about fifteen seconds, then release it.\n\nWait a few seconds, then try to power it on again.Disconnect any peripherals.. Docks or multi-port hubs are notoriously problematic, especially if they have many items connected.Reset the System Management Controller (or SMC).\n\nThey can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory that contains system settings for the Mac.\n\nResetting it may clear a bad setting.Check for any signs of power.. If you're getting any response here, your issue is more likely to be related to a blank display.Trackpad clicks.\n\nNote: This only applies to MacBook Pros 2015 and newer, MacBook Airs 2018 and newer, and all Retina MacBooks.Keyboard lights are onCAPS Lock LED lights when pressedThe Touch Bar is on.Audible fan spin, or heat exhausting from the vents.The display backlight is on.\n\nThis can be subtle and is best observed in a dark room.. The Apple logo would also be lit if your model has a white Apple logo on the lid.Sound when connecting a charger.",
@@ -7199,10 +7564,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Keyboard+Not+Working/505002?lang=en",
       "title": "MacBook Keyboard Not Working",
       "view_statistics": {
-        "past_24_hours": "148",
-        "past_7_days": "808",
-        "past_30_days": "3,619",
-        "all_time": "72,128"
+        "past_24_hours": "159",
+        "past_7_days": "824",
+        "past_30_days": "3,635",
+        "all_time": "72,144"
       },
       "the_basics": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Uncheck the box to \"Reopen windows when logging back in.\" This ensures a problematic app or session does not reopen.Reset the PRAM or NVRAM.\n\nThese are terms for a small amount of memory which contains some pre-boot settings for the Mac.. Clearing changes made may restore keyboard function.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings or resolve issues where your Mac is stuck in sleep.Note: An external keyboard may be necessary for these steps, but try on the native keyboard first.\n\nJust because keystrokes aren't appearing, doesn't mean the signals from the keyboard aren't transmitting.",
       "causes": [
@@ -7269,10 +7634,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Black+Screen/478598?lang=en",
       "title": "MacBook Black Screen",
       "view_statistics": {
-        "past_24_hours": "134",
-        "past_7_days": "665",
-        "past_30_days": "2,499",
-        "all_time": "55,972"
+        "past_24_hours": "138",
+        "past_7_days": "678",
+        "past_30_days": "2,512",
+        "all_time": "55,985"
       },
       "triage": "Troubleshooting is a process that often resembles medical diagnosis.. Certain information can help hone in on a specific problem.\n\nTry these tests to point yourself in the right direction.. Move your cursor around, especially towards the corners, or edges of the display.\n\nTry to get menus to appear.. If you're getting any sort of pointer, your display hardware is working properly.\n\nHave a look at software fixes.. Is your screen lighting up?. Try powering on in a dark room for easier observation.Pro Tip: Macs with a white Apple logo on the lid use the display backlight to illuminate.\n\nIf the Apple lights up, your backlight is working.. Pro Tip: Macs with a white Apple logo on the lid use the display backlight to illuminate.\n\nIf you don’t have any signs of backlight, check for an image on screen by shining a flashlight at your display.. No backlight and no display means you can safely rule out software.Pro Tip: This is easiest to spot during boot up.\n\nThe high contrast between the on screen Apple logo and the background significantly increases visibility.Bonus Pro Tip: If your Mac has the aforementioned white Apple logo on the lid, shine a light through it to emulate your backlight.\n\nCan you see an image now?. Bonus Pro Tip: If your Mac has the aforementioned white Apple logo on the lid, shine a light through it to emulate your backlight.\n\nNo image or backlight?. Connect your Mac to an external display.\n\nYou may need a dock, or an adapter to accomplish this.. If you get normal image on the external monitor, graphics processing is working properly.\n\nGetting trackpad click, but nothing else?. See if the Caps Lock LED lights when you press the key.\n\nIf no, you may have a firmware issue.",
       "introduction": "Have you ever booted your MacBook and found it unresponsive?. If you have encountered a black or white screen while restarting or booting up your MacBook, or you’re simply getting nothing on screen at all, don't panic, it’s possible you’ll even be able to solve your issue without the need for a costly repair.If your Mac doesn’t seem like it’s powering on, you may want to head over to the troubleshooting page for that instead.",
@@ -7336,10 +7701,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Slow/484308?lang=en",
       "title": "MacBook Slow",
       "view_statistics": {
-        "past_24_hours": "39",
-        "past_7_days": "234",
-        "past_30_days": "1,104",
-        "all_time": "22,160"
+        "past_24_hours": "36",
+        "past_7_days": "236",
+        "past_30_days": "1,106",
+        "all_time": "22,162"
       },
       "the_basics": "Before undertaking any of the more time-consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Especially if you have not done so recently.\n\nBe sure to uncheck the “Reopen windows when logging back in” box in the confirmation pop-up.Check for updates to macOS.. You may be running into a bug that Apple resolved later via an update.If your Mac is on Mojave 10.14 or newer, software updates can be performed within System Preferences.High Sierra 10.13 and older will have software updates in the App Store.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings which the SMC handles.Reset the PRAM or NVRAM.. These are terms for a small amount of memory that contains system settings for the Mac.\n\nResetting it may clear a bad setting.Run Apple’s Diagnostic Suite to check for any blatant errors.. Be aware that this test is designed to optimize quick results.\n\nTrust a failure, but not a pass.",
       "causes": [
@@ -7407,10 +7772,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Folder+With+Question+Mark/484463?lang=en",
       "title": "MacBook Folder With Question Mark",
       "view_statistics": {
-        "past_24_hours": "44",
-        "past_7_days": "200",
-        "past_30_days": "978",
-        "all_time": "26,160"
+        "past_24_hours": "49",
+        "past_7_days": "207",
+        "past_30_days": "985",
+        "all_time": "26,167"
       },
       "introduction": "It seems logical to expect that opening your MacBook would lead to your usual login screen.. Or perhaps the Apple logo and a progress bar.\n\nBut what if instead you're faced with a mysterious flashing folder, and no other information.. This folder with a question mark icon, indicates that your MacBook cannot detect an operating system.\n\nIf it can't find that, your log in screen is out of the question.",
       "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Perform a hard reset.. Press and hold your power button for about fifteen seconds, then release.\n\nWait a few seconds, then try to power on again.. This can resolve any minor hang ups in the startup process.Reset the System Management Controller (or SMC).\n\nThe can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory which contains system settings for the Mac.\n\nClearing it resets the default startup disk, amongst other settings.If you have a 2012 13\" Unibody MacBook Pro, consider foregoing additional triage and replace your hard drive cable.. They are notorious for failure on this model.\n\nThere was an Apple Service Program at one time which covered this repair, but it has since expired leaving the repair up to you.",
@@ -7453,10 +7818,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Stuck+On+Loading+Screen/486734?lang=en",
       "title": "MacBook Stuck On Loading Screen",
       "view_statistics": {
-        "past_24_hours": "24",
-        "past_7_days": "106",
-        "past_30_days": "484",
-        "all_time": "12,860"
+        "past_24_hours": "26",
+        "past_7_days": "109",
+        "past_30_days": "487",
+        "all_time": "12,863"
       },
       "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Consider how long you've been waiting.. Patience is key.\n\nSometimes a Mac is doing a software update, but you don't realize because there's no hallmark \"Estimated time\" and a grossly incorrect approximation under it.. Give it another 15 minutes.Put a sticky note or some tape on the display with its edge aligned with the progress bar so you can tell if it's made any progress.If your waiting isn't fruitful, perform a force shutdown of your Mac.\n\nPress and hold the power button for fifteen seconds.. Don't be fooled by a black screen, keep holding for a few seconds even past that.\n\nThen try and power back up again.Disconnect all peripherals before power on.Perform both an SMC and an NVRAM reset.. This clears many settings used during startup and can correct a faulty configuration.Run a repair on your startup disk using Internet Recovery.Run Apple’s Diagnostic Suite to check for any blatant errors.\n\nBe aware that this test is designed to optimize quick results.. Trust a failure, but not a pass.",
       "causes": [
@@ -7499,5 +7864,5 @@
       ]
     }
   ],
-  "crawl_timestamp": "2025-07-04 16:48:44"
+  "crawl_timestamp": "2025-07-04 18:04:09"
 }

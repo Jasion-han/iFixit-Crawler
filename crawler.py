@@ -7,11 +7,11 @@ import random
 import re
 
 class IFixitCrawler:
-    def __init__(self, base_url="https://zh.ifixit.com"):
+    def __init__(self, base_url="https://www.ifixit.com"):
         self.base_url = base_url
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "Accept-Language": "zh-CN,zh;q=0.9",
+            "Accept-Language": "en-US,en;q=0.9",
         }
         self.results = []
         self.visited_urls = set()
@@ -640,11 +640,11 @@ class IFixitCrawler:
         if not categories:
             print("未在首页找到设备类别，使用预定义的设备类别")
             categories = [
-                {"name": "Apple iPhone", "url": "https://zh.ifixit.com/Device/iPhone"},
-                {"name": "iPad", "url": "https://zh.ifixit.com/Device/iPad"},
-                {"name": "平板电脑", "url": "https://zh.ifixit.com/Device/Tablet"},
-                {"name": "手机", "url": "https://zh.ifixit.com/Device/Phone"},
-                {"name": "电脑硬件", "url": "https://zh.ifixit.com/Device/Computer_Hardware"}
+                {"name": "Apple iPhone", "url": "https://www.ifixit.com/Device/iPhone"},
+                {"name": "iPad", "url": "https://www.ifixit.com/Device/iPad"},
+                {"name": "平板电脑", "url": "https://www.ifixit.com/Device/Tablet"},
+                {"name": "手机", "url": "https://www.ifixit.com/Device/Phone"},
+                {"name": "电脑硬件", "url": "https://www.ifixit.com/Device/Computer_Hardware"}
             ]
             
         for category in categories:
@@ -824,5 +824,5 @@ class IFixitCrawler:
 if __name__ == "__main__":
     crawler = IFixitCrawler()
     # 从设备页面开始爬取
-    crawler.start_crawl("https://zh.ifixit.com/Device")
+    crawler.start_crawl("https://www.ifixit.com/Device")
  

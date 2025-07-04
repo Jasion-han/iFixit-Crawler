@@ -12,7 +12,7 @@ def crawl_batch(search_term, debug=False):
     crawler = IFixitCrawler()
     crawler.debug = debug  # 设置debug属性
     # 首先获取搜索结果页面
-    search_url = f"https://zh.ifixit.com/Search?query={search_term}"
+    search_url = f"https://www.ifixit.com/Search?query={search_term}"
     soup = crawler.get_soup(search_url)
     if not soup:
         print(f"无法获取搜索页面: {search_url}")
@@ -29,7 +29,7 @@ def crawl_batch(search_term, debug=False):
                 if href and "/Device/" in href:
                     # 构建完整URL
                     if not href.startswith("http"):
-                        href = "https://zh.ifixit.com" + href
+                        href = "https://www.ifixit.com" + href
                     product_links.append(href)
     
     if not product_links:
@@ -41,7 +41,7 @@ def crawl_batch(search_term, debug=False):
             if href and ("/Device/" in href or "/Guide/" in href or "/Teardown/" in href):
                 # 构建完整URL
                 if not href.startswith("http"):
-                    href = "https://zh.ifixit.com" + href
+                    href = "https://www.ifixit.com" + href
                 product_links.append(href)
     
     if not product_links:
@@ -108,9 +108,9 @@ def test_multiple_urls(debug=False):
     """测试多个预定义的URL"""
     # 定义测试URL列表，包含不同类型的产品
     urls = [
-        "https://zh.ifixit.com/Device/Golf_Cart",  # 有视频指南的产品
-        "https://zh.ifixit.com/Device/iPad_3G",    # 可能有PDF文档的产品
-        "https://zh.ifixit.com/Device/LG_37LG10-UM"  # 有锚点链接的产品
+        "https://www.ifixit.com/Device/Golf_Cart",  # 有视频指南的产品
+        "https://www.ifixit.com/Device/iPad_3G",    # 可能有PDF文档的产品
+        "https://www.ifixit.com/Device/LG_37LG10-UM"  # 有锚点链接的产品
     ]
     
     crawler = IFixitCrawler()
@@ -160,7 +160,7 @@ def process_input(input_text):
     # 如果包含/Device/，可能是部分URL
     if "/Device/" in input_text:
         if not input_text.startswith("https://"):
-            return "https://zh.ifixit.com" + input_text
+            return "https://www.ifixit.com" + input_text
         return input_text
     
     # 否则视为产品名，进行搜索或构建URL
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("用法: python batch_crawler.py <搜索词/URL/产品名> [debug]")
         print("例如: python batch_crawler.py iPad")
-        print("      python batch_crawler.py https://zh.ifixit.com/Device/iPad_3G")
+        print("      python batch_crawler.py https://www.ifixit.com/Device/iPad_3G")
         print("      python batch_crawler.py iPad_3G")
         print("或者: python batch_crawler.py test [debug] - 测试多个预定义URL")
         sys.exit(1)
@@ -190,7 +190,7 @@ if __name__ == "__main__":
         test_url(url, debug)
     else:
         # 尝试直接作为产品名构建URL
-        product_url = f"https://zh.ifixit.com/Device/{input_text}"
+        product_url = f"https://www.ifixit.com/Device/{input_text}"
         print(f"尝试直接访问产品页面: {product_url}")
         
         # 创建爬虫实例并测试URL

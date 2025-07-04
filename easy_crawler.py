@@ -4,7 +4,7 @@
 """
 简易iFixit爬虫工具
 用法: python easy_crawler.py [URL或产品名]
-示例: python easy_crawler.py https://zh.ifixit.com/Device/iPad_3G
+示例: python easy_crawler.py https://www.ifixit.com/Device/iPad_3G
       python easy_crawler.py iPad_3G
 """
 
@@ -16,7 +16,7 @@ from crawler import IFixitCrawler
 def print_usage():
     print("使用方法:")
     print("python easy_crawler.py [URL或产品名]")
-    print("例如: python easy_crawler.py https://zh.ifixit.com/Device/iPad_3G")
+    print("例如: python easy_crawler.py https://www.ifixit.com/Device/iPad_3G")
     print("或者: python easy_crawler.py iPad_3G")
     print("\n或者直接运行脚本，然后按提示输入URL或产品名")
 
@@ -92,11 +92,11 @@ def process_input(input_text):
     # 如果包含/Device/，可能是部分URL
     if "/Device/" in input_text:
         if not input_text.startswith("https://"):
-            return "https://zh.ifixit.com" + input_text
+            return "https://www.ifixit.com" + input_text
         return input_text
-    
+
     # 否则视为产品名，构建URL
-    return f"https://zh.ifixit.com/Device/{input_text}"
+    return f"https://www.ifixit.com/Device/{input_text}"
 
 def main():
     # 检查是否提供了URL参数
@@ -104,7 +104,7 @@ def main():
         input_text = sys.argv[1]
     else:
         print("请输入要爬取的iFixit产品页面URL或产品名:")
-        print("例如: https://zh.ifixit.com/Device/iPad_3G 或 iPad_3G")
+        print("例如: https://www.ifixit.com/Device/iPad_3G 或 iPad_3G")
         input_text = input("> ").strip()
     
     if not input_text:
