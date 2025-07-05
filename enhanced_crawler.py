@@ -699,10 +699,45 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         return what_you_need
 
     def extract_time_and_difficulty(self, soup, guide_url=None):
-        """从页面中提取真实的时间和难度信息"""
+        """从页面中提取真实的时间和难度信息，只有在页面真实存在时才提取"""
         time_difficulty = {}
 
         try:
+            # 检查是否为Teardown、History或其他不应该有时间和难度的页面类型
+            if guide_url:
+                # 跳过Teardown页面 - 它们通常不需要时间和难度信息
+                if '/Teardown/' in guide_url:
+                    return {}
+
+                # 跳过History页面 - 它们是版本历史，不是实际的指南
+                if '/Guide/history/' in guide_url or 'history' in guide_url:
+                    return {}
+
+                # 跳过其他特殊页面类型
+                skip_patterns = [
+                    '/Guide/new',
+                    '/Guide/edit',
+                    '/Guide/create',
+                    'action=edit',
+                    'action=create'
+                ]
+                if any(pattern in guide_url for pattern in skip_patterns):
+                    return {}
+
+            # 检查页面标题，如果包含特定关键词则跳过
+            title_elem = soup.select_one("h1")
+            if title_elem:
+                title_text = title_elem.get_text().strip().lower()
+                skip_title_keywords = [
+                    'teardown',
+                    'guide history',
+                    'version history',
+                    'edit guide',
+                    'create guide'
+                ]
+                if any(keyword in title_text for keyword in skip_title_keywords):
+                    return {}
+
             # 方法1：使用iFixit API获取准确的数据
             if guide_url:
                 # 从URL中提取guide ID
@@ -717,324 +752,45 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                         if response.status_code == 200:
                             api_data = response.json()
 
-                            # 从API数据中提取难度信息
-                            if 'difficulty' in api_data:
-                                difficulty = api_data['difficulty']
-                                time_difficulty["difficulty"] = self.standardize_difficulty(difficulty)
+                            # 检查API数据中的类型，跳过不合适的类型
+                            if 'type' in api_data:
+                                guide_type = api_data['type'].lower()
+                                if guide_type in ['teardown', 'history']:
+                                    return {}
 
-                            # 从API数据中提取时间信息
+                            # 从API数据中提取难度信息 - 只有在有有效值时才添加
+                            if 'difficulty' in api_data and api_data['difficulty'] and api_data['difficulty'].strip():
+                                difficulty = api_data['difficulty'].strip()
+                                # 只有在是有效难度值时才添加
+                                if difficulty.lower() in ['very easy', 'easy', 'moderate', 'difficult', 'hard', 'very difficult']:
+                                    time_difficulty["difficulty"] = self.standardize_difficulty(difficulty)
+
+                            # 从API数据中提取时间信息 - 只有在有有效值时才添加
                             time_fields = ['time_required', 'duration', 'time', 'estimate']
                             for field in time_fields:
-                                if field in api_data and api_data[field]:
-                                    time_difficulty["time_required"] = api_data[field]
-                                    break
-
-                            # 如果API中没有时间信息，查找其他可能的字段
-                            if not time_difficulty.get("time_required"):
-                                # 查找可能包含时间信息的字段
-                                for key, value in api_data.items():
-                                    if isinstance(value, str) and re.search(r'\d+\s*[-–]\s*\d+\s*(?:minutes?|hours?)', value, re.IGNORECASE):
-                                        time_difficulty["time_required"] = value
+                                if field in api_data and api_data[field] and api_data[field].strip():
+                                    time_value = api_data[field].strip()
+                                    # 只有在包含有效时间格式时才添加
+                                    if re.search(r'\d+\s*(?:[-–]\s*\d+)?\s*(?:minutes?|mins?|hours?|hrs?)', time_value, re.IGNORECASE) or time_value.lower() == 'no estimate':
+                                        time_difficulty["time_required"] = time_value
                                         break
 
-                            if self.verbose:
-                                print(f"从API获取到时间和难度信息: {time_difficulty}")
+                            # 如果从API获取到有效数据，直接返回
                             if time_difficulty:
+                                if self.verbose:
+                                    print(f"从API获取到时间和难度信息: {time_difficulty}")
                                 return time_difficulty
 
                     except Exception as e:
-                        print(f"API调用失败: {str(e)}")
+                        if self.verbose:
+                            print(f"API调用失败: {str(e)}")
 
-            # 方法2：查找页面中的JavaScript数据（备用方法）
-            # 时间和难度信息可能在页面的JavaScript变量中
-            scripts = soup.find_all('script')
-            for script in scripts:
-                if script.string:
-                    script_content = script.string
-
-                    # 查找时间信息的JSON数据
-                    time_patterns = [
-                        r'"time_required"\s*:\s*"([^"]+)"',
-                        r'"duration"\s*:\s*"([^"]+)"',
-                        r'"timeRequired"\s*:\s*"([^"]+)"',
-                        r'timeRequired["\']?\s*:\s*["\']([^"\']+)["\']',
-                        r'time["\']?\s*:\s*["\']([^"\']*(?:\d+\s*[-–]\s*\d+|\d+)\s*(?:minutes?|hours?)[^"\']*)["\']'
-                    ]
-
-                    for pattern in time_patterns:
-                        match = re.search(pattern, script_content, re.IGNORECASE)
-                        if match:
-                            time_difficulty["time_required"] = match.group(1).strip()
-                            break
-
-                    # 查找难度信息的JSON数据
-                    difficulty_patterns = [
-                        r'"difficulty"\s*:\s*"([^"]+)"',
-                        r'"level"\s*:\s*"([^"]+)"',
-                        r'difficulty["\']?\s*:\s*["\']([^"\']+)["\']',
-                        r'level["\']?\s*:\s*["\']([^"\']*(?:Very\s+easy|Easy|Moderate|Difficult|Hard)[^"\']*)["\']'
-                    ]
-
-                    for pattern in difficulty_patterns:
-                        match = re.search(pattern, script_content, re.IGNORECASE)
-                        if match:
-                            difficulty = match.group(1).strip()
-                            time_difficulty["difficulty"] = self.standardize_difficulty(difficulty)
-                            break
-
-                    # 如果两个都找到了，就停止搜索
-                    if time_difficulty.get("time_required") and time_difficulty.get("difficulty"):
-                        break
-
-            # 方法2：查找页面中的特定HTML结构
-            # 基于iFixit页面的实际结构查找时间和难度信息
-            if not time_difficulty:
-                # 查找可能包含时间信息的元素（基于常见的HTML结构）
-                time_selectors = [
-                    'span[title*="minute"]',
-                    'span[title*="hour"]',
-                    'div[title*="minute"]',
-                    'div[title*="hour"]',
-                    '.time',
-                    '.duration',
-                    '.estimate'
-                ]
-
-                for selector in time_selectors:
-                    time_elem = soup.select_one(selector)
-                    if time_elem:
-                        time_text = time_elem.get_text().strip()
-                        if re.search(r'\d+\s*[-–]\s*\d+\s*(?:minutes?|hours?)', time_text, re.IGNORECASE):
-                            time_difficulty["time_required"] = time_text
-                            break
-                        # 也检查title属性
-                        title = time_elem.get('title', '')
-                        if re.search(r'\d+\s*[-–]\s*\d+\s*(?:minutes?|hours?)', title, re.IGNORECASE):
-                            time_difficulty["time_required"] = title
-                            break
-
-                # 查找可能包含难度信息的元素
-                difficulty_selectors = [
-                    'span[title*="easy"]',
-                    'span[title*="moderate"]',
-                    'span[title*="difficult"]',
-                    'div[title*="easy"]',
-                    'div[title*="moderate"]',
-                    'div[title*="difficult"]',
-                    '.difficulty',
-                    '.level'
-                ]
-
-                for selector in difficulty_selectors:
-                    diff_elem = soup.select_one(selector)
-                    if diff_elem:
-                        diff_text = diff_elem.get_text().strip()
-                        if re.search(r'(?:Very\s+easy|Easy|Moderate|Difficult|Hard)', diff_text, re.IGNORECASE):
-                            time_difficulty["difficulty"] = self.standardize_difficulty(diff_text)
-                            break
-                        # 也检查title属性
-                        title = diff_elem.get('title', '')
-                        if re.search(r'(?:Very\s+easy|Easy|Moderate|Difficult|Hard)', title, re.IGNORECASE):
-                            time_difficulty["difficulty"] = self.standardize_difficulty(title)
-                            break
-
-            # 方法3：查找页面中的时间和难度信息框
-            # 通常在页面顶部的信息区域
-            if not time_difficulty:
-                info_selectors = [
-                    ".guide-info",
-                    ".guide-meta",
-                    ".guide-header",
-                    ".guide-stats",
-                    ".guide-difficulty",
-                    ".guide-time",
-                    ".meta-info",
-                    ".difficulty-time",
-                    ".guide-details",
-                    ".guide-metadata",
-                    ".metadata",
-                    ".stats"
-                ]
-
-                for selector in info_selectors:
-                    info_section = soup.select_one(selector)
-                    if info_section:
-                        # 在信息区域中查找时间和难度
-                        time_diff = self.parse_time_difficulty_from_section(info_section)
-                        if time_diff:
-                            time_difficulty.update(time_diff)
-                            break
-
-            # 方法2：如果没有找到专门的信息区域，在整个页面中搜索
-            if not time_difficulty:
-                page_text = soup.get_text()
-
-                # 查找包含时间信息的元素 - 改进的模式，包含完整的时间表达
-                time_patterns = [
-                    r'(\d+\s*(?:-\s*\d+)?\s*(?:minutes?|mins?))',  # 分钟
-                    r'(\d+\s*(?:-\s*\d+)?\s*(?:hours?|hrs?))',     # 小时
-                    r'(\d+\s*hours?)',                             # 简单小时
-                    r'(\d+\s*minutes?)',                           # 简单分钟
-                    r'(No\s+estimate)',                            # 无估计
-                    r'(\d+\s*(?:-\s*\d+)?\s*(?:minutes?|mins?|hours?|hrs?))', # 通用模式
-                ]
-
-                # 查找难度信息 - 改进的模式
-                difficulty_patterns = [
-                    r'(Very\s+easy|Easy|Moderate|Difficult|Hard)',
-                    r'(很简单|简单|中等|困难|很困难)'
-                ]
-
-                # 提取时间信息
-                for pattern in time_patterns:
-                    match = re.search(pattern, page_text, re.IGNORECASE)
-                    if match:
-                        time_text = match.group(1).strip()
-                        # 确保时间信息包含单位
-                        if not re.search(r'(?:minutes?|mins?|hours?|hrs?|estimate)', time_text, re.IGNORECASE):
-                            # 如果没有单位，尝试从上下文中推断
-                            context_match = re.search(rf'{re.escape(time_text)}\s*(minutes?|mins?|hours?|hrs?)', page_text, re.IGNORECASE)
-                            if context_match:
-                                time_text += " " + context_match.group(1)
-                            else:
-                                # 默认假设是小时（基于观察到的数据）
-                                time_text += " Hours"
-                        time_difficulty["time_required"] = time_text
-                        break
-
-                # 提取难度信息
-                for pattern in difficulty_patterns:
-                    match = re.search(pattern, page_text, re.IGNORECASE)
-                    if match:
-                        difficulty = match.group(1).strip()
-                        # 标准化难度值为英文
-                        difficulty_mapping = {
-                            "很简单": "Very easy",
-                            "简单": "Easy",
-                            "中等": "Moderate",
-                            "困难": "Difficult",
-                            "很困难": "Very difficult"
-                        }
-                        mapped_difficulty = difficulty_mapping.get(difficulty, difficulty)
-                        time_difficulty["difficulty"] = self.standardize_difficulty(mapped_difficulty)
-                        break
-
-            # 方法3：查找特定的HTML结构（基于实际页面结构）
-            if not time_difficulty:
-                # 查找可能包含时间和难度的span或div元素
-                time_elements = soup.find_all(['span', 'div'], string=re.compile(r'\d+\s*(?:minutes?|hours?)', re.IGNORECASE))
-                for elem in time_elements:
-                    text = elem.get_text().strip()
-                    if re.search(r'\d+\s*(?:minutes?|hours?)', text, re.IGNORECASE):
-                        time_difficulty["time_required"] = text
-                        break
-
-                difficulty_elements = soup.find_all(['span', 'div'], string=re.compile(r'(?:Very\s+easy|Easy|Moderate|Difficult|Hard)', re.IGNORECASE))
-                for elem in difficulty_elements:
-                    text = elem.get_text().strip()
-                    if re.search(r'(?:Very\s+easy|Easy|Moderate|Difficult|Hard)', text, re.IGNORECASE):
-                        time_difficulty["difficulty"] = self.standardize_difficulty(text)
-                        break
-
-            # 方法5：查找页面中的特定CSS类或属性（基于iFixit页面结构）
-            if not time_difficulty:
-                # 查找可能的时间和难度容器
-                meta_containers = soup.find_all(['div', 'section', 'span'], class_=re.compile(r'guide|meta|info|stats|difficulty|time', re.IGNORECASE))
-                for container in meta_containers:
-                    container_text = container.get_text()
-
-                    # 在容器中查找时间信息
-                    if not time_difficulty.get("time_required"):
-                        time_match = re.search(r'(\d+\s*(?:-\s*\d+)?\s*(?:minutes?|mins?|hours?|hrs?))', container_text, re.IGNORECASE)
-                        if time_match:
-                            time_difficulty["time_required"] = time_match.group(1).strip()
-
-                    # 在容器中查找难度信息
-                    if not time_difficulty.get("difficulty"):
-                        diff_match = re.search(r'(Very\s+easy|Easy|Moderate|Difficult|Hard)', container_text, re.IGNORECASE)
-                        if diff_match:
-                            difficulty = diff_match.group(1).strip()
-                            time_difficulty["difficulty"] = self.standardize_difficulty(difficulty)
-
-                    # 如果两个都找到了，就停止搜索
-                    if time_difficulty.get("time_required") and time_difficulty.get("difficulty"):
-                        break
-
-            # 方法4：查找页面中的图标或标签附近的文本
-            if not time_difficulty:
-                # 查找时钟图标或时间相关的类名附近的文本
-                time_icons = soup.find_all(['i', 'span', 'div'], class_=re.compile(r'time|clock|duration', re.IGNORECASE))
-                for icon in time_icons:
-                    parent = icon.parent
-                    if parent:
-                        parent_text = parent.get_text().strip()
-                        time_match = re.search(r'(\d+\s*(?:-\s*\d+)?\s*(?:minutes?|mins?|hours?|hrs?))', parent_text, re.IGNORECASE)
-                        if time_match:
-                            time_difficulty["time_required"] = time_match.group(1).strip()
-                            break
-
-                # 查找难度图标或难度相关的类名附近的文本
-                difficulty_icons = soup.find_all(['i', 'span', 'div'], class_=re.compile(r'difficulty|level', re.IGNORECASE))
-                for icon in difficulty_icons:
-                    parent = icon.parent
-                    if parent:
-                        parent_text = parent.get_text().strip()
-                        diff_match = re.search(r'(Very\s+easy|Easy|Moderate|Difficult|Hard)', parent_text, re.IGNORECASE)
-                        if diff_match:
-                            difficulty = diff_match.group(1).strip()
-                            time_difficulty["difficulty"] = self.standardize_difficulty(difficulty)
-                            break
-
-            # 方法6：查找页面头部区域的时间和难度信息（基于用户图片显示的位置）
-            if not time_difficulty:
-                # 查找页面头部的信息区域
-                header_areas = soup.find_all(['header', 'div'], class_=re.compile(r'header|top|intro|guide-header', re.IGNORECASE))
-                for header in header_areas:
-                    header_text = header.get_text()
-
-                    # 在头部区域查找时间信息
-                    if not time_difficulty.get("time_required"):
-                        time_match = re.search(r'(\d+\s*(?:-\s*\d+)?\s*(?:minutes?|mins?|hours?|hrs?))', header_text, re.IGNORECASE)
-                        if time_match:
-                            time_difficulty["time_required"] = time_match.group(1).strip()
-
-                    # 在头部区域查找难度信息
-                    if not time_difficulty.get("difficulty"):
-                        diff_match = re.search(r'(Very\s+easy|Easy|Moderate|Difficult|Hard)', header_text, re.IGNORECASE)
-                        if diff_match:
-                            difficulty = diff_match.group(1).strip()
-                            time_difficulty["difficulty"] = self.standardize_difficulty(difficulty)
-
-                # 如果头部区域没有找到，查找页面中所有包含这些信息的文本节点
-                if not time_difficulty.get("time_required") or not time_difficulty.get("difficulty"):
-                    # 查找所有文本节点
-                    all_text_elements = soup.find_all(string=True)
-                    for text_node in all_text_elements:
-                        text = str(text_node).strip()
-
-                        # 查找时间信息
-                        if not time_difficulty.get("time_required"):
-                            time_match = re.search(r'(\d+\s*(?:-\s*\d+)?\s*(?:minutes?|mins?|hours?|hrs?))', text, re.IGNORECASE)
-                            if time_match:
-                                time_difficulty["time_required"] = time_match.group(1).strip()
-
-                        # 查找难度信息
-                        if not time_difficulty.get("difficulty"):
-                            diff_match = re.search(r'(Very\s+easy|Easy|Moderate|Difficult|Hard)', text, re.IGNORECASE)
-                            if diff_match:
-                                difficulty = diff_match.group(1).strip()
-                                # 标准化难度值格式
-                                time_difficulty["difficulty"] = self.standardize_difficulty(difficulty)
-
-                        # 如果两个都找到了，就停止搜索
-                        if time_difficulty.get("time_required") and time_difficulty.get("difficulty"):
-                            break
-
-            print(f"提取到时间和难度信息: {time_difficulty}")
+            # 只返回真实存在的数据，不进行页面文本搜索
             return time_difficulty
 
         except Exception as e:
-            print(f"提取时间和难度信息时发生错误: {str(e)}")
+            if self.verbose:
+                print(f"提取时间和难度信息时发生错误: {str(e)}")
             return {}
 
     def standardize_difficulty(self, difficulty):
@@ -1059,66 +815,7 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             # 如果不匹配已知模式，返回首字母大写的版本
             return difficulty.capitalize()
 
-    def parse_time_difficulty_from_section(self, section):
-        """从特定区域解析时间和难度信息"""
-        result = {}
 
-        try:
-            section_text = section.get_text()
-
-            # 提取时间信息 - 改进的模式
-            time_patterns = [
-                r'(\d+\s*(?:-\s*\d+)?\s*(?:minutes?|mins?))',  # 分钟
-                r'(\d+\s*(?:-\s*\d+)?\s*(?:hours?|hrs?))',     # 小时
-                r'(\d+\s*hours?)',                             # 简单小时
-                r'(\d+\s*minutes?)',                           # 简单分钟
-                r'(No\s+estimate)',                            # 无估计
-                r'(\d+\s*(?:-\s*\d+)?\s*(?:minutes?|mins?|hours?|hrs?))', # 通用模式
-            ]
-
-            for pattern in time_patterns:
-                match = re.search(pattern, section_text, re.IGNORECASE)
-                if match:
-                    time_text = match.group(1).strip()
-                    # 确保时间信息包含单位
-                    if not re.search(r'(?:minutes?|mins?|hours?|hrs?|estimate)', time_text, re.IGNORECASE):
-                        # 如果没有单位，尝试从上下文中推断
-                        context_match = re.search(rf'{re.escape(time_text)}\s*(minutes?|mins?|hours?|hrs?)', section_text, re.IGNORECASE)
-                        if context_match:
-                            time_text += " " + context_match.group(1)
-                        else:
-                            # 默认假设是小时（基于观察到的数据）
-                            time_text += " Hours"
-                    result["time_required"] = time_text
-                    break
-
-            # 提取难度信息
-            difficulty_patterns = [
-                r'(Very\s+easy|Easy|Moderate|Difficult|Hard)',
-                r'(很简单|简单|中等|困难|很困难)'
-            ]
-
-            for pattern in difficulty_patterns:
-                match = re.search(pattern, section_text, re.IGNORECASE)
-                if match:
-                    difficulty = match.group(1).strip()
-                    # 标准化难度值为英文
-                    difficulty_mapping = {
-                        "很简单": "Very easy",
-                        "简单": "Easy",
-                        "中等": "Moderate",
-                        "困难": "Difficult",
-                        "很困难": "Very difficult"
-                    }
-                    mapped_difficulty = difficulty_mapping.get(difficulty, difficulty)
-                    result["difficulty"] = self.standardize_difficulty(mapped_difficulty)
-                    break
-
-            return result
-
-        except Exception as e:
-            print(f"解析区域时间和难度信息时发生错误: {str(e)}")
-            return {}
 
     def extract_page_statistics(self, soup):
         """提取页面统计数据 - 支持guide和troubleshooting页面"""
@@ -5336,7 +5033,15 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                     for link in guide_links:
                         href = link.get("href")
                         text = link.get_text().strip()
-                        if href and text and "Create Guide" not in text and "创建指南" not in text:
+
+                        # 过滤掉不需要的链接
+                        skip_patterns = [
+                            "Create Guide", "创建指南", "Guide/new", "Guide/edit", "/edit/",
+                            "Guide/history", "/history/", "Edit Guide", "编辑指南",
+                            "Version History", "版本历史", "Teardown/edit", "#comment", "permalink=comment"
+                        ]
+
+                        if href and text and not any(pattern in href or pattern in text for pattern in skip_patterns):
                             if href.startswith("/"):
                                 href = self.base_url + href
                             if href not in seen_guide_urls:
@@ -5354,7 +5059,15 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             for link in guide_links:
                 href = link.get("href")
                 text = link.get_text().strip()
-                if href and text and "Create Guide" not in text and "创建指南" not in text and "Guide/new" not in href:
+
+                # 过滤掉不需要的链接
+                skip_patterns = [
+                    "Create Guide", "创建指南", "Guide/new", "Guide/edit", "/edit/",
+                    "Guide/history", "/history/", "Edit Guide", "编辑指南",
+                    "Version History", "版本历史", "Teardown/edit", "#comment", "permalink=comment"
+                ]
+
+                if href and text and not any(pattern in href or pattern in text for pattern in skip_patterns):
                     if href.startswith("/"):
                         href = self.base_url + href
                     if href not in seen_guide_urls:

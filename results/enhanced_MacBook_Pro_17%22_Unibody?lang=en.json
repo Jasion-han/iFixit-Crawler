@@ -17,10 +17,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "20",
-        "past_7_days": "61",
-        "past_30_days": "110",
-        "all_time": "17,031"
+        "past_24_hours": "16",
+        "past_7_days": "63",
+        "past_30_days": "112",
+        "all_time": "17,033"
       },
       "completed": "9",
       "favorites": "14",
@@ -229,10 +229,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "10",
-        "past_7_days": "40",
-        "past_30_days": "92",
-        "all_time": "22,566"
+        "past_24_hours": "9",
+        "past_7_days": "42",
+        "past_30_days": "94",
+        "all_time": "22,568"
       },
       "completed": "15",
       "favorites": "16",
@@ -464,10 +464,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "23",
-        "past_7_days": "75",
-        "past_30_days": "278",
-        "all_time": "330,480"
+        "past_24_hours": "21",
+        "past_7_days": "80",
+        "past_30_days": "283",
+        "all_time": "330,485"
       },
       "completed": "208",
       "favorites": "81",
@@ -543,9 +543,9 @@
       },
       "view_statistics": {
         "past_24_hours": "7",
-        "past_7_days": "20",
-        "past_30_days": "57",
-        "all_time": "23,497"
+        "past_7_days": "21",
+        "past_30_days": "58",
+        "all_time": "23,498"
       },
       "completed": "6",
       "favorites": "15",
@@ -637,10 +637,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "13",
-        "past_7_days": "33",
-        "past_30_days": "65",
-        "all_time": "11,718"
+        "past_24_hours": "9",
+        "past_7_days": "34",
+        "past_30_days": "66",
+        "all_time": "11,719"
       },
       "completed": "5",
       "favorites": "7",
@@ -998,9 +998,9 @@
       },
       "view_statistics": {
         "past_24_hours": "8",
-        "past_7_days": "13",
-        "past_30_days": "41",
-        "all_time": "2,443"
+        "past_7_days": "15",
+        "past_30_days": "43",
+        "all_time": "2,437"
       },
       "completed": "3",
       "favorites": "5",
@@ -1366,9 +1366,9 @@
       },
       "view_statistics": {
         "past_24_hours": "8",
-        "past_7_days": "13",
-        "past_30_days": "67",
-        "all_time": "12,888"
+        "past_7_days": "15",
+        "past_30_days": "69",
+        "all_time": "12,882"
       },
       "completed": "3",
       "favorites": "9",
@@ -1764,10 +1764,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "7",
-        "past_7_days": "12",
-        "past_30_days": "62",
-        "all_time": "20,420"
+        "past_24_hours": "8",
+        "past_7_days": "14",
+        "past_30_days": "64",
+        "all_time": "20,414"
       },
       "completed": "9",
       "favorites": "13",
@@ -1954,10 +1954,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "12",
-        "past_7_days": "31",
-        "past_30_days": "88",
-        "all_time": "74,305"
+        "past_24_hours": "13",
+        "past_7_days": "35",
+        "past_30_days": "92",
+        "all_time": "74,296"
       },
       "completed": "43",
       "favorites": "24",
@@ -2113,25 +2113,11 @@
       "time_required": "10 - 30 minutes",
       "difficulty": "Moderate",
       "introduction": "There are many benefits to adding a second drive (either HDD or SSD) to your laptop, such as improved speeds, greater storage space, and less heartache when installing new software. Use this guide to install one using our optical bay hard drive enclosure.\n\nWarning! If you have an older 3.0 Gb/s (SATA II) based system you need to make sure the drive you use is able to run at this slower speed. Review your drives spec sheet, make sure it clearly lists compatibility with 3.0 Gb/s (SATA II) systems. Most drives sold today are fixed speed 6.0 Gb/s (SATA III) which won’t work in 3.0 Gb/s (SATA II) systems properly.",
-      "what_you_need": {
-        "Tools": [
-          "Phillips #00 Screwdriver",
-          "Spudger"
-        ],
-        "Parts": [
-          "500 GB SSD Hybrid 2.5\" Hard Drive (Upgrade Kit)",
-          "Unibody Laptop Dual Drive",
-          "Crucial BX500 500GB SSD"
-        ],
-        "Fix Kit": [
-          "500 GB SSD"
-        ]
-      },
       "view_statistics": {
-        "past_24_hours": "15",
-        "past_7_days": "31",
-        "past_30_days": "88",
-        "all_time": "66,575"
+        "past_24_hours": "11",
+        "past_7_days": "34",
+        "past_30_days": "92",
+        "all_time": "66,566"
       },
       "completed": "68",
       "favorites": "62",
@@ -2333,10 +2319,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "9",
+        "past_24_hours": "8",
         "past_7_days": "13",
-        "past_30_days": "31",
-        "all_time": "12,454"
+        "past_30_days": "32",
+        "all_time": "12,447"
       },
       "completed": "6",
       "favorites": "9",
@@ -2598,9 +2584,9 @@
       },
       "view_statistics": {
         "past_24_hours": "8",
-        "past_7_days": "13",
-        "past_30_days": "37",
-        "all_time": "2,509"
+        "past_7_days": "15",
+        "past_30_days": "39",
+        "all_time": "2,503"
       },
       "completed": "10",
       "favorites": "1",
@@ -2684,21 +2670,11 @@
       "time_required": "No estimate",
       "difficulty": "Difficult",
       "introduction": "Have you ever wondered how your display seems to work just fine, despite the huge cracks running across the front of it? Likely, you have just cracked the protective glass covering the LCD. Use this guide to remove a damaged or cracked display glass.",
-      "what_you_need": {
-        "Tools": [
-          "Heat Gun",
-          "Heavy‑Duty Suction Cups (Pair)",
-          "iFixit Opening Picks set of 6",
-          "Phillips #00 Screwdriver",
-          "Spudger",
-          "T6 Torx Screwdriver"
-        ]
-      },
       "view_statistics": {
         "past_24_hours": "7",
-        "past_7_days": "16",
-        "past_30_days": "29",
-        "all_time": "14,469"
+        "past_7_days": "17",
+        "past_30_days": "30",
+        "all_time": "14,470"
       },
       "completed": "8",
       "favorites": "13",
@@ -2976,10 +2952,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "26",
-        "past_7_days": "56",
-        "past_30_days": "233",
-        "all_time": "274,068"
+        "past_24_hours": "21",
+        "past_7_days": "57",
+        "past_30_days": "234",
+        "all_time": "274,069"
       },
       "completed": "242",
       "favorites": "95",
@@ -3071,10 +3047,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "9",
-        "past_7_days": "14",
-        "past_30_days": "43",
-        "all_time": "4,810"
+        "past_24_hours": "8",
+        "past_7_days": "15",
+        "past_30_days": "44",
+        "all_time": "4,811"
       },
       "completed": "10",
       "favorites": "6",
@@ -3177,9 +3153,9 @@
       },
       "view_statistics": {
         "past_24_hours": "8",
-        "past_7_days": "14",
-        "past_30_days": "48",
-        "all_time": "20,513"
+        "past_7_days": "15",
+        "past_30_days": "49",
+        "all_time": "20,506"
       },
       "completed": "16",
       "favorites": "12",
@@ -3290,10 +3266,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "7",
-        "past_7_days": "24",
-        "past_30_days": "69",
-        "all_time": "40,336"
+        "past_24_hours": "8",
+        "past_7_days": "27",
+        "past_30_days": "72",
+        "all_time": "40,339"
       },
       "completed": "33",
       "favorites": "29",
@@ -3546,10 +3522,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "13",
-        "past_7_days": "41",
-        "past_30_days": "152",
-        "all_time": "75,213"
+        "past_24_hours": "11",
+        "past_7_days": "40",
+        "past_30_days": "155",
+        "all_time": "75,204"
       },
       "completed": "32",
       "favorites": "17",
@@ -3871,11 +3847,18 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Does your display have a hard time staying upright? Nobody like a floppy display. Use this guide to replace the left clutch hinge.",
+      "what_you_need": {
+        "Tools": [
+          "Phillips #00 Screwdriver",
+          "Spudger",
+          "T6 Torx Screwdriver"
+        ]
+      },
       "view_statistics": {
         "past_24_hours": "6",
         "past_7_days": "12",
         "past_30_days": "48",
-        "all_time": "7,157"
+        "all_time": "7,151"
       },
       "completed": "7",
       "favorites": "7",
@@ -4078,10 +4061,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "7",
-        "past_7_days": "12",
-        "past_30_days": "44",
-        "all_time": "24,013"
+        "past_24_hours": "8",
+        "past_7_days": "13",
+        "past_30_days": "45",
+        "all_time": "24,006"
       },
       "completed": "32",
       "favorites": "14",
@@ -4159,10 +4142,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "8",
-        "past_7_days": "16",
-        "past_30_days": "61",
-        "all_time": "21,491"
+        "past_24_hours": "9",
+        "past_7_days": "17",
+        "past_30_days": "63",
+        "all_time": "21,484"
       },
       "completed": "18",
       "favorites": "13",
@@ -4420,10 +4403,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "13",
-        "past_7_days": "30",
-        "past_30_days": "126",
-        "all_time": "141,909"
+        "past_24_hours": "10",
+        "past_7_days": "24",
+        "past_30_days": "128",
+        "all_time": "141,901"
       },
       "completed": "100",
       "favorites": "44",
@@ -4708,10 +4691,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "9",
-        "past_7_days": "15",
-        "past_30_days": "30",
-        "all_time": "18,275"
+        "past_24_hours": "8",
+        "past_7_days": "16",
+        "past_30_days": "31",
+        "all_time": "18,268"
       },
       "completed": "20",
       "favorites": "10",
@@ -4753,10 +4736,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "7",
-        "past_7_days": "18",
-        "past_30_days": "39",
-        "all_time": "29,586"
+        "past_24_hours": "10",
+        "past_7_days": "22",
+        "past_30_days": "43",
+        "all_time": "29,580"
       },
       "completed": "30",
       "favorites": "13",
@@ -4985,10 +4968,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "7",
+        "past_24_hours": "8",
         "past_7_days": "15",
-        "past_30_days": "50",
-        "all_time": "9,306"
+        "past_30_days": "51",
+        "all_time": "9,299"
       },
       "completed": "4",
       "favorites": "11",
@@ -5240,9 +5223,9 @@
       },
       "view_statistics": {
         "past_24_hours": "7",
-        "past_7_days": "18",
-        "past_30_days": "50",
-        "all_time": "94,225"
+        "past_7_days": "16",
+        "past_30_days": "51",
+        "all_time": "94,219"
       },
       "completed": "59",
       "favorites": "40",
@@ -5392,10 +5375,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "6",
-        "past_7_days": "11",
-        "past_30_days": "47",
-        "all_time": "11,133"
+        "past_24_hours": "7",
+        "past_7_days": "12",
+        "past_30_days": "48",
+        "all_time": "11,127"
       },
       "completed": "9",
       "favorites": "13",
@@ -5536,10 +5519,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "11",
-        "past_7_days": "27",
-        "past_30_days": "88",
-        "all_time": "97,844"
+        "past_24_hours": "13",
+        "past_7_days": "29",
+        "past_30_days": "93",
+        "all_time": "97,834"
       },
       "completed": "133",
       "favorites": "52",
@@ -5599,9 +5582,9 @@
       },
       "view_statistics": {
         "past_24_hours": "7",
-        "past_7_days": "11",
-        "past_30_days": "43",
-        "all_time": "6,683"
+        "past_7_days": "12",
+        "past_30_days": "44",
+        "all_time": "6,677"
       },
       "favorites": "7",
       "videos": [],
@@ -6040,10 +6023,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "6",
-        "past_7_days": "23",
-        "past_30_days": "75",
-        "all_time": "18,357"
+        "past_24_hours": "8",
+        "past_7_days": "24",
+        "past_30_days": "76",
+        "all_time": "18,351"
       },
       "completed": "7",
       "favorites": "10",
@@ -6234,21 +6217,11 @@
       "time_required": "No estimate",
       "difficulty": "Moderate",
       "introduction": "Running hot? Use this guide to replace a worn-out right fan.",
-      "what_you_need": {
-        "Tools": [
-          "Phillips #00 Screwdriver",
-          "Spudger"
-        ],
-        "Parts": [
-          "MacBook Pro 15\" Unibody (2.53 GHz Mid 2009) or 17\" Unibody (Early/Mid 2009) Right Fan",
-          "MacBook Pro 17\" Unibody (Mid 2010‑Late 2011) Right Fan"
-        ]
-      },
       "view_statistics": {
-        "past_24_hours": "6",
+        "past_24_hours": "7",
         "past_7_days": "14",
-        "past_30_days": "28",
-        "all_time": "23,936"
+        "past_30_days": "29",
+        "all_time": "23,930"
       },
       "completed": "33",
       "favorites": "13",
@@ -6326,10 +6299,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "6",
-        "past_7_days": "10",
-        "past_30_days": "37",
-        "all_time": "26,722"
+        "past_24_hours": "10",
+        "past_7_days": "13",
+        "past_30_days": "41",
+        "all_time": "26,716"
       },
       "completed": "18",
       "favorites": "16",
@@ -6492,10 +6465,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "8",
-        "past_7_days": "16",
-        "past_30_days": "38",
-        "all_time": "75,151"
+        "past_24_hours": "7",
+        "past_7_days": "17",
+        "past_30_days": "39",
+        "all_time": "75,145"
       },
       "completed": "45",
       "favorites": "31",
@@ -6909,8 +6882,6 @@
     {
       "url": "https://www.ifixit.com/Teardown/MacBook+Pro+17-Inch+Unibody+Teardown/618?lang=en",
       "title": "MacBook Pro 17\" Unibody Teardown",
-      "time_required": "24 Hours",
-      "difficulty": "Difficult",
       "introduction": "",
       "what_you_need": {
         "Tools": [
@@ -6921,10 +6892,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "7",
-        "past_7_days": "40",
-        "past_30_days": "206",
-        "all_time": "421,020"
+        "past_24_hours": "18",
+        "past_7_days": "48",
+        "past_30_days": "219",
+        "all_time": "421,015"
       },
       "favorites": "158",
       "videos": [],
@@ -7159,10 +7130,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "6",
-        "past_7_days": "14",
-        "past_30_days": "39",
-        "all_time": "10,095"
+        "past_24_hours": "7",
+        "past_7_days": "15",
+        "past_30_days": "41",
+        "all_time": "10,089"
       },
       "completed": "13",
       "favorites": "3",
@@ -7267,10 +7238,10 @@
         ]
       },
       "view_statistics": {
-        "past_24_hours": "10",
-        "past_7_days": "25",
-        "past_30_days": "72",
-        "all_time": "2,548"
+        "past_24_hours": "11",
+        "past_7_days": "28",
+        "past_30_days": "76",
+        "all_time": "2,541"
       },
       "favorites": "1",
       "videos": [],
@@ -7407,10 +7378,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Fan+Loud/506012?lang=en",
       "title": "MacBook Fan Loud",
       "view_statistics": {
-        "past_24_hours": "374",
-        "past_7_days": "2,794",
-        "past_30_days": "8,367",
-        "all_time": "55,949"
+        "past_24_hours": "170",
+        "past_7_days": "2,878",
+        "past_30_days": "8,451",
+        "all_time": "56,033"
       },
       "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Especially if you have not done so recently.\n\nFor the best results, uncheck the “Reopen windows when logging back in” box in the confirmation pop up.Check for updates to macOS.. You may be running into a bug which Apple resolved later via update.If your Mac is on Mojave 10.14 or newer, software updates can be performed within System Preferences.High Sierra 10.13 and older will have software updates in the App Store.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory which contains system settings for the Mac.\n\nResetting it may clear a bad setting.Run Apple’s Diagnostic Suite to check for any blatant errors.. High fan speed can manifest in errors with the fans themselves, the System Management Controller (SMC) or Power Management systems.",
       "causes": [
@@ -7477,10 +7448,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Will+Not+Turn+On/483799?lang=en",
       "title": "MacBook Won't Turn On",
       "view_statistics": {
-        "past_24_hours": "181",
-        "past_7_days": "1,243",
-        "past_30_days": "5,497",
-        "all_time": "117,027"
+        "past_24_hours": "149",
+        "past_7_days": "1,138",
+        "past_30_days": "5,581",
+        "all_time": "116,955"
       },
       "introduction": "There are few electronics problems more disheartening than a device that doesn't power on.. Other issues have workarounds.\n\nBut a device that won't power on can't be circumvented.. It feels so final like there are only so many things you can try before you write its death certificate and toss it in the trash.\n\nIn truth, resurrecting a dead MacBook is more like a mystery novel.. A few good clues can make all the difference.",
       "the_basics": "Before undertaking any of the more time-consuming solutions below, these are a few fundamentals to get you started.Perform a hard reset.. Press and hold your power button for about fifteen seconds, then release it.\n\nWait a few seconds, then try to power it on again.Disconnect any peripherals.. Docks or multi-port hubs are notoriously problematic, especially if they have many items connected.Reset the System Management Controller (or SMC).\n\nThey can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory that contains system settings for the Mac.\n\nResetting it may clear a bad setting.Check for any signs of power.. If you're getting any response here, your issue is more likely to be related to a blank display.Trackpad clicks.\n\nNote: This only applies to MacBook Pros 2015 and newer, MacBook Airs 2018 and newer, and all Retina MacBooks.Keyboard lights are onCAPS Lock LED lights when pressedThe Touch Bar is on.Audible fan spin, or heat exhausting from the vents.The display backlight is on.\n\nThis can be subtle and is best observed in a dark room.. The Apple logo would also be lit if your model has a white Apple logo on the lid.Sound when connecting a charger.",
@@ -7557,10 +7528,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Keyboard+Not+Working/505002?lang=en",
       "title": "MacBook Keyboard Not Working",
       "view_statistics": {
-        "past_24_hours": "134",
-        "past_7_days": "851",
-        "past_30_days": "3,662",
-        "all_time": "72,171"
+        "past_24_hours": "118",
+        "past_7_days": "916",
+        "past_30_days": "3,727",
+        "all_time": "72,236"
       },
       "the_basics": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Uncheck the box to \"Reopen windows when logging back in.\" This ensures a problematic app or session does not reopen.Reset the PRAM or NVRAM.\n\nThese are terms for a small amount of memory which contains some pre-boot settings for the Mac.. Clearing changes made may restore keyboard function.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings or resolve issues where your Mac is stuck in sleep.Note: An external keyboard may be necessary for these steps, but try on the native keyboard first.\n\nJust because keystrokes aren't appearing, doesn't mean the signals from the keyboard aren't transmitting.",
       "causes": [
@@ -7627,10 +7598,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Black+Screen/478598?lang=en",
       "title": "MacBook Black Screen",
       "view_statistics": {
-        "past_24_hours": "132",
-        "past_7_days": "707",
-        "past_30_days": "2,541",
-        "all_time": "56,014"
+        "past_24_hours": "86",
+        "past_7_days": "629",
+        "past_30_days": "2,579",
+        "all_time": "55,964"
       },
       "triage": "Troubleshooting is a process that often resembles medical diagnosis.. Certain information can help hone in on a specific problem.\n\nTry these tests to point yourself in the right direction.. Move your cursor around, especially towards the corners, or edges of the display.\n\nTry to get menus to appear.. If you're getting any sort of pointer, your display hardware is working properly.\n\nHave a look at software fixes.. Is your screen lighting up?. Try powering on in a dark room for easier observation.Pro Tip: Macs with a white Apple logo on the lid use the display backlight to illuminate.\n\nIf the Apple lights up, your backlight is working.. Pro Tip: Macs with a white Apple logo on the lid use the display backlight to illuminate.\n\nIf you don’t have any signs of backlight, check for an image on screen by shining a flashlight at your display.. No backlight and no display means you can safely rule out software.Pro Tip: This is easiest to spot during boot up.\n\nThe high contrast between the on screen Apple logo and the background significantly increases visibility.Bonus Pro Tip: If your Mac has the aforementioned white Apple logo on the lid, shine a light through it to emulate your backlight.\n\nCan you see an image now?. Bonus Pro Tip: If your Mac has the aforementioned white Apple logo on the lid, shine a light through it to emulate your backlight.\n\nNo image or backlight?. Connect your Mac to an external display.\n\nYou may need a dock, or an adapter to accomplish this.. If you get normal image on the external monitor, graphics processing is working properly.\n\nGetting trackpad click, but nothing else?. See if the Caps Lock LED lights when you press the key.\n\nIf no, you may have a firmware issue.",
       "introduction": "Have you ever booted your MacBook and found it unresponsive?. If you have encountered a black or white screen while restarting or booting up your MacBook, or you’re simply getting nothing on screen at all, don't panic, it’s possible you’ll even be able to solve your issue without the need for a costly repair.If your Mac doesn’t seem like it’s powering on, you may want to head over to the troubleshooting page for that instead.",
@@ -7694,10 +7665,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Slow/484308?lang=en",
       "title": "MacBook Slow",
       "view_statistics": {
-        "past_24_hours": "40",
-        "past_7_days": "242",
-        "past_30_days": "1,112",
-        "all_time": "22,168"
+        "past_24_hours": "29",
+        "past_7_days": "238",
+        "past_30_days": "1,131",
+        "all_time": "22,154"
       },
       "the_basics": "Before undertaking any of the more time-consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Especially if you have not done so recently.\n\nBe sure to uncheck the “Reopen windows when logging back in” box in the confirmation pop-up.Check for updates to macOS.. You may be running into a bug that Apple resolved later via an update.If your Mac is on Mojave 10.14 or newer, software updates can be performed within System Preferences.High Sierra 10.13 and older will have software updates in the App Store.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings which the SMC handles.Reset the PRAM or NVRAM.. These are terms for a small amount of memory that contains system settings for the Mac.\n\nResetting it may clear a bad setting.Run Apple’s Diagnostic Suite to check for any blatant errors.. Be aware that this test is designed to optimize quick results.\n\nTrust a failure, but not a pass.",
       "causes": [
@@ -7765,10 +7736,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Folder+With+Question+Mark/484463?lang=en",
       "title": "MacBook Folder With Question Mark",
       "view_statistics": {
-        "past_24_hours": "50",
-        "past_7_days": "215",
-        "past_30_days": "993",
-        "all_time": "26,175"
+        "past_24_hours": "28",
+        "past_7_days": "222",
+        "past_30_days": "1,000",
+        "all_time": "26,182"
       },
       "introduction": "It seems logical to expect that opening your MacBook would lead to your usual login screen.. Or perhaps the Apple logo and a progress bar.\n\nBut what if instead you're faced with a mysterious flashing folder, and no other information.. This folder with a question mark icon, indicates that your MacBook cannot detect an operating system.\n\nIf it can't find that, your log in screen is out of the question.",
       "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Perform a hard reset.. Press and hold your power button for about fifteen seconds, then release.\n\nWait a few seconds, then try to power on again.. This can resolve any minor hang ups in the startup process.Reset the System Management Controller (or SMC).\n\nThe can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory which contains system settings for the Mac.\n\nClearing it resets the default startup disk, amongst other settings.If you have a 2012 13\" Unibody MacBook Pro, consider foregoing additional triage and replace your hard drive cable.. They are notorious for failure on this model.\n\nThere was an Apple Service Program at one time which covered this repair, but it has since expired leaving the repair up to you.",
@@ -7811,10 +7782,10 @@
       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Stuck+On+Loading+Screen/486734?lang=en",
       "title": "MacBook Stuck On Loading Screen",
       "view_statistics": {
-        "past_24_hours": "19",
-        "past_7_days": "109",
-        "past_30_days": "487",
-        "all_time": "12,863"
+        "past_24_hours": "17",
+        "past_7_days": "105",
+        "past_30_days": "501",
+        "all_time": "12,858"
       },
       "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Consider how long you've been waiting.. Patience is key.\n\nSometimes a Mac is doing a software update, but you don't realize because there's no hallmark \"Estimated time\" and a grossly incorrect approximation under it.. Give it another 15 minutes.Put a sticky note or some tape on the display with its edge aligned with the progress bar so you can tell if it's made any progress.If your waiting isn't fruitful, perform a force shutdown of your Mac.\n\nPress and hold the power button for fifteen seconds.. Don't be fooled by a black screen, keep holding for a few seconds even past that.\n\nThen try and power back up again.Disconnect all peripherals before power on.Perform both an SMC and an NVRAM reset.. This clears many settings used during startup and can correct a faulty configuration.Run a repair on your startup disk using Internet Recovery.Run Apple’s Diagnostic Suite to check for any blatant errors.\n\nBe aware that this test is designed to optimize quick results.. Trust a failure, but not a pass.",
       "causes": [
@@ -7857,5 +7828,5 @@
       ]
     }
   ],
-  "crawl_timestamp": "2025-07-04 23:32:31"
+  "crawl_timestamp": "2025-07-05 15:18:02"
 }
