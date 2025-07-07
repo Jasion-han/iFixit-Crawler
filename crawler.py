@@ -87,9 +87,14 @@ class IFixitCrawler:
                                 text = link.text.strip()
                                 if href and text and "/Device/" in href:
                                     full_url = self.base_url + href if href.startswith("/") else href
+                                    # 确保URL被正确编码
+                                    import urllib.parse
+                                    # 先解码再重新编码，确保一致性
+                                    decoded_url = urllib.parse.unquote(full_url)
+                                    encoded_url = urllib.parse.quote(decoded_url, safe=':/?#[]@!$&\'()*+,;=')
                                     categories.append({
                                         "name": text,
-                                        "url": full_url
+                                        "url": encoded_url
                                     })
             
             # 如果没有找到类别标题，尝试其他方法
@@ -103,9 +108,13 @@ class IFixitCrawler:
                         text = link.text.strip()
                         if href and text and "/Device/" in href:
                             full_url = self.base_url + href if href.startswith("/") else href
+                            # 确保URL被正确编码
+                            import urllib.parse
+                            decoded_url = urllib.parse.unquote(full_url)
+                            encoded_url = urllib.parse.quote(decoded_url, safe=':/?#[]@!$&\'()*+,;=')
                             categories.append({
                                 "name": text,
-                                "url": full_url
+                                "url": encoded_url
                             })
             
             # 如果还是没有找到，尝试查找所有可能的设备链接
@@ -117,9 +126,13 @@ class IFixitCrawler:
                     text = link.text.strip()
                     if href and text and "/Device/" in href and not any(x in href for x in ["/Edit/", "/History/", "?revision", "/Answers/"]):
                         full_url = self.base_url + href if href.startswith("/") else href
+                        # 确保URL被正确编码
+                        import urllib.parse
+                        decoded_url = urllib.parse.unquote(full_url)
+                        encoded_url = urllib.parse.quote(decoded_url, safe=':/?#[]@!$&\'()*+,;=')
                         categories.append({
                             "name": text,
-                            "url": full_url
+                            "url": encoded_url
                         })
             
             # 去重

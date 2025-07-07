@@ -27,9 +27,16 @@ class TreeCrawler(IFixitCrawler):
         从根目录开始，找到到达目标URL的确切路径
         优先使用网页内面包屑导航提取完整路径
         """
+        # 确保目标URL被正确编码
+        import urllib.parse
+        # 先解码再重新编码，确保一致性
+        decoded_url = urllib.parse.unquote(target_url)
+        # 重新编码，确保引号等特殊字符被正确处理
+        target_url = urllib.parse.quote(decoded_url, safe=':/?#[]@!$&\'()*+,;=')
+
         # 始终从设备根目录开始
         device_url = self.base_url + "/Device"
-        
+
         # 如果目标就是根目录，则直接返回
         if target_url == device_url:
             return [{"name": "设备", "url": device_url}]
@@ -63,50 +70,52 @@ class TreeCrawler(IFixitCrawler):
                 "相机": "Camera"
             }
             
-            # 依次构建每一级的URL和名称
-            current_url_parts = ["https://www.ifixit.com"]
-            
-            for i, crumb_name in enumerate(breadcrumbs):
-                # 处理第一级别(通常是"设备")
-                if i == 0:
-                    url_path = "/Device"
-                    current_url_parts.append(url_path)
+            # 重新设计URL构建逻辑：每个层级都是真实的页面URL，不是拼接路径
+            # 从/Device页面开始，逐层查找真实的URL
+
+            path = []
+            current_page_url = f"{self.base_url}/Device"
+
+            # 第一级：Device页面
+            path.append({
+                "name": breadcrumbs[0],
+                "url": current_page_url
+            })
+
+            # 逐层查找真实URL
+            for i in range(1, len(breadcrumbs)):
+                crumb_name = breadcrumbs[i]
+
+                # 如果是最后一级，确保目标URL被正确编码
+                if i == len(breadcrumbs) - 1:
+                    # 再次确保URL被正确编码
+                    import urllib.parse
+                    decoded_target = urllib.parse.unquote(target_url)
+                    encoded_target = urllib.parse.quote(decoded_target, safe=':/?#[]@!$&\'()*+,;=')
                     path.append({
                         "name": crumb_name,
-                        "url": "".join(current_url_parts)
+                        "url": encoded_target
                     })
-                    continue
-                
-                # 处理剩余级别
-                # 确定URL路径部分
-                if crumb_name in category_map:
-                    # 使用预定义映射
-                    url_path = category_map[crumb_name]
+                    break
+
+                # 在当前页面中查找匹配的子类别链接
+                real_url = self._find_real_url_for_category(current_page_url, crumb_name)
+
+                if real_url:
+                    current_page_url = real_url
+                    path.append({
+                        "name": crumb_name,
+                        "url": real_url
+                    })
                 else:
-                    # 对于品牌和产品名称，使用下划线替换空格
-                    url_path = crumb_name.replace(" ", "_")
-                
-                # 如果是第二级，替换Device为新路径
-                if i == 1:
-                    current_url_parts = current_url_parts[:1]  # 保留基础URL
-                    current_url_parts.append(f"/Device/{url_path}")
-                else:
-                    # 其他级别，替换最后一部分
-                    current_url_parts = current_url_parts[:1]  # 保留基础URL
-                    previous_paths = "/".join([breadcrumbs[j].replace(" ", "_") if j > 0 else "Device" 
-                                             for j in range(i+1)])
-                    current_url_parts.append(f"/{previous_paths}")
-                
-                # 添加到路径
-                path.append({
-                    "name": crumb_name,
-                    "url": "".join(current_url_parts)
-                })
-            
-            # 特殊情况：如果最后一级不是目标URL，再添加目标URL
-            if path[-1]["url"] != target_url:
-                target_name = self._get_page_title(target_soup) or target_url.split("/")[-1].replace("_", " ")
-                path.append({"name": target_name, "url": target_url})
+                    # 如果找不到真实URL，使用fallback逻辑
+                    print(f"警告：无法找到 '{crumb_name}' 的真实URL，使用fallback")
+                    fallback_url = self._generate_fallback_url(crumb_name)
+                    current_page_url = fallback_url
+                    path.append({
+                        "name": crumb_name,
+                        "url": fallback_url
+                    })
             
             # 修复URL路径
             fixed_path = []
@@ -163,7 +172,73 @@ class TreeCrawler(IFixitCrawler):
         # 最后的备选方案：使用传统的爬取方法
         print("URL推断失败，使用爬取方法查找路径")
         return self._find_path_to_target(device_url, target_url, [{"name": "设备", "url": device_url}])
-        
+
+    def _find_real_url_for_category(self, current_page_url, category_name):
+        """
+        在当前页面中查找指定类别的真实URL
+        """
+        try:
+            soup = self.get_soup(current_page_url)
+            if not soup:
+                return None
+
+            # 提取当前页面的所有子类别
+            categories = self.extract_categories(soup, current_page_url)
+
+            # 智能匹配类别名称
+            for category in categories:
+                if self._is_category_match(category["name"], category_name):
+                    print(f"找到真实URL: {category_name} -> {category['url']}")
+                    return category["url"]
+
+            print(f"在页面 {current_page_url} 中未找到匹配的类别: {category_name}")
+            return None
+
+        except Exception as e:
+            print(f"查找真实URL时出错: {str(e)}")
+            return None
+
+    def _is_category_match(self, page_link_name, breadcrumb_name):
+        """
+        智能匹配页面链接名称和面包屑名称
+        """
+        # 清理和标准化名称
+        def normalize_name(name):
+            return name.lower().strip().replace(" repair", "").replace(" devices", "")
+
+        page_name = normalize_name(page_link_name)
+        crumb_name = normalize_name(breadcrumb_name)
+
+        # 精确匹配
+        if page_name == crumb_name:
+            return True
+
+        # 包含匹配
+        if crumb_name in page_name or page_name in crumb_name:
+            return True
+
+        # 特殊映射
+        mappings = {
+            "mac": ["mac", "macintosh"],
+            "laptop": ["laptop", "notebook"],
+            "macbook pro": ["macbook pro", "macbook_pro"],
+            "17\"": ["17\"", "17 inch", "17-inch"]
+        }
+
+        for key, values in mappings.items():
+            if crumb_name in values and any(v in page_name for v in values):
+                return True
+
+        return False
+
+    def _generate_fallback_url(self, category_name):
+        """
+        生成fallback URL（当无法找到真实URL时使用）
+        """
+        # 简单的fallback：使用Device + 类别名称
+        clean_name = category_name.replace(" ", "_").replace("\"", "%22")
+        return f"{self.base_url}/Device/{clean_name}"
+
     def extract_breadcrumbs_from_page(self, soup):
         """从页面提取面包屑导航"""
         breadcrumbs = []
@@ -496,11 +571,31 @@ class TreeCrawler(IFixitCrawler):
         if not target_node:
             print("无法在树中找到目标节点，使用根节点")
             target_node = tree
-        
-        # 4. 从目标节点开始爬取子类别
+
+        # 4. 只对目标节点进行内容爬取，保留完整路径结构
         print(f"开始从 {target_node['url']} 爬取子类别")
-        self._crawl_recursive_tree(target_node["url"], target_node)
-        
+
+        # 检查目标节点是否是叶子节点（最终产品页面）
+        soup = self.get_soup(target_node["url"])
+        if soup:
+            # 检查是否为最终产品页面
+            is_final_page = self.is_final_product_page(soup, target_node["url"])
+
+            if is_final_page:
+                # 如果是最终产品页面，提取产品信息但保留路径结构
+                product_info = self.extract_product_info(soup, target_node["url"], [])
+                if product_info["product_name"]:
+                    target_node["name"] = product_info["product_name"]
+                    # 检查是否是根目录，不给根目录添加instruction_url
+                    target_url = target_node.get("url", "")
+                    is_root_device = target_url == f"{self.base_url}/Device"
+                    if not is_root_device:
+                        target_node["instruction_url"] = product_info["instruction_url"]
+                    print(f"已找到产品: {product_info['product_name']}")
+            else:
+                # 如果不是最终产品页面，进行正常的子类别爬取
+                self._crawl_recursive_tree(target_node["url"], target_node)
+
         return tree
         
     def find_tv_path(self, target_url, category_name):
@@ -685,12 +780,15 @@ class TreeCrawler(IFixitCrawler):
         # 如果是最终产品页面（没有子类别），则提取产品信息
         if is_final_page:
             product_info = self.extract_product_info(soup, url, [])
-            
+
             # 只有当产品名称不为空时才添加到结果中
             if product_info["product_name"]:
                 # 设置当前节点为叶子节点(产品)
                 parent_node["name"] = product_info["product_name"]
-                parent_node["instruction_url"] = product_info["instruction_url"]
+                # 检查是否是根目录，不给根目录添加instruction_url
+                is_root_device = url == f"{self.base_url}/Device"
+                if not is_root_device:
+                    parent_node["instruction_url"] = product_info["instruction_url"]
                 print(f"已找到产品: {path_str} > {product_info['product_name']}")
         else:
             # 如果是我们的目标节点（如70UK6570PUB），将其视为产品和分类的混合类型
@@ -700,8 +798,11 @@ class TreeCrawler(IFixitCrawler):
                 if product_info["product_name"]:
                     # 设置当前节点为产品
                     parent_node["name"] = product_info["product_name"]
-                    parent_node["instruction_url"] = product_info["instruction_url"]
-                    
+                    # 检查是否是根目录，不给根目录添加instruction_url
+                    is_root_device = url == f"{self.base_url}/Device"
+                    if not is_root_device:
+                        parent_node["instruction_url"] = product_info["instruction_url"]
+
                     # 同时让它保持category类型的children属性，继续向下爬取
                     print(f"找到产品与分类混合节点: {path_str} > {product_info['product_name']}")
             
@@ -753,7 +854,10 @@ class TreeCrawler(IFixitCrawler):
                 product_info = self.extract_product_info(soup, url, [])
                 if product_info["product_name"]:
                     parent_node["name"] = product_info["product_name"]
-                    parent_node["instruction_url"] = product_info["instruction_url"]
+                    # 检查是否是根目录，不给根目录添加instruction_url
+                    is_root_device = url == f"{self.base_url}/Device"
+                    if not is_root_device:
+                        parent_node["instruction_url"] = product_info["instruction_url"]
                     print(f"已找到产品: {path_str} > {product_info['product_name']}")
         
     def _get_current_path(self, node, tree=None):
@@ -801,29 +905,40 @@ class TreeCrawler(IFixitCrawler):
         确保正确的字段结构:
         1. 所有叶子节点(没有子节点)都有instruction_url字段，且字段顺序为name-url-instruction_url-children
         2. 所有分类节点(有子节点)都没有instruction_url字段，字段顺序为name-url-children
+        3. 根目录（Device页面）不添加instruction_url字段
         """
+        # 检查是否是根目录（Device页面）
+        url = node.get('url', '')
+        is_root_device = url == f"{self.base_url}/Device"
+
         if "children" in node:
             if not node["children"] or len(node["children"]) == 0:
-                # 这是一个叶子节点，确保有instruction_url字段，并调整字段顺序
-                # 确保instruction_url存在
-                if "instruction_url" not in node:
-                    node["instruction_url"] = ""
-                    print(f"后处理: 添加缺失的instruction_url字段到叶子节点: {node.get('name', '')}")
-                
-                # 重新排序字段：name-url-instruction_url-children
-                name = node.get("name", "")
-                url = node.get("url", "")
-                instruction_url = node.get("instruction_url", "")
-                children = node.get("children", [])
-                
-                # 清除所有键
-                node.clear()
-                
-                # 按照正确的顺序添加回去
-                node["name"] = name
-                node["url"] = url
-                node["instruction_url"] = instruction_url
-                node["children"] = children
+                # 这是一个叶子节点，但排除根目录
+                if not is_root_device:
+                    # 确保instruction_url存在
+                    if "instruction_url" not in node:
+                        node["instruction_url"] = ""
+                        print(f"后处理: 添加缺失的instruction_url字段到叶子节点: {node.get('name', '')}")
+
+                    # 重新排序字段：name-url-instruction_url-children
+                    name = node.get("name", "")
+                    url = node.get("url", "")
+                    instruction_url = node.get("instruction_url", "")
+                    children = node.get("children", [])
+
+                    # 清除所有键
+                    node.clear()
+
+                    # 按照正确的顺序添加回去
+                    node["name"] = name
+                    node["url"] = url
+                    node["instruction_url"] = instruction_url
+                    node["children"] = children
+                else:
+                    # 根目录节点，确保没有instruction_url字段
+                    if "instruction_url" in node:
+                        print(f"后处理: 删除根目录节点中的instruction_url字段: {node.get('name', '')}")
+                        del node["instruction_url"]
             else:
                 # 这是一个分类节点(有子节点)，确保没有instruction_url字段
                 if "instruction_url" in node:

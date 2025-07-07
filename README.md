@@ -2,7 +2,7 @@
 
 该爬虫用于爬取[iFixit英文网站](https://www.ifixit.com/)上的设备信息、维修指南和故障排除内容。
 
-**🎉 v2.1重大更新**：新增智能内容验证机制，确保只提取页面上真实存在的内容，杜绝虚假字段，大幅提升数据质量和可靠性。
+**🎉 v3.0重大更新**：新增整合爬虫工具，结合树形结构和详细内容提取，提供最完整的数据爬取解决方案。同时修复了字段排序问题，确保数据结构的一致性和可读性。
 
 ## 项目概述
 
@@ -11,6 +11,7 @@
 ## 核心特性
 
 ### 🚀 多模式爬取支持
+- **🌟 整合爬虫** (`combined_crawler.py`) - **最新推荐**：结合树形结构和详细内容，提供最完整的数据
 - **增强版爬虫** (`enhanced_crawler.py`) - 完整内容爬取，包括维修指南详细步骤和故障排除内容
 - **交互式爬虫** (`easy_crawler.py`) - 新手友好，支持引导式类别选择
 - **批量爬虫** (`batch_crawler.py`) - 自动遍历指定类别下的所有产品
@@ -60,6 +61,112 @@
   }
 ]
 ```
+
+### 🌟 整合爬虫格式（combined_crawler.py）- 最新推荐
+
+#### 完整树形结构 + 详细内容
+```json
+{
+  "name": "Device",
+  "url": "https://www.ifixit.com/Device",
+  "children": [
+    {
+      "name": "Mac",
+      "url": "https://www.ifixit.com/Device/Mac",
+      "title": "Mac Repair",
+      "view_statistics": {
+        "past_24_hours": "1,366",
+        "past_7_days": "10,431",
+        "past_30_days": "45,581",
+        "all_time": "18,173,453"
+      },
+      "children": [
+        {
+          "name": "MacBook_Pro_17\"_Unibody",
+          "url": "https://www.ifixit.com/Device/MacBook_Pro_17%22_Unibody",
+          "title": "MacBook Pro 17\" Unibody Repair",
+          "instruction_url": "",
+          "view_statistics": {
+            "past_24_hours": "31",
+            "past_7_days": "237",
+            "past_30_days": "806",
+            "all_time": "683,126"
+          },
+          "guides": [
+            {
+              "url": "https://www.ifixit.com/Guide/MacBook+Pro+17-Inch+Unibody+AirPort+Antenna+Replacement/9588",
+              "title": "MacBook Pro 17\" Unibody AirPort Antenna Replacement",
+              "time_required": "No estimate",
+              "difficulty": "Moderate",
+              "introduction": "Replace the AirPort Antenna in your MacBook Pro...",
+              "what_you_need": {
+                "Tools": ["Phillips #00 Screwdriver", "Spudger", "T6 Torx Screwdriver"]
+              },
+              "view_statistics": {
+                "past_24_hours": "13",
+                "past_7_days": "77",
+                "past_30_days": "128",
+                "all_time": "17,050"
+              },
+              "completed": "9",
+              "favorites": "14",
+              "videos": [],
+              "steps": [
+                {
+                  "title": "Step 1 Lower Case",
+                  "content": "Remove the following ten screws...",
+                  "images": ["https://guide-images.cdn.ifixit.com/igi/syE2ybccRrcFeJJi.medium"],
+                  "videos": []
+                }
+              ]
+            }
+          ],
+          "troubleshooting": [
+            {
+              "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Fan+Loud/506012",
+              "title": "MacBook Fan Loud",
+              "view_statistics": {
+                "past_24_hours": "300",
+                "past_7_days": "2,342",
+                "past_30_days": "8,618",
+                "all_time": "56,374"
+              },
+              "first_steps": "Before undertaking any of the more time consuming solutions...",
+              "causes": [
+                {
+                  "number": "1",
+                  "title": "Overheating",
+                  "content": "The harder your MacBook is working, the more heat it is generating...",
+                  "images": [
+                    {
+                      "url": "https://guide-images.cdn.ifixit.com/igi/abc.medium.jpg",
+                      "description": "CPU temperature monitoring"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+**数据结构特点**：
+- ✅ **完整层级结构**：从根目录到目标设备的完整路径
+- ✅ **正确字段顺序**：name → url → title → 详细内容 → children
+- ✅ **智能内容验证**：只包含页面真实存在的字段
+- ✅ **多媒体资源**：图片、视频、文档URL完整提取
+- ✅ **统计数据**：浏览量、完成数、收藏数等真实数据
+- ✅ **完整内容爬取**：支持爬取所有指南和故障排除，无数量限制
+
+**实际爬取示例**（MacBook Pro 17" Unibody）：
+- **指南数量**：35个完整维修指南
+- **故障排除**：7个详细故障排除页面
+- **文件大小**：644KB (7,930 行)
+- **数据完整性**：包含完整的步骤说明、工具清单、统计数据
 
 ### 🔧 增强版爬虫格式（enhanced_crawler.py）
 
@@ -186,7 +293,61 @@ pip install -r requirements.txt
 
 ### 🚀 推荐使用方式
 
-#### 1. 增强版爬虫（推荐）- 完整内容爬取
+#### 1. 🌟 整合爬虫（最新推荐）- 树形结构 + 详细内容
+
+获取设备的完整层级结构和详细内容，包括维修指南和故障排除：
+
+```bash
+# 基本用法（静默模式）
+python combined_crawler.py MacBook_Pro_17%22_Unibody
+
+# 启用详细输出模式
+python combined_crawler.py MacBook_Pro_17%22_Unibody verbose
+
+# 交互式输入
+python combined_crawler.py
+
+# 显示帮助信息
+python combined_crawler.py --help
+```
+
+**支持的输入格式**：
+```bash
+# 完整URL
+python combined_crawler.py https://www.ifixit.com/Device/MacBook_Pro_17%22_Unibody
+
+# 产品名（推荐）
+python combined_crawler.py MacBook_Pro_17%22_Unibody
+
+# 类别名称
+python combined_crawler.py Television
+python combined_crawler.py LG_Television
+```
+
+**Python API 使用**：
+```python
+from combined_crawler import CombinedIFixitCrawler
+
+# 创建整合爬虫实例
+crawler = CombinedIFixitCrawler(verbose=True)
+
+# 爬取完整树形结构和详细内容
+device_url = "https://www.ifixit.com/Device/MacBook_Pro_17%22_Unibody"
+result = crawler.crawl_combined_tree(device_url, "MacBook_Pro_17%22_Unibody")
+
+# 保存结果
+crawler.save_combined_result(result)
+```
+
+**输出特点**：
+- ✅ 完整的层级树形结构（从根目录到目标设备）
+- ✅ 每个节点的详细内容（维修指南、故障排除、统计数据）
+- ✅ 智能内容验证，确保数据真实性
+- ✅ 多媒体资源URL提取（图片、视频、文档）
+- ✅ 正确的字段排序：name → url → title → 详细内容 → children
+- ✅ 文件命名：`combined_[设备名].json`
+
+#### 2. 增强版爬虫 - 完整内容爬取
 
 获取设备的完整信息，包括维修指南和故障排除内容：
 
@@ -202,36 +363,6 @@ python3 enhanced_crawler.py -v iPad_Air_2
 python3 enhanced_crawler.py --help
 ```
 
-**支持的输入格式**：
-```bash
-# 完整URL
-python3 enhanced_crawler.py https://www.ifixit.com/Device/MacBook_Pro_17%22_Unibody
-
-# 产品名（推荐）
-python3 enhanced_crawler.py MacBook_Pro_17%22_Unibody
-
-# 部分URL
-python3 enhanced_crawler.py /Device/MacBook_Pro_17%22_Unibody
-
-# 运行测试
-python3 enhanced_crawler.py test
-```
-
-**Python API 使用**：
-```python
-from enhanced_crawler import EnhancedIFixitCrawler
-
-# 创建爬虫实例
-crawler = EnhancedIFixitCrawler(verbose=True)
-
-# 爬取完整设备信息
-device_url = "https://www.ifixit.com/Device/iPad_3G"
-result = crawler.crawl_device_with_guides_and_troubleshooting(device_url)
-
-# 保存结果
-crawler.save_enhanced_results(result)
-```
-
 **输出特点**：
 - ✅ 设备基本信息、维修指南详细步骤、故障排除内容
 - ✅ 智能内容验证，确保数据真实性
@@ -239,7 +370,7 @@ crawler.save_enhanced_results(result)
 - ✅ 静默/详细输出模式控制
 - ✅ 文件命名：`enhanced_[设备名].json`
 
-#### 2. 交互式爬虫（新手友好）
+#### 3. 交互式爬虫（新手友好）
 
 支持引导式类别选择，适合初学者使用：
 
@@ -264,7 +395,7 @@ python3 easy_crawler.py -h
 - 📝 自动开启调试模式显示详细信息
 - 📁 文件命名：`[设备名].json`
 
-#### 3. 批量爬虫（大量数据收集）
+#### 4. 批量爬虫（大量数据收集）
 
 自动遍历指定类别下的所有产品，适合批量数据收集：
 
@@ -289,7 +420,7 @@ python3 batch_crawler.py -h
 - 🐛 调试模式显示详细过程
 - 📁 文件命名：`batch_[设备名].json`
 
-#### 4. 树形爬虫（结构分析）
+#### 5. 树形爬虫（结构分析）
 
 构建完整的多层级设备分类树，适合分析网站结构：
 
@@ -323,7 +454,7 @@ python3 tree_crawler.py MacBook             # MacBook类别树
 - 🌐 支持中英文混合路径处理
 - 📁 文件命名：`tree_[目标名称].json`
 
-#### 5. 完整站点爬虫（全站数据）
+#### 6. 完整站点爬虫（全站数据）
 
 从设备首页开始递归爬取整个网站：
 
@@ -370,6 +501,7 @@ python3 crawler.py --debug
 
 | 爬虫类型 | 文件命名格式 | 示例 |
 |---------|-------------|------|
+| **🌟 整合爬虫** | `combined_[设备名].json` | `combined_MacBook_Pro_17%22_Unibody.json` |
 | 增强版爬虫 | `enhanced_[设备名].json` | `enhanced_MacBook_Pro_17%22_Unibody.json` |
 | 交互式爬虫 | `[设备名].json` | `iPad_3G.json` |
 | 批量爬虫 | `batch_[设备名].json` | `batch_LG_Television.json` |
@@ -378,13 +510,14 @@ python3 crawler.py --debug
 
 ### 数据内容对比
 
-| 爬虫类型 | 基本信息 | 维修指南 | 故障排除 | 树形结构 | 统计数据 |
-|---------|---------|---------|---------|---------|---------|
-| 增强版爬虫 | ✅ | ✅ | ✅ | ❌ | ✅ |
-| 交互式爬虫 | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 批量爬虫 | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 树形爬虫 | ✅ | ❌ | ❌ | ✅ | ❌ |
-| 完整爬虫 | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 爬虫类型 | 基本信息 | 维修指南 | 故障排除 | 树形结构 | 统计数据 | 字段排序 |
+|---------|---------|---------|---------|---------|---------|---------|
+| **🌟 整合爬虫** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 增强版爬虫 | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| 交互式爬虫 | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| 批量爬虫 | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| 树形爬虫 | ✅ | ❌ | ❌ | ✅ | ❌ | ✅ |
+| 完整爬虫 | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 ## ⚠️ 重要注意事项
 
@@ -410,6 +543,7 @@ python3 crawler.py --debug
 
 | 爬虫文件 | 基本用法 | 调试选项 | 帮助选项 | 特殊功能 |
 |---------|---------|---------|---------|---------|
+| **🌟 `combined_crawler.py`** | `python combined_crawler.py [URL/产品名]` | `verbose` | `--help`, `-h` | 交互式输入 |
 | `enhanced_crawler.py` | `python3 enhanced_crawler.py [URL/产品名]` | `--verbose`, `-v` | `--help`, `-h` | `test` |
 | `easy_crawler.py` | `python3 easy_crawler.py [URL/产品名]` | 默认开启 | `-h` | 交互式输入 |
 | `batch_crawler.py` | `python3 batch_crawler.py [URL/产品名]` | `--debug` | `-h` | `test` |
@@ -470,7 +604,8 @@ python3 crawler.py --debug
 
 | 文件名 | 功能描述 | 推荐场景 | 主要特性 |
 |--------|---------|---------|---------|
-| `enhanced_crawler.py` | **增强版爬虫**（推荐） | 完整数据需求 | 智能内容验证、多媒体提取、API数据获取 |
+| **🌟 `combined_crawler.py`** | **整合爬虫**（最新推荐） | 最完整数据需求 | 树形结构+详细内容、字段排序优化、完整层级路径 |
+| `enhanced_crawler.py` | 增强版爬虫 | 详细内容需求 | 智能内容验证、多媒体提取、API数据获取 |
 | `easy_crawler.py` | 交互式爬虫 | 新手学习、单个产品 | 引导式操作、页面类型检测 |
 | `batch_crawler.py` | 批量爬虫 | 大量数据收集 | 自动搜索、去重处理、延迟控制 |
 | `tree_crawler.py` | 树形结构爬虫 | 结构分析、分类研究 | 多层路径发现、面包屑提取 |
@@ -492,7 +627,8 @@ python3 crawler.py --debug
 
 | 使用场景 | 推荐爬虫 | 命令示例 | 优势 |
 |---------|---------|---------|------|
-| **完整数据研究** | `enhanced_crawler.py` | `python3 enhanced_crawler.py MacBook_Pro_17%22_Unibody` | 数据最全面，质量最高 |
+| **🌟 最完整数据研究** | `combined_crawler.py` | `python combined_crawler.py MacBook_Pro_17%22_Unibody` | 树形结构+详细内容，数据最全面 |
+| **完整内容爬取** | `enhanced_crawler.py` | `python3 enhanced_crawler.py MacBook_Pro_17%22_Unibody` | 详细内容，质量最高 |
 | **新手学习** | `easy_crawler.py` | `python3 easy_crawler.py iPad_3G` | 交互友好，操作简单 |
 | **批量数据收集** | `batch_crawler.py` | `python3 batch_crawler.py LG_Television` | 自动化程度高，效率高 |
 | **网站结构分析** | `tree_crawler.py` | `python3 tree_crawler.py MacBook` | 层级关系清晰 |
@@ -511,7 +647,10 @@ python3 tree_crawler.py MacBook
 
 **2. 数据收集阶段**：
 ```bash
-# 使用增强版爬虫获取完整数据
+# 🌟 推荐：使用整合爬虫获取最完整数据（树形结构+详细内容）
+python combined_crawler.py MacBook_Pro_17%22_Unibody verbose
+
+# 或使用增强版爬虫获取详细内容
 python3 enhanced_crawler.py --verbose MacBook_Pro_17%22_Unibody
 
 # 或使用批量爬虫收集大量数据
@@ -564,7 +703,18 @@ python3 crawler.py --debug
 
 ## 📈 版本更新历史
 
-### 🎉 v2.1 - 内容验证与质量控制重大升级（当前版本）
+### 🎉 v3.0 - 整合爬虫与字段排序优化重大升级（当前版本）
+
+**核心新功能**：
+- 🌟 **整合爬虫工具**：新增 `combined_crawler.py`，结合树形结构和详细内容提取
+- ✅ **完整层级路径**：从根目录到目标设备的完整树形结构
+- ✅ **字段排序优化**：修复字段顺序问题，确保 name → url → title → 详细内容 → children
+- ✅ **数据结构一致性**：统一所有爬虫的字段排序和数据格式
+- ✅ **智能内容整合**：将树形结构与详细内容完美结合
+- ✅ **无重复数据**：解决title字段重复出现的问题
+- ✅ **完整数据爬取**：支持爬取所有指南和故障排除，无数量限制
+
+### 🎉 v2.1 - 内容验证与质量控制重大升级
 
 **核心改进**：
 - ✅ **智能内容验证**：只提取页面真实存在的内容，杜绝虚假字段
