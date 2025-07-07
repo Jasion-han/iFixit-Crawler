@@ -302,6 +302,22 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                             guide_data["introduction"] = intro_text
                             break
 
+            # 方法2b：直接查找Introduction标题后的第一个div内容
+            if not guide_data["introduction"]:
+                intro_headers = soup.find_all(['h1', 'h2', 'h3'], string=lambda text: text and "Introduction" in text)
+                for header in intro_headers:
+                    next_div = header.find_next_sibling('div')
+                    if next_div:
+                        div_text = next_div.get_text().strip()
+                        # 清理文本并检查是否是有效的介绍内容
+                        if (div_text and len(div_text) > 20 and
+                            not any(stop_word in div_text.lower() for stop_word in
+                                   ['step 1', 'step 2', 'remove the', 'install the'])):
+                            # 清理多余的空白字符
+                            div_text = re.sub(r'\s+', ' ', div_text).strip()
+                            guide_data["introduction"] = div_text
+                            break
+
             # 方法3：查找页面开头的描述性段落，但要避免步骤内容
             if not guide_data["introduction"]:
                 # 查找页面中的段落，但要过滤掉步骤相关内容
@@ -515,7 +531,7 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         return text.strip()
 
     def extract_what_you_need(self, soup, guide_url=None):
-        """提取指南页面的'What you need'部分内容，支持动态内容"""
+        """智能提取指南页面的'What you need'部分内容 - 基于内容语义而非URL模式"""
         what_you_need = {}
 
         try:
@@ -537,8 +553,8 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                         # 导航到页面并等待加载
                         page.goto(guide_url, wait_until='networkidle')
 
-                        # 等待一下确保动态内容加载完成
-                        page.wait_for_timeout(3000)
+                        # 等待更长时间确保动态内容加载完成
+                        page.wait_for_timeout(5000)
 
                         # 获取页面HTML
                         html_content = page.content()
@@ -589,114 +605,287 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             if not what_you_need_section:
                 return what_you_need
 
-            # 在找到的区域内查找分类和产品
-            # 查找所有可能的分类标题
-            category_keywords = [
-                'Tools', 'Parts', 'Fix Kit', 'Kit', 'Components', 'Fix Kits',
-                '工具', '配件', '零件', '套件', '修复工具包'
-            ]
+            # 使用新的智能内容识别方法
+            what_you_need = self._extract_products_by_content_analysis(what_you_need_section)
 
-            category_elements = []
-            for keyword in category_keywords:
-                elements = what_you_need_section.find_all(['h2', 'h3', 'h4', 'h5', 'p'],
-                                                         string=lambda text: text and keyword in text.strip())
-                category_elements.extend(elements)
-
-            # 如果没有找到明确的分类，查找所有段落和标题
-            if not category_elements:
-                category_elements = what_you_need_section.find_all(['p', 'h2', 'h3', 'h4', 'h5'])
-
-            processed_categories = set()  # 避免重复处理相同的分类
-
-            for category_elem in category_elements:
-                category_text = category_elem.get_text().strip()
-
-                # 跳过太短或无意义的文本
-                if len(category_text) < 2 or category_text.lower() in ['view', 'more', '更多', 'see', 'all']:
-                    continue
-
-                # 确定分类名称
-                category_name = category_text
-
-                # 避免重复处理相同的分类
-                if category_name in processed_categories:
-                    continue
-                processed_categories.add(category_name)
-
-                # 查找该分类下的产品列表
-                items = []
-
-                # 方法1：查找分类元素后面的列表项
-                next_element = category_elem.find_next_sibling()
-                while next_element and len(items) < 20:  # 限制最多20个产品
-                    if next_element.name == 'ul' or next_element.name == 'list':
-                        # 找到列表，提取产品链接
-                        product_links = next_element.find_all('a', href=lambda x: x and '/products/' in x)
-                        for link in product_links:
-                            item_text = link.get_text().strip()
-                            # 清理产品名称
-                            item_text = self.clean_product_name(item_text)
-                            if item_text and len(item_text) > 2 and item_text not in items:
-                                items.append(item_text)
-                        break
-                    elif next_element.name in ['h2', 'h3', 'h4', 'h5', 'p'] and any(
-                        cat in next_element.get_text() for cat in category_keywords
-                    ):
-                        # 遇到下一个分类，停止
-                        break
-                    next_element = next_element.find_next_sibling()
-
-                # 方法2：在分类元素的父容器中查找产品
-                if not items:
-                    # 查找分类元素后面的兄弟元素中的产品
-                    current = category_elem
-                    for _ in range(10):  # 最多查找10个兄弟元素
-                        current = current.find_next_sibling()
-                        if not current:
-                            break
-
-                        # 如果遇到下一个分类标题，停止
-                        if current.name in ['h2', 'h3', 'h4', 'h5', 'p'] and any(
-                            cat in current.get_text() for cat in category_keywords
-                        ):
-                            break
-
-                        # 查找当前元素中的产品链接
-                        product_links = current.find_all('a', href=lambda x: x and '/products/' in x)
-                        for link in product_links:
-                            item_text = link.get_text().strip()
-                            item_text = self.clean_product_name(item_text)
-                            if item_text and len(item_text) > 2 and item_text not in items:
-                                items.append(item_text)
-
-                # 如果找到了产品，添加到结果中
-                if items:
-                    what_you_need[category_name] = items
-
-            # 如果没有找到分类，尝试直接提取所有产品
-            if not what_you_need:
-                all_product_links = what_you_need_section.find_all('a', href=lambda x: x and '/products/' in x)
-                if all_product_links:
-                    items = []
-                    for link in all_product_links:
-                        item_text = link.get_text().strip()
-                        # 清理产品名称
-                        item_text = re.sub(r'\$[\d.,]+.*$', '', item_text).strip()
-                        item_text = re.sub(r'[\d.]+\s*out of.*$', '', item_text).strip()
-                        item_text = re.sub(r'Sale price.*$', '', item_text).strip()
-                        if item_text and len(item_text) > 2:
-                            items.append(item_text)
-
-                    if items:
-                        # 去重
-                        items = list(dict.fromkeys(items))
-                        what_you_need["Items"] = items
+            return what_you_need
 
         except Exception as e:
             if self.verbose:
                 print(f"提取What you need部分时发生错误: {str(e)}")
 
         return what_you_need
+
+    def _extract_products_by_content_analysis(self, section):
+        """基于内容语义分析提取产品信息 - 通用方法，不依赖特定URL模式"""
+        products = {"Tools": [], "Parts": []}
+
+        try:
+            # 方法1: 查找明确的分类标题和内容
+            category_mapping = self._find_explicit_categories(section)
+            if category_mapping:
+                products.update(category_mapping)
+
+            # 方法2: 如果没有明确分类，使用智能文本分析
+            if not any(products.values()):
+                products = self._analyze_all_text_content(section)
+
+            # 清理和去重
+            for category in products:
+                products[category] = self._clean_and_deduplicate_products(products[category])
+
+        except Exception as e:
+            if self.verbose:
+                print(f"内容分析提取产品时发生错误: {str(e)}")
+
+        return {k: v for k, v in products.items() if v}  # 只返回非空的分类
+
+    def _find_explicit_categories(self, section):
+        """查找明确的分类标题和对应内容"""
+        categories = {}
+
+        # 查找Tools分类
+        tools_headers = section.find_all(string=lambda text: text and
+                                        any(keyword in text.strip() for keyword in ['Tools', 'tools', '工具']))
+        for header in tools_headers:
+            tools = self._extract_products_after_header(header, 'Tools')
+            if tools:
+                categories['Tools'] = tools
+                break
+
+        # 查找Parts分类
+        parts_headers = section.find_all(string=lambda text: text and
+                                        any(keyword in text.strip() for keyword in ['Parts', 'parts', 'Fix Kit', 'Kit', '配件', '零件']))
+        for header in parts_headers:
+            parts = self._extract_products_after_header(header, 'Parts')
+            if parts:
+                categories['Parts'] = parts
+                break
+
+        return categories
+
+    def _extract_products_after_header(self, header, category_type):
+        """提取标题后的产品列表 - 基于内容而非链接"""
+        products = []
+
+        try:
+            parent = header.parent
+            if not parent:
+                return products
+
+            # 查找标题后的所有相关内容
+            current = parent
+            for _ in range(10):  # 最多查找10个兄弟元素
+                current = current.find_next_sibling()
+                if not current:
+                    break
+
+                # 如果遇到下一个分类标题，停止
+                if self._is_category_header(current):
+                    break
+
+                # 提取当前元素中的产品
+                element_products = self._extract_products_from_element(current, category_type)
+                products.extend(element_products)
+
+        except Exception as e:
+            if self.verbose:
+                print(f"提取{category_type}产品时发生错误: {str(e)}")
+
+        return products
+
+    def _is_category_header(self, element):
+        """判断元素是否是分类标题"""
+        if not element:
+            return False
+
+        text = element.get_text().strip().lower()
+        category_keywords = ['tools', 'parts', 'fix kit', 'kit', 'components', '工具', '配件', '零件']
+
+        return any(keyword in text for keyword in category_keywords)
+
+    def _extract_products_from_element(self, element, category_type):
+        """从HTML元素中提取产品信息 - 智能识别产品文本"""
+        products = []
+
+        try:
+            # 方法1: 查找所有链接（任何类型的链接）
+            links = element.find_all('a', href=True)
+            for link in links:
+                product_text = link.get_text().strip()
+                if self._is_valid_product(product_text, category_type):
+                    cleaned_product = self._clean_product_text(product_text)
+                    if cleaned_product and cleaned_product not in products:
+                        products.append(cleaned_product)
+
+            # 方法2: 如果没有链接，分析纯文本内容
+            if not products:
+                text_content = element.get_text().strip()
+                text_products = self._extract_products_from_text(text_content, category_type)
+                products.extend(text_products)
+
+        except Exception as e:
+            if self.verbose:
+                print(f"从元素提取产品时发生错误: {str(e)}")
+
+        return products
+
+    def _is_valid_product(self, text, category_type):
+        """判断文本是否是有效的产品名称"""
+        if not text or len(text.strip()) < 3:
+            return False
+
+        text_lower = text.lower()
+
+        # 排除明显不是产品的文本
+        exclude_keywords = ['view', 'more', 'see', 'all', 'available', 'sale', 'price', 'buy', 'shop', 'cart']
+        if any(keyword in text_lower for keyword in exclude_keywords):
+            return False
+
+        # 根据分类类型判断
+        if category_type == 'Tools':
+            tool_keywords = ['screwdriver', 'tool', 'driver', 'opener', 'kit', 'spudger', 'pick', 'pry', 'wrench']
+            return any(keyword in text_lower for keyword in tool_keywords)
+
+        elif category_type == 'Parts':
+            part_keywords = ['battery', 'screen', 'display', 'replacement', 'part', 'component', 'board', 'cable', 'assembly']
+            brand_keywords = ['macbook', 'iphone', 'ipad', 'samsung', 'lg', 'sony', 'dell', 'hp']
+            return (any(keyword in text_lower for keyword in part_keywords) or
+                   any(keyword in text_lower for keyword in brand_keywords))
+
+        return True  # 默认认为是有效产品
+
+    def _clean_product_text(self, text):
+        """清理产品文本"""
+        if not text:
+            return ""
+
+        # 移除价格信息
+        text = re.sub(r'\$[\d.,]+.*$', '', text).strip()
+        # 移除评分信息
+        text = re.sub(r'[\d.]+\s*out of.*$', '', text).strip()
+        text = re.sub(r'[\d.]+\s*stars?.*$', '', text).strip()
+        # 移除销售信息
+        text = re.sub(r'Sale price.*$', '', text).strip()
+        text = re.sub(r'Available for.*$', '', text).strip()
+        # 清理多余空白
+        text = re.sub(r'\s+', ' ', text).strip()
+
+        return text
+
+    def _extract_products_from_text(self, text, category_type):
+        """从纯文本中提取产品信息"""
+        products = []
+
+        # 按行分割文本
+        lines = text.split('\n')
+        for line in lines:
+            line = line.strip()
+            if self._is_valid_product(line, category_type):
+                cleaned_product = self._clean_product_text(line)
+                if cleaned_product and cleaned_product not in products:
+                    products.append(cleaned_product)
+
+        return products
+
+    def _analyze_all_text_content(self, section):
+        """分析所有文本内容，智能分类产品"""
+        products = {"Tools": [], "Parts": []}
+
+        try:
+            # 获取所有文本内容
+            all_text = section.get_text()
+
+            # 查找所有可能的产品
+            all_links = section.find_all('a', href=True)
+            all_elements = section.find_all(['p', 'div', 'li', 'span'])
+
+            # 处理链接
+            for link in all_links:
+                product_text = link.get_text().strip()
+                category = self._classify_product(product_text)
+                if category and self._is_valid_product(product_text, category):
+                    cleaned_product = self._clean_product_text(product_text)
+                    if cleaned_product and cleaned_product not in products[category]:
+                        products[category].append(cleaned_product)
+
+            # 处理其他元素
+            for element in all_elements:
+                element_text = element.get_text().strip()
+                if len(element_text) > 5 and len(element_text) < 200:  # 合理的产品名称长度
+                    category = self._classify_product(element_text)
+                    if category and self._is_valid_product(element_text, category):
+                        cleaned_product = self._clean_product_text(element_text)
+                        if cleaned_product and cleaned_product not in products[category]:
+                            products[category].append(cleaned_product)
+
+        except Exception as e:
+            if self.verbose:
+                print(f"分析所有文本内容时发生错误: {str(e)}")
+
+        return products
+
+    def _classify_product(self, text):
+        """智能分类产品到Tools或Parts"""
+        if not text:
+            return None
+
+        text_lower = text.lower()
+
+        # Tools关键词
+        tool_keywords = ['screwdriver', 'tool', 'driver', 'opener', 'kit', 'spudger', 'pick', 'pry', 'wrench', 'phillips', 'tri-point', 'torx']
+        if any(keyword in text_lower for keyword in tool_keywords):
+            return 'Tools'
+
+        # Parts关键词
+        part_keywords = ['battery', 'screen', 'display', 'replacement', 'part', 'component', 'board', 'cable', 'assembly']
+        brand_keywords = ['macbook', 'iphone', 'ipad', 'samsung', 'lg', 'sony', 'dell', 'hp']
+        if (any(keyword in text_lower for keyword in part_keywords) or
+            any(keyword in text_lower for keyword in brand_keywords)):
+            return 'Parts'
+
+        return None
+
+    def _clean_and_deduplicate_products(self, products):
+        """清理和去重产品列表"""
+        if not products:
+            return []
+
+        cleaned = []
+        seen = set()
+
+        for product in products:
+            cleaned_product = self._clean_product_text(product)
+            if cleaned_product and len(cleaned_product) > 2:
+                # 使用小写版本进行去重比较
+                key = cleaned_product.lower()
+                if key not in seen:
+                    seen.add(key)
+                    cleaned.append(cleaned_product)
+
+        return cleaned
+
+    def _extract_parts_from_json(self, data):
+        """从JSON数据中递归提取Parts信息"""
+        parts = []
+
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key.lower() in ['parts', 'products', 'items'] and isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            name = item.get('name') or item.get('title') or item.get('product_name')
+                            if name:
+                                parts.append(name)
+                        elif isinstance(item, str):
+                            parts.append(item)
+                elif isinstance(value, (dict, list)):
+                    parts.extend(self._extract_parts_from_json(value))
+        elif isinstance(data, list):
+            for item in data:
+                parts.extend(self._extract_parts_from_json(item))
+
+        return parts
 
     def extract_time_and_difficulty(self, soup, guide_url=None):
         """从页面中提取真实的时间和难度信息，只有在页面真实存在时才提取"""

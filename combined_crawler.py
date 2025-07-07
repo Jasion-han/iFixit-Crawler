@@ -25,6 +25,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         # 初始化树形爬虫的功能
         self.tree_crawler = TreeCrawler(base_url)
         self.processed_nodes = set()  # 记录已处理的节点，避免重复
+        self.target_url = None  # 用户指定的目标URL
 
         # 复制树形爬虫的重要方法到当前类
         self.find_exact_path = self.tree_crawler.find_exact_path
@@ -88,9 +89,71 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         """
         检查URL是否是用户指定的目标URL
         """
-        # 这里可以添加逻辑来检查是否是用户指定的目标URL
-        # 目前简单返回False，让系统自动判断叶子节点
-        return False
+        if not self.target_url or not url:
+            return False
+
+        # 标准化URL进行比较
+        def normalize_url(u):
+            import urllib.parse
+            # URL解码，然后标准化
+            decoded = urllib.parse.unquote(u)
+            return decoded.rstrip('/').lower()
+
+        return normalize_url(url) == normalize_url(self.target_url)
+
+    def discover_subcategories_from_page(self, soup, base_url):
+        """
+        动态发现页面中的子类别链接
+        """
+        if not soup:
+            return []
+
+        subcategories = []
+
+        # 查找设备类别链接的多种选择器
+        category_selectors = [
+            'a[href*="/Device/"]',  # 包含/Device/的链接
+            '.category-link',       # 类别链接类
+            '.device-link',         # 设备链接类
+            '.subcategory',         # 子类别类
+            'a[href^="/Device/"]'   # 以/Device/开头的链接
+        ]
+
+        found_links = set()
+
+        for selector in category_selectors:
+            links = soup.select(selector)
+            for link in links:
+                href = link.get('href', '')
+                if href and '/Device/' in href:
+                    # 构建完整URL
+                    if href.startswith('/'):
+                        full_url = f"{self.base_url}{href}"
+                    elif href.startswith('http'):
+                        full_url = href
+                    else:
+                        continue
+
+                    # 过滤掉不需要的链接
+                    skip_patterns = [
+                        '/Guide/', '/Troubleshooting/', '/Edit/', '/History/',
+                        '/Answers/', '?revision', 'action=edit', 'action=create'
+                    ]
+
+                    if not any(pattern in full_url for pattern in skip_patterns):
+                        # 确保这是一个子类别（URL比当前页面更深一层）
+                        if full_url != base_url and full_url not in found_links:
+                            # 提取链接文本作为名称
+                            link_text = link.get_text().strip()
+                            if link_text:
+                                subcategories.append({
+                                    'name': self.extract_real_name_from_url(full_url),
+                                    'url': full_url,
+                                    'title': link_text
+                                })
+                                found_links.add(full_url)
+
+        return subcategories
 
     def extract_real_view_statistics(self, soup, url):
         """
@@ -258,6 +321,9 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         """
         print(f"开始整合爬取: {start_url}")
         print("=" * 60)
+
+        # 设置目标URL
+        self.target_url = start_url
 
         # 第一步：使用 tree_crawler 逻辑构建基础树结构
         print("1. 构建基础树形结构...")
@@ -530,24 +596,28 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         return count
 
-    def deep_crawl_product_content(self, node):
+    def deep_crawl_product_content(self, node, skip_troubleshooting=False):
         """
         深入爬取产品页面的指南和故障排除内容，并正确构建数据结构
+        支持有子类别的目标文件处理
         """
         if not node or not isinstance(node, dict):
             return node
 
         url = node.get('url', '')
 
-        # 检查是否是目标产品页面（叶子节点页面，包含实际的guides和troubleshooting内容）
+        # 检查是否是用户指定的目标页面
+        is_specified_target = self._is_specified_target_url(url)
+
+        # 检查是否是目标产品页面
         # 目标页面特征：
         # 1. 是Device页面
         # 2. 不是编辑、历史等功能页面
-        # 3. 没有子类别（是叶子节点）或者是用户指定的目标URL
+        # 3. 是用户指定的目标URL 或者 没有子类别（是叶子节点）
         is_target_page = (
             '/Device/' in url and
             not any(skip in url for skip in ['/Guide/', '/Troubleshooting/', '/Edit/', '/History/', '/Answers/']) and
-            (not node.get('children') or len(node.get('children', [])) == 0 or self._is_specified_target_url(url))
+            (is_specified_target or not node.get('children') or len(node.get('children', [])) == 0)
         )
 
         if is_target_page:
@@ -566,11 +636,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                     guide_links = [guide["url"] for guide in guides]
                     print(f"  找到 {len(guide_links)} 个指南")
 
-                    # 提取故障排除链接
-                    troubleshooting_links = self.extract_troubleshooting_from_device_page(soup, url)
-                    print(f"  找到 {len(troubleshooting_links)} 个故障排除页面")
-
-                    # 创建guides和troubleshooting数组而不是children
+                    # 创建guides和troubleshooting数组
                     guides_data = []
                     troubleshooting_data = []
 
@@ -583,21 +649,26 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                             guides_data.append(guide_content)
                             print(f"    ✓ 指南: {guide_content.get('title', '')}")
 
-                    # 添加故障排除数据 - 爬取所有故障排除，不限制数量
-                    for ts_link in troubleshooting_links:
-                        # 确保 ts_link 是字符串
-                        if isinstance(ts_link, dict):
-                            ts_url = ts_link.get('url', '')
-                        else:
-                            ts_url = ts_link
+                    # 只在目标文件层级提取troubleshooting（如果不跳过的话）
+                    if not skip_troubleshooting:
+                        troubleshooting_links = self.extract_troubleshooting_from_device_page(soup, url)
+                        print(f"  找到 {len(troubleshooting_links)} 个故障排除页面")
 
-                        if ts_url:
-                            ts_content = self.extract_troubleshooting_content(ts_url)
-                            if ts_content:
-                                # 不添加name字段，只设置url
-                                ts_content['url'] = ts_url
-                                troubleshooting_data.append(ts_content)
-                                print(f"    ✓ 故障排除: {ts_content.get('title', '')}")
+                        # 添加故障排除数据 - 爬取所有故障排除，不限制数量
+                        for ts_link in troubleshooting_links:
+                            # 确保 ts_link 是字符串
+                            if isinstance(ts_link, dict):
+                                ts_url = ts_link.get('url', '')
+                            else:
+                                ts_url = ts_link
+
+                            if ts_url:
+                                ts_content = self.extract_troubleshooting_content(ts_url)
+                                if ts_content:
+                                    # 不添加name字段，只设置url
+                                    ts_content['url'] = ts_url
+                                    troubleshooting_data.append(ts_content)
+                                    print(f"    ✓ 故障排除: {ts_content.get('title', '')}")
 
                     # 使用正确的数据结构
                     if guides_data:
@@ -605,9 +676,41 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                     if troubleshooting_data:
                         node['troubleshooting'] = troubleshooting_data
 
-                    # 移除children字段，因为这是目标页面
-                    if 'children' in node:
-                        del node['children']
+                    # 如果是用户指定的目标且有子类别，动态发现并处理子类别
+                    if is_specified_target:
+                        subcategories = self.discover_subcategories_from_page(soup, url)
+                        if subcategories:
+                            print(f"  发现 {len(subcategories)} 个子类别，开始处理...")
+
+                            # 处理子类别，但跳过troubleshooting提取
+                            subcategory_children = []
+                            for subcat in subcategories:
+                                print(f"    处理子类别: {subcat['name']}")
+
+                                # 创建子类别节点
+                                subcat_node = {
+                                    'name': subcat['name'],
+                                    'url': subcat['url'],
+                                    'title': subcat['title']
+                                }
+
+                                # 递归处理子类别，但跳过troubleshooting
+                                processed_subcat = self.deep_crawl_product_content(subcat_node, skip_troubleshooting=True)
+                                if processed_subcat:
+                                    subcategory_children.append(processed_subcat)
+
+                            # 如果有处理成功的子类别，添加到children中
+                            if subcategory_children:
+                                node['children'] = subcategory_children
+                                print(f"  成功处理 {len(subcategory_children)} 个子类别")
+                        else:
+                            # 没有子类别，移除children字段
+                            if 'children' in node:
+                                del node['children']
+                    else:
+                        # 不是用户指定的目标，移除children字段
+                        if 'children' in node:
+                            del node['children']
 
                     print(f"  总计: {len(guides_data)} 个指南, {len(troubleshooting_data)} 个故障排除")
 
@@ -617,7 +720,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         # 递归处理子节点（对于非目标页面）
         elif 'children' in node and node['children']:
             for i, child in enumerate(node['children']):
-                node['children'][i] = self.deep_crawl_product_content(child)
+                node['children'][i] = self.deep_crawl_product_content(child, skip_troubleshooting)
 
         return node
         

@@ -33,446 +33,6 @@
 - **智能URL处理**：自动添加语言参数，支持多种URL格式输入，智能检测页面存在性
 - **Robots.txt遵守**：完全遵守网站爬取规则，添加合理延迟避免对服务器造成压力
 
-## 数据格式说明
-
-### 📋 基础爬虫格式（easy_crawler.py、batch_crawler.py）
-
-#### 单个产品对象格式
-```json
-{
-  "product_name": "iPad Pro 12.9英寸 Repair",
-  "product_url": "https://www.ifixit.com/Device/iPad_Pro_12.9%22",
-  "instruction_url": "https://www.ifixit.com/Document/.../manual.pdf"
-}
-```
-
-#### 批量产品数组格式
-```json
-[
-  {
-    "product_name": "iPad Pro 12.9英寸 Repair",
-    "product_url": "https://www.ifixit.com/Device/iPad_Pro_12.9%22",
-    "instruction_url": "https://www.ifixit.com/Document/.../manual.pdf"
-  },
-  {
-    "product_name": "iPad Air 2 Repair",
-    "product_url": "https://www.ifixit.com/Device/iPad_Air_2",
-    "instruction_url": ""
-  }
-]
-```
-
-### 🌟 整合爬虫格式（combined_crawler.py）- 最新推荐
-
-#### 完整树形结构 + 详细内容
-```json
-{
-  "name": "Device",
-  "url": "https://www.ifixit.com/Device",
-  "children": [
-    {
-      "name": "Mac",
-      "url": "https://www.ifixit.com/Device/Mac",
-      "title": "Mac Repair",
-      "view_statistics": {
-        "past_24_hours": "1,366",
-        "past_7_days": "10,431",
-        "past_30_days": "45,581",
-        "all_time": "18,173,453"
-      },
-      "children": [
-        {
-          "name": "MacBook_Pro_17\"_Unibody",
-          "url": "https://www.ifixit.com/Device/MacBook_Pro_17%22_Unibody",
-          "title": "MacBook Pro 17\" Unibody Repair",
-          "instruction_url": "",
-          "view_statistics": {
-            "past_24_hours": "31",
-            "past_7_days": "237",
-            "past_30_days": "806",
-            "all_time": "683,126"
-          },
-          "guides": [
-            {
-              "url": "https://www.ifixit.com/Guide/MacBook+Pro+17-Inch+Unibody+AirPort+Antenna+Replacement/9588",
-              "title": "MacBook Pro 17\" Unibody AirPort Antenna Replacement",
-              "time_required": "No estimate",
-              "difficulty": "Moderate",
-              "introduction": "Replace the AirPort Antenna in your MacBook Pro...",
-              "what_you_need": {
-                "Tools": ["Phillips #00 Screwdriver", "Spudger", "T6 Torx Screwdriver"]
-              },
-              "view_statistics": {
-                "past_24_hours": "13",
-                "past_7_days": "77",
-                "past_30_days": "128",
-                "all_time": "17,050"
-              },
-              "completed": "9",
-              "favorites": "14",
-              "videos": [],
-              "steps": [
-                {
-                  "title": "Step 1 Lower Case",
-                  "content": "Remove the following ten screws...",
-                  "images": ["https://guide-images.cdn.ifixit.com/igi/syE2ybccRrcFeJJi.medium"],
-                  "videos": []
-                }
-              ]
-            }
-          ],
-          "troubleshooting": [
-            {
-              "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Fan+Loud/506012",
-              "title": "MacBook Fan Loud",
-              "view_statistics": {
-                "past_24_hours": "300",
-                "past_7_days": "2,342",
-                "past_30_days": "8,618",
-                "all_time": "56,374"
-              },
-              "first_steps": "Before undertaking any of the more time consuming solutions...",
-              "causes": [
-                {
-                  "number": "1",
-                  "title": "Overheating",
-                  "content": "The harder your MacBook is working, the more heat it is generating...",
-                  "images": [
-                    {
-                      "url": "https://guide-images.cdn.ifixit.com/igi/abc.medium.jpg",
-                      "description": "CPU temperature monitoring"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
-
-**数据结构特点**：
-- ✅ **完整层级结构**：从根目录到目标设备的完整路径
-- ✅ **正确字段顺序**：name → url → title → 详细内容 → children
-- ✅ **智能内容验证**：只包含页面真实存在的字段
-- ✅ **多媒体资源**：图片、视频、文档URL完整提取
-- ✅ **统计数据**：浏览量、完成数、收藏数等真实数据
-- ✅ **完整内容爬取**：支持爬取所有指南和故障排除，无数量限制
-
-**实际爬取示例**（MacBook Pro 17" Unibody）：
-- **指南数量**：35个完整维修指南
-- **故障排除**：7个详细故障排除页面
-- **文件大小**：644KB (7,930 行)
-- **数据完整性**：包含完整的步骤说明、工具清单、统计数据
-
-### 🔧 增强版爬虫格式（enhanced_crawler.py）
-
-#### 完整设备信息对象
-```json
-{
-  "product_name": "MacBook Pro 17英寸 Unibody Repair",
-  "product_url": "https://www.ifixit.com/Device/MacBook_Pro_17%22_Unibody",
-  "instruction_url": "",
-  "guides": [
-    {
-      "url": "https://www.ifixit.com/Guide/MacBook+Pro+17-Inch+Unibody+AirPort+Antenna+Replacement/9588",
-      "title": "MacBook Pro 17\" Unibody AirPort Antenna Replacement",
-      "time_required": "No estimate",
-      "difficulty": "Moderate",
-      "introduction": "Replace the AirPort Antenna in your MacBook Pro to get a clear signal...",
-      "what_you_need": {
-        "Tools": ["Phillips #00 Screwdriver", "Spudger", "T6 Torx Screwdriver"]
-      },
-      "view_statistics": {
-        "past_24_hours": "20",
-        "past_7_days": "61",
-        "past_30_days": "110",
-        "all_time": "17,031"
-      },
-      "completed": "9",
-      "favorites": "14",
-      "videos": [],
-      "steps": [
-        {
-          "title": "Step 1 Lower Case",
-          "content": "Remove the following ten screws securing the lower case...",
-          "images": ["https://guide-images.cdn.ifixit.com/igi/syE2ybccRrcFeJJi.medium"],
-          "videos": []
-        }
-      ]
-    }
-  ],
-  "troubleshooting": [
-    {
-      "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Won't+Turn+On/483799",
-      "title": "MacBook Won't Turn On",
-      "view_statistics": {
-        "past_24_hours": "188",
-        "past_7_days": "1,174",
-        "past_30_days": "5,428",
-        "all_time": "116,958"
-      },
-      "introduction": "There are few electronics problems more disheartening...",
-      "the_basics": "Before undertaking any of the more time-consuming solutions...",
-      "causes": [
-        {
-          "number": "1",
-          "title": "Faulty Power Source",
-          "content": "Your computer itself could be perfectly fine...",
-          "images": [
-            {
-              "url": "https://guide-images.cdn.ifixit.com/igi/abc.medium.jpg",
-              "alt": "Power adapter connection"
-            }
-          ],
-          "videos": []
-        }
-      ]
-    }
-  ],
-  "crawl_timestamp": "2024-07-04 15:30:45"
-}
-```
-
-### 🌳 树形结构格式（tree_crawler.py）
-
-#### 多层级设备分类树
-```json
-{
-  "name": "设备",
-  "url": "https://www.ifixit.com/Device",
-  "children": [
-    {
-      "name": "Mac",
-      "url": "https://www.ifixit.com/Device/Mac",
-      "children": [
-        {
-          "name": "笔记本",
-          "url": "https://www.ifixit.com/Device/Mac/笔记本",
-          "children": [
-            {
-              "name": "MacBook",
-              "url": "https://www.ifixit.com/Device/Mac/笔记本/MacBook",
-              "children": [
-                {
-                  "name": "MacBook Core Duo Repair",
-                  "url": "https://www.ifixit.com/Device/MacBook_Core_Duo",
-                  "instruction_url": "",
-                  "children": []
-                },
-                {
-                  "name": "MacBook Unibody A1342 Repair",
-                  "url": "https://www.ifixit.com/Device/MacBook_Unibody_Model_A1342",
-                  "instruction_url": "https://www.ifixit.com/Document/.../manual.pdf",
-                  "children": []
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
-
-**节点类型说明**：
-- **分类节点**：包含 `name`、`url`、`children` 字段，不包含 `instruction_url`
-- **产品节点**：包含 `name`、`url`、`instruction_url`、`children` 字段，其中 `children` 为空数组
-
-## 快速开始
-
-### 📦 安装依赖
-
-```bash
-pip install -r requirements.txt
-```
-
-### 🚀 推荐使用方式
-
-#### 1. 🌟 整合爬虫（最新推荐）- 树形结构 + 详细内容
-
-获取设备的完整层级结构和详细内容，包括维修指南和故障排除：
-
-```bash
-# 基本用法（静默模式）
-python combined_crawler.py MacBook_Pro_17%22_Unibody
-
-# 启用详细输出模式
-python combined_crawler.py MacBook_Pro_17%22_Unibody verbose
-
-# 交互式输入
-python combined_crawler.py
-
-# 显示帮助信息
-python combined_crawler.py --help
-```
-
-**支持的输入格式**：
-```bash
-# 完整URL
-python combined_crawler.py https://www.ifixit.com/Device/MacBook_Pro_17%22_Unibody
-
-# 产品名（推荐）
-python combined_crawler.py MacBook_Pro_17%22_Unibody
-
-# 类别名称
-python combined_crawler.py Television
-python combined_crawler.py LG_Television
-```
-
-**Python API 使用**：
-```python
-from combined_crawler import CombinedIFixitCrawler
-
-# 创建整合爬虫实例
-crawler = CombinedIFixitCrawler(verbose=True)
-
-# 爬取完整树形结构和详细内容
-device_url = "https://www.ifixit.com/Device/MacBook_Pro_17%22_Unibody"
-result = crawler.crawl_combined_tree(device_url, "MacBook_Pro_17%22_Unibody")
-
-# 保存结果
-crawler.save_combined_result(result)
-```
-
-**输出特点**：
-- ✅ 完整的层级树形结构（从根目录到目标设备）
-- ✅ 每个节点的详细内容（维修指南、故障排除、统计数据）
-- ✅ 智能内容验证，确保数据真实性
-- ✅ 多媒体资源URL提取（图片、视频、文档）
-- ✅ 正确的字段排序：name → url → title → 详细内容 → children
-- ✅ 文件命名：`combined_[设备名].json`
-
-#### 2. 增强版爬虫 - 完整内容爬取
-
-获取设备的完整信息，包括维修指南和故障排除内容：
-
-```bash
-# 基本用法（静默模式）
-python3 enhanced_crawler.py MacBook_Pro_17%22_Unibody
-
-# 启用详细输出模式
-python3 enhanced_crawler.py --verbose iPhone_12
-python3 enhanced_crawler.py -v iPad_Air_2
-
-# 显示帮助信息
-python3 enhanced_crawler.py --help
-```
-
-**输出特点**：
-- ✅ 设备基本信息、维修指南详细步骤、故障排除内容
-- ✅ 智能内容验证，确保数据真实性
-- ✅ 多媒体资源URL提取（图片、视频、文档）
-- ✅ 静默/详细输出模式控制
-- ✅ 文件命名：`enhanced_[设备名].json`
-
-#### 3. 交互式爬虫（新手友好）
-
-支持引导式类别选择，适合初学者使用：
-
-```bash
-# 基本用法
-python3 easy_crawler.py iPad_3G
-
-# 完整URL
-python3 easy_crawler.py https://www.ifixit.com/Device/iPad_3G
-
-# 交互式输入
-python3 easy_crawler.py
-
-# 显示帮助
-python3 easy_crawler.py -h
-```
-
-**特点**：
-- 🎯 自动检测页面类型（产品页面 vs 类别页面）
-- 🔍 类别页面时显示子类别供用户选择
-- 💬 支持交互式输入和引导
-- 📝 自动开启调试模式显示详细信息
-- 📁 文件命名：`[设备名].json`
-
-#### 4. 批量爬虫（大量数据收集）
-
-自动遍历指定类别下的所有产品，适合批量数据收集：
-
-```bash
-# 基本用法
-python3 batch_crawler.py iPad
-
-# 启用调试模式
-python3 batch_crawler.py --debug LG_Television
-
-# 测试预定义URL
-python3 batch_crawler.py test
-
-# 显示帮助
-python3 batch_crawler.py -h
-```
-
-**特点**：
-- 🔍 智能搜索：直接访问失败时自动搜索
-- 🚫 自动去重，避免重复爬取
-- ⏱️ 合理延迟，避免请求过于频繁
-- 🐛 调试模式显示详细过程
-- 📁 文件命名：`batch_[设备名].json`
-
-#### 5. 树形爬虫（结构分析）
-
-构建完整的多层级设备分类树，适合分析网站结构：
-
-```bash
-# 基本用法
-python3 tree_crawler.py MacBook
-
-# 启用调试模式
-python3 tree_crawler.py --debug Television
-
-# 完整URL
-python3 tree_crawler.py https://www.ifixit.com/Device/LG_Television
-
-# 显示帮助
-python3 tree_crawler.py -h
-```
-
-**使用示例**：
-```bash
-# 不同产品类别
-python3 tree_crawler.py Television          # 电视类别树
-python3 tree_crawler.py LG_Television       # LG电视子类别
-python3 tree_crawler.py Apple_Headphone     # 苹果耳机类别
-python3 tree_crawler.py MacBook             # MacBook类别树
-```
-
-**特点**：
-- 🌳 多层级路径发现，从React组件提取面包屑导航
-- 🎯 精确构建设备分类层次结构
-- 🔍 智能区分分类节点和产品节点
-- 🌐 支持中英文混合路径处理
-- 📁 文件命名：`tree_[目标名称].json`
-
-#### 6. 完整站点爬虫（全站数据）
-
-从设备首页开始递归爬取整个网站：
-
-```bash
-# 基本用法
-python3 crawler.py
-
-# 启用调试模式
-python3 crawler.py --debug
-```
-
-**特点**：
-- 🌐 从设备首页开始递归爬取所有类别和产品
-- 🎯 自动识别最终产品页面和类别页面
-- ⏱️ 添加随机延迟避免对服务器造成压力
-- 🚫 自动跳过无关页面（创建指南、编辑页面等）
-- 🐛 支持调试模式显示详细爬取过程
-
 ## 🔧 高级功能
 
 ### 树形爬虫高级特性
@@ -492,6 +52,57 @@ python3 crawler.py --debug
 **节点规范**：
 - **分类节点**：`name` + `url` + `children`（不含instruction_url）
 - **产品节点**：`name` + `url` + `instruction_url` + `children`（空数组）
+
+## 🔍 爬虫实现细节
+
+### 等待时间设置
+
+为了遵守网站爬取规则并避免被封IP，各爬虫文件设置了不同的等待时间：
+
+| 爬虫文件 | 等待时间设置 | 实现方式 |
+|---------|------------|---------|
+| **🌟 `combined_crawler.py`** | 0.5-1.0秒随机 | `time.sleep(random.uniform(0.5, 1.0))` |
+| `enhanced_crawler.py` | 1-2秒随机 | `time.sleep(random.uniform(1, 2))` |
+| `tree_crawler.py` | 0.5-1.0秒随机 | `time.sleep(random.uniform(0.5, 1.0))` |
+| `crawler.py` | 2-4秒随机 | `time.sleep(random.uniform(2, 4))` |
+| `batch_crawler.py` | 1-2秒固定 | `time.sleep(1)` 和 `time.sleep(2)` |
+
+这些等待时间设置有以下目的：
+- **避免过快请求**：防止在短时间内向服务器发送大量请求
+- **遵守robots.txt规则**：尊重网站的抓取规则，避免对服务器造成过大负载
+- **随机化等待时间**：模拟更真实的人类访问行为，降低被检测为爬虫的风险
+
+### combined_crawler.py 方法继承关系
+
+`combined_crawler.py` 是一个整合爬虫，结合了 `enhanced_crawler.py` 和 `tree_crawler.py` 的功能：
+
+**继承结构**：
+- `CombinedIFixitCrawler` 类继承自 `EnhancedIFixitCrawler`
+- 同时通过组合方式使用 `TreeCrawler` 的功能
+
+**从 enhanced_crawler.py 继承的主要方法**：
+- `get_soup(url)` - 获取网页内容并解析为BeautifulSoup对象
+- `extract_guide_content(guide_url)` - 提取指南页面的详细内容
+- `extract_troubleshooting_content(troubleshooting_url)` - 提取故障排除页面的详细内容
+- `extract_product_info(soup, url, breadcrumb)` - 提取产品页面的基本信息
+- `extract_guides_from_device_page(soup, device_url)` - 从设备页面提取指南链接
+- `extract_troubleshooting_from_device_page(soup, device_url)` - 从设备页面提取故障排除链接
+- `is_final_product_page(soup, url)` - 判断页面是否是最终产品页面
+
+**从 tree_crawler.py 直接复制的方法**：
+- `find_exact_path` - 查找从根节点到目标URL的确切路径
+- `extract_breadcrumbs_from_page` - 从页面中提取面包屑导航
+- `_build_tree_from_path` - 根据路径构建树形结构
+- `_find_node_by_url` - 在树中查找指定URL的节点
+- `ensure_instruction_url_in_leaf_nodes` - 确保所有叶子节点都有指令URL
+
+**工作流程**：
+1. 使用 `tree_crawler.py` 的方法构建基础树形结构
+2. 使用 `enhanced_crawler.py` 的方法为树中的每个节点提取详细内容
+3. 深入爬取产品页面的指南和故障排除内容
+4. 整合所有数据，保持树形结构的同时添加详细内容
+
+这种组合设计使 `combined_crawler.py` 能够同时具备树形结构爬取和详细内容提取的能力，提供最完整的数据爬取解决方案。
 
 ## 📁 输出结果
 
