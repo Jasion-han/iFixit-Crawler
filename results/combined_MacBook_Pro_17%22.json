@@ -7,10 +7,10 @@
       "url": "https://www.ifixit.com/Device/Mac",
       "title": "Mac Repair",
       "view_statistics": {
-        "past_24_hours": "1,507",
-        "past_7_days": "9,803",
-        "past_30_days": "45,200",
-        "all_time": "18,174,568"
+        "past_24_hours": "1,740",
+        "past_7_days": "11,500",
+        "past_30_days": "46,897",
+        "all_time": "18,176,265"
       },
       "children": [
         {
@@ -18,10 +18,10 @@
           "url": "https://www.ifixit.com/Device/Mac_Laptop",
           "title": "Mac Laptop Repair",
           "view_statistics": {
-            "past_24_hours": "904",
-            "past_7_days": "5,711",
-            "past_30_days": "26,508",
-            "all_time": "7,967,016"
+            "past_24_hours": "1,035",
+            "past_7_days": "6,714",
+            "past_30_days": "27,511",
+            "all_time": "7,968,019"
           },
           "children": [
             {
@@ -29,21 +29,22 @@
               "url": "https://www.ifixit.com/Device/MacBook_Pro",
               "title": "MacBook Pro Repair",
               "view_statistics": {
-                "past_24_hours": "748",
-                "past_7_days": "4,546",
-                "past_30_days": "21,069",
-                "all_time": "9,456,252"
+                "past_24_hours": "810",
+                "past_7_days": "5,326",
+                "past_30_days": "21,849",
+                "all_time": "9,457,032"
               },
               "children": [
                 {
                   "name": "MacBook_Pro_17\"",
                   "url": "https://www.ifixit.com/Device/MacBook_Pro_17%22",
                   "title": "MacBook Pro 17\" Repair",
+                  "instruction_url": "",
                   "view_statistics": {
-                    "past_24_hours": "51",
-                    "past_7_days": "222",
-                    "past_30_days": "1,032",
-                    "all_time": "457,393"
+                    "past_24_hours": "39",
+                    "past_7_days": "258",
+                    "past_30_days": "1,068",
+                    "all_time": "457,429"
                   },
                   "children": [
                     {
@@ -58,23 +59,21 @@
                           "difficulty": "Moderate",
                           "introduction": "Use this guide to replace a broken AirPort Extreme card.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Core 2 Duo 802.11n Airport Extreme Card",
+                              "MacBook Core 2 Duo Santa Rosa/Penryn 802.11n Airport Extreme Card"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook 802.11g Airport Extreme Card",
-                              "MacBook 802.11n Airport Extreme Card",
-                              "MacBook Core 2 Duo 802.11n Airport Extreme Card",
-                              "MacBook Core 2 Duo Santa Rosa/Penryn 802.11n Airport Extreme Card"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "7",
-                            "past_7_days": "16",
-                            "past_30_days": "45",
-                            "all_time": "34,893"
+                            "past_24_hours": "16",
+                            "past_7_days": "32",
+                            "past_30_days": "61",
+                            "all_time": "34,909"
                           },
                           "completed": "32",
                           "favorites": "12",
@@ -207,16 +206,13 @@
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1212) Airport Antenna Cables"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "6",
-                            "past_30_days": "15",
-                            "all_time": "6,903"
+                            "past_24_hours": "10",
+                            "past_7_days": "16",
+                            "past_30_days": "25",
+                            "all_time": "6,913"
                           },
                           "completed": "4",
                           "favorites": "4",
@@ -541,16 +537,13 @@
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1212) Antenna Cover"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "7",
-                            "past_7_days": "14",
-                            "past_30_days": "22",
-                            "all_time": "3,850"
+                            "past_24_hours": "11",
+                            "past_7_days": "25",
+                            "past_30_days": "33",
+                            "all_time": "3,861"
                           },
                           "completed": "3",
                           "favorites": "2",
@@ -784,18 +777,19 @@
                         {
                           "url": "https://www.ifixit.com/Guide/MacBook+Pro+17-Inch+Models+A1151+A1212+A1229+and+A1261+Battery+Replacement/312",
                           "title": "MacBook Pro 17\" Models A1151 A1212 A1229 and A1261 Battery Replacement",
+                          "time_required": "5 - 30 seconds",
                           "difficulty": "Very easy",
-                          "introduction": "Cancel: I did not complete this guide.\n\n40 other people completed this guide.",
+                          "introduction": "All you need to remove the battery is your fingers!",
                           "what_you_need": {
                             "Parts": [
                               "MacBook Pro 17\" Battery"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "7",
-                            "past_7_days": "19",
-                            "past_30_days": "54",
-                            "all_time": "31,952"
+                            "past_24_hours": "20",
+                            "past_7_days": "39",
+                            "past_30_days": "74",
+                            "all_time": "31,972"
                           },
                           "completed": "40",
                           "favorites": "5",
@@ -822,13 +816,20 @@
                               "MacBook Pro 17\" (Model A1151) Battery Connector",
                               "MacBook Pro 17\" (Models A1212/A1229) Battery Connector",
                               "MacBook Pro 17\" (Model A1261) Battery Connector"
+                            ],
+                            "Tools": [
+                              "Arctic Silver ArctiClean",
+                              "Arctic Silver Thermal Paste",
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "15",
-                            "past_30_days": "27",
-                            "all_time": "14,512"
+                            "past_24_hours": "20",
+                            "past_7_days": "35",
+                            "past_30_days": "47",
+                            "all_time": "14,532"
                           },
                           "completed": "4",
                           "favorites": "3",
@@ -1021,21 +1022,21 @@
                           "difficulty": "Difficult",
                           "introduction": "Use this guide to replace the aluminum clutch cover.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1212) Clutch Cover"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver",
                               "iFixit Opening Tool"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1212) Clutch Cover"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "10",
-                            "past_30_days": "23",
-                            "all_time": "6,376"
+                            "past_24_hours": "11",
+                            "past_7_days": "21",
+                            "past_30_days": "34",
+                            "all_time": "6,387"
                           },
                           "completed": "3",
                           "favorites": "4",
@@ -1364,23 +1365,22 @@
                           "difficulty": "Difficult",
                           "introduction": "Change out the entire display assembly, including the inverter, Airport antennas, hinges and casing.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151) Display Assembly",
+                              "MacBook Pro 17\" (Model A1212) Display Assembly",
+                              "MacBook Pro 17\" (Model A1229) Display Assembly"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) Display Assembly",
-                              "MacBook Pro 17\" (Model A1212) Display Assembly",
-                              "MacBook Pro 17\" (Model A1229) Display Assembly",
-                              "MacBook Pro 17\" (Model A1261) Display Assembly"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "6",
-                            "past_7_days": "21",
-                            "past_30_days": "57",
-                            "all_time": "66,093"
+                            "past_24_hours": "12",
+                            "past_7_days": "33",
+                            "past_30_days": "69",
+                            "all_time": "66,105"
                           },
                           "completed": "46",
                           "favorites": "26",
@@ -1501,20 +1501,20 @@
                           "difficulty": "Difficult",
                           "introduction": "Does your display flicker when you rotate it about the hinges? A worn-through display data cable may be the cause.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Models A1151 / A1212 / A1229) Display Data Cable"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Models A1151 / A1212 / A1229) Display Data Cable"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "14",
-                            "past_30_days": "29",
-                            "all_time": "18,687"
+                            "past_24_hours": "12",
+                            "past_7_days": "25",
+                            "past_30_days": "40",
+                            "all_time": "18,698"
                           },
                           "completed": "14",
                           "favorites": "15",
@@ -1811,20 +1811,20 @@
                           "difficulty": "Moderate",
                           "introduction": "Backlight not working? Use this guide to replace a burned out display inverter.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151/A1212) Display Inverter"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151/A1212) Display Inverter"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "6",
-                            "past_7_days": "11",
-                            "past_30_days": "33",
-                            "all_time": "16,727"
+                            "past_24_hours": "10",
+                            "past_7_days": "21",
+                            "past_30_days": "43",
+                            "all_time": "16,737"
                           },
                           "completed": "13",
                           "favorites": "11",
@@ -2045,11 +2045,22 @@
                           "time_required": "No estimate",
                           "difficulty": "Difficult",
                           "introduction": "You can again use ExpressCard accessories by replacing a faulty ExpressCard cage.",
+                          "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Models A1151/A1212) ExpressCard Cage",
+                              "MacBook Pro 17\" (Model A1229) ExpressCard Cage"
+                            ],
+                            "Tools": [
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
+                            ]
+                          },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "6",
-                            "past_30_days": "14",
-                            "all_time": "9,739"
+                            "past_24_hours": "12",
+                            "past_7_days": "18",
+                            "past_30_days": "26",
+                            "all_time": "9,751"
                           },
                           "completed": "6",
                           "favorites": "2",
@@ -2236,16 +2247,627 @@
                           ]
                         },
                         {
+                          "url": "https://www.ifixit.com/Guide/MacBook+Pro+17-Inch+Models+A1151+A1212+A1229+and+A1261+Front+Display+Bezel+Replacement/2784",
+                          "title": "MacBook Pro 17\" Models A1151 A1212 A1229 and A1261 Front Display Bezel Replacement",
+                          "time_required": "1 - 2 hours",
+                          "difficulty": "Moderate",
+                          "introduction": "Replacing the front display bezel requires removal of nearly every component in your display assembly.",
+                          "what_you_need": {
+                            "Tools": [
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver",
+                              "iFixit Opening Tool"
+                            ]
+                          },
+                          "view_statistics": {
+                            "past_24_hours": "9",
+                            "past_7_days": "23",
+                            "past_30_days": "35",
+                            "all_time": "21,598"
+                          },
+                          "completed": "10",
+                          "favorites": "9",
+                          "videos": [
+                            {
+                              "url": "http://youtu.be/J-9jUiLoRcQ",
+                              "title": "http://youtu.be/J-9jUiLoRcQ"
+                            }
+                          ],
+                          "steps": [
+                            {
+                              "title": "Step 1 Battery",
+                              "content": "Use your fingers to push both battery release tabs away from the battery and lift the battery out of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/inpTqi3kC2oEILvL.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 2 RAM Shield",
+                              "content": "Remove the four identical Phillips 3.4 mm screws from the memory door. These screws have 4 mm diameter heads rather than the 3 mm heads on the body screws.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/HsUpwplSeoYxfAZT.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 3",
+                              "content": "Lift the memory door up enough to get a grip on it, and slide it toward you, pulling it away from the casing.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/1k2Wi6HlKV5VrdgH.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 4 Upper Case",
+                              "content": "Remove the three Phillips screws in the battery compartment near the latch. Apple was nice enough to tilt these screws at a slight angle to make them easier to remove. On the A1261 these screws have 4 mm diameter heads rather than the 3 mm heads on the body screws.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/WKwoXwvApSbynKjr.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 5",
+                              "content": "Remove the following six screws:\nTwo 14.5 mm T6 Torx screws on either side of the RAM slot.\nFour 3.4 mm Phillips screws along the hinge.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/YAspW4EEkCJRDsKl.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 6",
+                              "content": "Remove the four 3.4 mm Phillips screws on the port side of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/23e4TihsxnA3YS1D.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 7",
+                              "content": "Rotate the computer 90 degrees and remove the two Phillips screws from the rear of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/Dq4YYMmEB13YHvA2.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 8",
+                              "content": "Rotate the computer 90 degrees again and remove the four Phillips screws from the side of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/rrRpmdNyglq1mYXy.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 9",
+                              "content": "Do not yank the upper case off quickly. The case is attached to the logic board via a ribbon cable.\nLift up the back of the case and work your fingers along the sides, freeing the case as you go. Once you have freed the sides, you may need to rock the case up and down to free the front of the upper case.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/VlILCxOuvQBBOu6Z.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 10",
+                              "content": "Disconnect the trackpad and keyboard ribbon cable from the logic board.\nRemove the upper case.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/CKcJBnPVxu3JFxFu.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 11 Display",
+                              "content": "Disconnect the two antenna cables from the AirPort Extreme card, the iSight and inverter cables from the left side of the logic board, and the display data cable from the right side of the logic board. Be careful to slide the connectors as they may become damaged otherwise.\nFor A1229 and A1212 models, disconnect the three antenna cables from the AirPort Extreme card and the three connectors highlighted on the logic board.\nFor the A1229, the order of the cables from left to right is: Black (left; towards the edge of the case) — Grey (middle) — Blue (right; towards the middle of the case.\nFor the A1261 model, disconnect the two antenna cables from the AirPort Extreme card and the three connectors highlighted on the logic board.\nCarefully peel the iSight and inverter cables off the top of the left fan and de-route the AirPort antenna cables from the channel in the left speaker.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/VWZoYEMADifk3CME.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/4mSvbTEXDgFPYKFE.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/NWjHlDGSULFukQCS.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 12",
+                              "content": "Remove the ten silver T6 Torx screws securing the display (five on each side-take note that the inside screws on both sides are longer with a thinner head).\nDon't forget to replace the hinge end caps when reinstalling the display assembly. The end caps are side specific, so be sure that the posts are facing towards the lower case.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/XevOsTDUQaQ5uiBm.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 13",
+                              "content": "Grasp the display assembly on both sides and lift it up and out of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/xlqPD5dlvhCYlEr6.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 14 Rear Display Bezel",
+                              "content": "The hinge end caps on this model can be easily removed at this point, as they are not fastened to the hinge and may fall off during service.\nRemove the Phillips screws from the lower left and right corners of the display (two screws total).",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/jdHjIyrv4VU4CUbM.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/dU5I1JNcjAFZFFaP.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 15",
+                              "content": "Insert the flat end of a spudger perpendicular to the face of the display between the plastic strip attached to the rear bezel and the front bezel.\nDo not insert your spudger between the plastic strip and the rear bezel.\nWith the spudger still inserted, rotate it away from the display to separate the front and rear bezels.\nWork along the right edge of the display until the rear bezel is evenly separated from the front bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/DcFQarWEAw1hL5Fp.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/OreX6cw1t1Rs5BRr.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/eJEfwHiNZOkYQbgB.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 16",
+                              "content": "Insert your spudger between the front and rear display bezels at the lower right corner of the display.\nPry the rear bezel away from the front bezel to slightly separate the bottom edge of the rear display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/6EGEuUBA3MuGMLQD.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/sN4Zo6cQHEtwKI2a.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 17",
+                              "content": "Insert the flat end of a spudger into the gap between the rear display bezel and the clutch cover.\nTwist the spudger to separate the lower edge of the rear display bezel from the clutch cover.\nWork along the lower edge of the rear bezel until it is evenly separated from the clutch cover.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/uSQwSy1EAqPC564j.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/CCdR1JvXMKU4oyoV.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 18",
+                              "content": "Now that the right and bottom edges of the rear bezel are slightly separated from the front bezel, use a spudger to pop the rear bezel off the tabs near the lower right corner of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/wGT2YsGonqpO6Kya.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/vVrwXKatTB2H6GC3.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/3ed3hONn1ENiFvYm.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 19",
+                              "content": "Insert the flat end of a spudger between the front bezel and the plastic strip attached to the rear bezel near the screw holes at the bottom corners of the display.\nRotate your spudger toward the rear bezel to separate it from the front bezel.\nIf necessary, continue separating the left edge of the rear bezel off the tabs on the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/44sokncrErWkQc6j.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/LwjV5BSDkEFItaYO.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/o553OmSJ2lWRYJnd.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 20",
+                              "content": "Slightly lift the lower edge of the display and pull it away from the rear display bezel.\nThe rear display bezel remains.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/BBAAaRX3FyVQA2aF.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 21 Display Inverter",
+                              "content": "Remove the piece of tape securing the backlight cables to the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/WGL5DJAgAuX14FDa.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 22",
+                              "content": "Carefully lift the inverter out of the clutch cover.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/sLENsqrQ1WaxcdcV.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/WZ1dpaI6JJMgRT56.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/qdAmK2Vt6VN4uyle.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 23",
+                              "content": "Disconnect the inverter cable by pulling its connector away from the socket on the inverter board.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/i5YD15ArGitrRXum.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/BVJfWNcsadbch4nl.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 24",
+                              "content": "Disconnect the backlight connector from the inverter board.\nBe careful when removing this connector, as it may be firmly seated in its socket.\nRemove the inverter from the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/RLZj6YRxY6cCcwLu.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/jJDXbElq6EFbUPHA.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 25 Clutch Assembly",
+                              "content": "Use the flat end of a spudger to carefully peel off the three antenna straps stuck to the lower edge of the LCD.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/mi6UFZuILLeslUAo.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 26",
+                              "content": "Remove the five Phillips screws securing the clutch cover to the bottom edge of the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/Apqrf3iiIIwnuvdJ.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 27",
+                              "content": "Remove the two pieces of tape securing the display data cable to the LCD.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/FgsyhILSFGDH6MqD.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/SY6efcnLJApNeVGM.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 28",
+                              "content": "Disconnect the display data cable from the LCD by pulling it toward the bottom edge of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/MvuKmE5OBOCLNU32.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/LmSxQYEVYS4HnVFN.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 29",
+                              "content": "Move the display data cable out of the way to remove the Phillips screw hidden underneath.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/UowSYYPTQd4tS3PZ.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 30",
+                              "content": "While pulling the clutch assembly away from the clutch hinge with one hand, insert an iPod opening tool between the clutch cover and the front display bezel to lift the clutch cover over the retaining pin on the front display bezel.\nPull the clutch assembly away from the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/bAZWfEPjuskdcGGw.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/SQyUFkTsZmYCICoa.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 31",
+                              "content": "Repeat the process covered in the previous step to free the other side of the clutch assembly from the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/WsHYmpXG1afeNbKV.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 32",
+                              "content": "Remove the clutch assembly from the front display bezel, minding any cables that may get caught.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/GLRDHfbDh6ZHIdQm.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 33 Inverter/Antenna Cables",
+                              "content": "Remove the three pieces of tape securing the camera cable to the display assembly.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/BnYOCVbSDmkERMI3.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 34",
+                              "content": "Use the tip of a spudger or your fingernail to flip up the ZIF retaining flap on the camera cable socket at the edge of the camera board near the top center of the front display bezel.\nBe sure you are prying up on the retaining flap, not the socket itself.\nPull the camera cable out of its socket.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/KPKQgApgIbiNUHip.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/jAth1bP2ZYUILVaU.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 35",
+                              "content": "Peel the camera cable off the foam tape along the top edge of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/ZWGIOlhJKZvrlDHt.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 36",
+                              "content": "Remove the inverter/antenna cables from the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/Y3kFX3mggADbanvU.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 37 Left Clutch Hinge",
+                              "content": "Remove the four 3.5 mm T6 Torx screws securing the left clutch hinge to the front display bezel.\nRemove the left clutch hinge from the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/DE2K1KJbkXOv6bIq.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/TFV6SLuns3MtKTpI.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 38 Front Display Bezel",
+                              "content": "Remove the display data cable from the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/Mg6OM5E6cHGVbII3.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 39",
+                              "content": "Remove the four 3.5 mm T6 Torx screws securing the right clutch hinge to the front display bezel.\nRemove the right clutch hinge from the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/CCT5nBNeWgdxGZiC.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/P6bLERM2SRVa52gM.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 40",
+                              "content": "Remove the four 3.2 mm Phillips screws along the right edge of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/2h444wRKjC5IQynC.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 41",
+                              "content": "Remove the two 3.2 mm Phillips screws on the top edge of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/3flkJaK5kJMQRvI2.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/M5c4UpGSv6eFtqQI.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 42",
+                              "content": "Remove the four 3.2 mm Phillips screws along the left edge of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/TD13CMwQDrhCtuMc.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 43",
+                              "content": "The next few steps will require you to separate the LCD from the adhesive applied to the upper and lower edges of the front bezel.\nThe adhesive is applied such that it sticks to a thin steel strip around the perimeter of the LCD. When prying your LCD away from the front panel, be sure you are separating the front panel from the steel strip on the LCD.\nUse the flat end of a spudger to gently lift one of the top corners of the LCD out of the front bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/VHIv1Fu2eGiqawRM.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 44",
+                              "content": "Work your way along the top edge of the LCD, slowly prying the attached steel strip away from the front bezel.\nContinue prying the LCD off the front bezel along the left side of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/bbnO2mRADUaSrBO4.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 45",
+                              "content": "Now that the top and left edges are free, slightly lift the LCD out of the front bezel for enough room to pry the steel strip along the lower edge of the LCD away from the front bezel.\nPry along the lower edge of the LCD until it is freed from the adhesive on the front bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/g1xnXPeDiXTQa1mo.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 46",
+                              "content": "Lift the LCD out of the front bezel, minding any cables that may get caught.\nReplacement Note: there are clear plastic spacers attached via adhesive to the sides and bottom of the lcd panel. Be sure to transfer these spacers to the replacement panel for optimum fit.\nFront bezel remains.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/DPPWilIJkGityknS.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/jdTDZnWfS3PdkFrZ.medium"
+                              ],
+                              "videos": []
+                            }
+                          ]
+                        },
+                        {
+                          "url": "https://www.ifixit.com/Guide/MacBook+Pro+17-Inch+Models+A1151+A1212+A1229+and+A1261+Hard+Drive+Replacement/319",
+                          "title": "MacBook Pro 17\" Models A1151 A1212 A1229 and A1261 Hard Drive Replacement",
+                          "time_required": "5 - 10 minutes",
+                          "difficulty": "Moderate",
+                          "introduction": "You can install hard drives up to 9.5mm thick.",
+                          "what_you_need": {
+                            "Fix Kits": [
+                              "MacBook and MacBook Pro (Non‑Retina) SSD Upgrade Kit"
+                            ],
+                            "Parts": [
+                              "500 GB SSD",
+                              "Crucial BX500 500GB SSD",
+                              "500 GB SSD Hybrid 2.5\" Hard Drive",
+                              "500 GB 5400 RPM 2.5\" Hard Drive",
+                              "1 TB 5400 RPM 2.5\" Hard Drive",
+                              "MacBook Pro 17\" (Model A1151) Hard Drive Cable",
+                              "MacBook Pro 17\" (Models A1212/A1229) Hard Drive Cable",
+                              "MacBook Pro 17\" (Model A1261) Hard Drive Cable",
+                              "MacBook Pro 17\" (Models A1212 / A1229 / A1261) Hard Drive Bracket"
+                            ],
+                            "Tools": [
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
+                            ]
+                          },
+                          "view_statistics": {
+                            "past_24_hours": "16",
+                            "past_7_days": "49",
+                            "past_30_days": "192",
+                            "all_time": "424,613"
+                          },
+                          "completed": "634",
+                          "favorites": "128",
+                          "videos": [],
+                          "steps": [
+                            {
+                              "title": "Step 1 Battery",
+                              "content": "Use your fingers to push both battery release tabs away from the battery and lift the battery out of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/inpTqi3kC2oEILvL.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 2 RAM Shield",
+                              "content": "Remove the four identical Phillips 3.4 mm screws from the memory door. These screws have 4 mm diameter heads rather than the 3 mm heads on the body screws.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/HsUpwplSeoYxfAZT.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 3",
+                              "content": "Lift the memory door up enough to get a grip on it, and slide it toward you, pulling it away from the casing.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/1k2Wi6HlKV5VrdgH.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 4 Upper Case",
+                              "content": "Remove the three Phillips screws in the battery compartment near the latch. Apple was nice enough to tilt these screws at a slight angle to make them easier to remove. On the A1261 these screws have 4 mm diameter heads rather than the 3 mm heads on the body screws.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/WKwoXwvApSbynKjr.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 5",
+                              "content": "Remove the following six screws:\nTwo 14.5 mm T6 Torx screws on either side of the RAM slot.\nFour 3.4 mm Phillips screws along the hinge.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/YAspW4EEkCJRDsKl.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 6",
+                              "content": "Remove the four 3.4 mm Phillips screws on the port side of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/23e4TihsxnA3YS1D.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 7",
+                              "content": "Rotate the computer 90 degrees and remove the two Phillips screws from the rear of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/Dq4YYMmEB13YHvA2.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 8",
+                              "content": "Rotate the computer 90 degrees again and remove the four Phillips screws from the side of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/rrRpmdNyglq1mYXy.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 9",
+                              "content": "Do not yank the upper case off quickly. The case is attached to the logic board via a ribbon cable.\nLift up the back of the case and work your fingers along the sides, freeing the case as you go. Once you have freed the sides, you may need to rock the case up and down to free the front of the upper case.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/VlILCxOuvQBBOu6Z.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 10",
+                              "content": "Disconnect the trackpad and keyboard ribbon cable from the logic board.\nRemove the upper case.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/CKcJBnPVxu3JFxFu.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 11 Hard Drive",
+                              "content": "Peel up the orange ribbon cable taped to the top of the hard drive. This cable is still connected to the hard drive, so you will only be able to lift up on the cable a little.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/DRnUGWXsxBE3Hkjt.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 12",
+                              "content": "Remove the two T6 Torx screws securing the hard drive retaining bracket to the lower case.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/iogeTpbBTgFxXQHS.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 13",
+                              "content": "Lift the hard drive retaining bracket up and out of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/HI2KLxRkEQMv3s6Z.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 14",
+                              "content": "Lift the hard drive by tilting it from the right hand side, then lift it gently out of the lower case.\nIf present, remove the piece of tape holding the hard drive connector in its socket on the hard drive.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/UdxtoX4gdtoAl1P2.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 15",
+                              "content": "Disconnect the hard drive cable by pulling its connector away from the hard drive.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/C2uKoKtsqVptgmFL.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 16 Hard Drive",
+                              "content": "Remove the two silver T6 Torx screws and white (or black) rubber bumpers from the right side of the hard drive.\nYou'll need to transfer these screws and bumpers to your new hard drive if you're changing drives. Make sure to put these on the right side of the drive when looking at the label with the SATA connector at the far end.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/QqcX3G3OPcQYgV45.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 17",
+                              "content": "Remove the two silver T6 Torx screws from the left side of the hard drive (the rubber bumpers remain in the case for the left side of the drive)\nYou'll need to transfer these screws to your new hard drive if you're changing drives.\nIf you are installing a new hard drive, we have an OS X install guide to get you up and running.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/boKPEQnYtU2dOdXD.medium"
+                              ],
+                              "videos": []
+                            }
+                          ]
+                        },
+                        {
                           "url": "https://www.ifixit.com/Guide/MacBook+Pro+17-Inch+Models+A1151+A1212+A1229+and+A1261+Heat+Sink+Replacement/336",
                           "title": "MacBook Pro 17\" Models A1151 A1212 A1229 and A1261 Heat Sink Replacement",
                           "time_required": "No estimate",
                           "difficulty": "Difficult",
                           "introduction": "The heat sink helps keep the processor cool and happy.",
+                          "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151) Heat Sink",
+                              "MacBook Pro 17\" (Models A1212/A1229) Heat Sink"
+                            ],
+                            "Tools": [
+                              "MacBook Pro 17\" (Model A1261) Middle Thermal Sensor",
+                              "Arctic Silver ArctiClean",
+                              "Arctic Silver Thermal Paste",
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
+                            ]
+                          },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "15",
-                            "past_30_days": "38",
-                            "all_time": "26,192"
+                            "past_24_hours": "12",
+                            "past_7_days": "27",
+                            "past_30_days": "50",
+                            "all_time": "26,204"
                           },
                           "completed": "17",
                           "favorites": "15",
@@ -2514,29 +3136,359 @@
                           ]
                         },
                         {
+                          "url": "https://www.ifixit.com/Guide/MacBook+Pro+17-Inch+Models+A1151+A1212+A1229+and+A1261+Inverter-Antenna+Cables+Replacement/2782",
+                          "title": "MacBook Pro 17\" Models A1151 A1212 A1229 and A1261 Inverter/Antenna Cables Replacement",
+                          "time_required": "No estimate",
+                          "difficulty": "Difficult",
+                          "introduction": "Use this guide to replace a worn-out set of inverter/antenna cables.",
+                          "what_you_need": {
+                            "Tools": [
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
+                            ]
+                          },
+                          "view_statistics": {
+                            "past_24_hours": "9",
+                            "past_7_days": "13",
+                            "past_30_days": "18",
+                            "all_time": "9,813"
+                          },
+                          "completed": "2",
+                          "favorites": "4",
+                          "videos": [],
+                          "steps": [
+                            {
+                              "title": "Step 1 Battery",
+                              "content": "Use your fingers to push both battery release tabs away from the battery and lift the battery out of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/inpTqi3kC2oEILvL.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 2 RAM Shield",
+                              "content": "Remove the four identical Phillips 3.4 mm screws from the memory door. These screws have 4 mm diameter heads rather than the 3 mm heads on the body screws.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/HsUpwplSeoYxfAZT.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 3",
+                              "content": "Lift the memory door up enough to get a grip on it, and slide it toward you, pulling it away from the casing.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/1k2Wi6HlKV5VrdgH.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 4 Upper Case",
+                              "content": "Remove the three Phillips screws in the battery compartment near the latch. Apple was nice enough to tilt these screws at a slight angle to make them easier to remove. On the A1261 these screws have 4 mm diameter heads rather than the 3 mm heads on the body screws.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/WKwoXwvApSbynKjr.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 5",
+                              "content": "Remove the following six screws:\nTwo 14.5 mm T6 Torx screws on either side of the RAM slot.\nFour 3.4 mm Phillips screws along the hinge.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/YAspW4EEkCJRDsKl.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 6",
+                              "content": "Remove the four 3.4 mm Phillips screws on the port side of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/23e4TihsxnA3YS1D.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 7",
+                              "content": "Rotate the computer 90 degrees and remove the two Phillips screws from the rear of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/Dq4YYMmEB13YHvA2.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 8",
+                              "content": "Rotate the computer 90 degrees again and remove the four Phillips screws from the side of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/rrRpmdNyglq1mYXy.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 9",
+                              "content": "Do not yank the upper case off quickly. The case is attached to the logic board via a ribbon cable.\nLift up the back of the case and work your fingers along the sides, freeing the case as you go. Once you have freed the sides, you may need to rock the case up and down to free the front of the upper case.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/VlILCxOuvQBBOu6Z.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 10",
+                              "content": "Disconnect the trackpad and keyboard ribbon cable from the logic board.\nRemove the upper case.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/CKcJBnPVxu3JFxFu.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 11 Display",
+                              "content": "Disconnect the two antenna cables from the AirPort Extreme card, the iSight and inverter cables from the left side of the logic board, and the display data cable from the right side of the logic board. Be careful to slide the connectors as they may become damaged otherwise.\nFor A1229 and A1212 models, disconnect the three antenna cables from the AirPort Extreme card and the three connectors highlighted on the logic board.\nFor the A1229, the order of the cables from left to right is: Black (left; towards the edge of the case) — Grey (middle) — Blue (right; towards the middle of the case.\nFor the A1261 model, disconnect the two antenna cables from the AirPort Extreme card and the three connectors highlighted on the logic board.\nCarefully peel the iSight and inverter cables off the top of the left fan and de-route the AirPort antenna cables from the channel in the left speaker.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/VWZoYEMADifk3CME.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/4mSvbTEXDgFPYKFE.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/NWjHlDGSULFukQCS.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 12",
+                              "content": "Remove the ten silver T6 Torx screws securing the display (five on each side-take note that the inside screws on both sides are longer with a thinner head).\nDon't forget to replace the hinge end caps when reinstalling the display assembly. The end caps are side specific, so be sure that the posts are facing towards the lower case.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/XevOsTDUQaQ5uiBm.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 13",
+                              "content": "Grasp the display assembly on both sides and lift it up and out of the computer.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/xlqPD5dlvhCYlEr6.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 14 Rear Display Bezel",
+                              "content": "The hinge end caps on this model can be easily removed at this point, as they are not fastened to the hinge and may fall off during service.\nRemove the Phillips screws from the lower left and right corners of the display (two screws total).",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/jdHjIyrv4VU4CUbM.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/dU5I1JNcjAFZFFaP.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 15",
+                              "content": "Insert the flat end of a spudger perpendicular to the face of the display between the plastic strip attached to the rear bezel and the front bezel.\nDo not insert your spudger between the plastic strip and the rear bezel.\nWith the spudger still inserted, rotate it away from the display to separate the front and rear bezels.\nWork along the right edge of the display until the rear bezel is evenly separated from the front bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/DcFQarWEAw1hL5Fp.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/OreX6cw1t1Rs5BRr.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/eJEfwHiNZOkYQbgB.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 16",
+                              "content": "Insert your spudger between the front and rear display bezels at the lower right corner of the display.\nPry the rear bezel away from the front bezel to slightly separate the bottom edge of the rear display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/6EGEuUBA3MuGMLQD.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/sN4Zo6cQHEtwKI2a.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 17",
+                              "content": "Insert the flat end of a spudger into the gap between the rear display bezel and the clutch cover.\nTwist the spudger to separate the lower edge of the rear display bezel from the clutch cover.\nWork along the lower edge of the rear bezel until it is evenly separated from the clutch cover.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/uSQwSy1EAqPC564j.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/CCdR1JvXMKU4oyoV.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 18",
+                              "content": "Now that the right and bottom edges of the rear bezel are slightly separated from the front bezel, use a spudger to pop the rear bezel off the tabs near the lower right corner of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/wGT2YsGonqpO6Kya.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/vVrwXKatTB2H6GC3.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/3ed3hONn1ENiFvYm.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 19",
+                              "content": "Insert the flat end of a spudger between the front bezel and the plastic strip attached to the rear bezel near the screw holes at the bottom corners of the display.\nRotate your spudger toward the rear bezel to separate it from the front bezel.\nIf necessary, continue separating the left edge of the rear bezel off the tabs on the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/44sokncrErWkQc6j.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/LwjV5BSDkEFItaYO.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/o553OmSJ2lWRYJnd.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 20",
+                              "content": "Slightly lift the lower edge of the display and pull it away from the rear display bezel.\nThe rear display bezel remains.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/BBAAaRX3FyVQA2aF.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 21 Display Inverter",
+                              "content": "Remove the piece of tape securing the backlight cables to the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/WGL5DJAgAuX14FDa.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 22",
+                              "content": "Carefully lift the inverter out of the clutch cover.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/sLENsqrQ1WaxcdcV.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/WZ1dpaI6JJMgRT56.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/qdAmK2Vt6VN4uyle.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 23",
+                              "content": "Disconnect the inverter cable by pulling its connector away from the socket on the inverter board.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/i5YD15ArGitrRXum.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/BVJfWNcsadbch4nl.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 24",
+                              "content": "Disconnect the backlight connector from the inverter board.\nBe careful when removing this connector, as it may be firmly seated in its socket.\nRemove the inverter from the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/RLZj6YRxY6cCcwLu.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/jJDXbElq6EFbUPHA.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 25 Clutch Assembly",
+                              "content": "Use the flat end of a spudger to carefully peel off the three antenna straps stuck to the lower edge of the LCD.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/mi6UFZuILLeslUAo.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 26",
+                              "content": "Remove the five Phillips screws securing the clutch cover to the bottom edge of the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/Apqrf3iiIIwnuvdJ.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 27",
+                              "content": "Remove the two pieces of tape securing the display data cable to the LCD.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/FgsyhILSFGDH6MqD.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/SY6efcnLJApNeVGM.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 28",
+                              "content": "Disconnect the display data cable from the LCD by pulling it toward the bottom edge of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/MvuKmE5OBOCLNU32.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/LmSxQYEVYS4HnVFN.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 29",
+                              "content": "Move the display data cable out of the way to remove the Phillips screw hidden underneath.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/UowSYYPTQd4tS3PZ.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 30",
+                              "content": "While pulling the clutch assembly away from the clutch hinge with one hand, insert an iPod opening tool between the clutch cover and the front display bezel to lift the clutch cover over the retaining pin on the front display bezel.\nPull the clutch assembly away from the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/bAZWfEPjuskdcGGw.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/SQyUFkTsZmYCICoa.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 31",
+                              "content": "Repeat the process covered in the previous step to free the other side of the clutch assembly from the front display bezel.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/WsHYmpXG1afeNbKV.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 32",
+                              "content": "Remove the clutch assembly from the front display bezel, minding any cables that may get caught.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/GLRDHfbDh6ZHIdQm.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 33 Inverter/Antenna Cables",
+                              "content": "Remove the three pieces of tape securing the camera cable to the display assembly.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/BnYOCVbSDmkERMI3.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 34",
+                              "content": "Use the tip of a spudger or your fingernail to flip up the ZIF retaining flap on the camera cable socket at the edge of the camera board near the top center of the front display bezel.\nBe sure you are prying up on the retaining flap, not the socket itself.\nPull the camera cable out of its socket.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/KPKQgApgIbiNUHip.medium",
+                                "https://guide-images.cdn.ifixit.com/igi/jAth1bP2ZYUILVaU.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 35",
+                              "content": "Peel the camera cable off the foam tape along the top edge of the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/ZWGIOlhJKZvrlDHt.medium"
+                              ],
+                              "videos": []
+                            },
+                            {
+                              "title": "Step 36",
+                              "content": "Remove the inverter/antenna cables from the display.",
+                              "images": [
+                                "https://guide-images.cdn.ifixit.com/igi/Y3kFX3mggADbanvU.medium"
+                              ],
+                              "videos": []
+                            }
+                          ]
+                        },
+                        {
                           "url": "https://www.ifixit.com/Guide/MacBook+Pro+17-Inch+Models+A1151+A1212+A1229+and+A1261+Keyboard+Replacement/317",
                           "title": "MacBook Pro 17\" Models A1151 A1212 A1229 and A1261 Keyboard Replacement",
                           "time_required": "25 minutes - 1 hour",
                           "difficulty": "Moderate",
                           "introduction": "This guide shows the hidden screws you must remove when replacing the keyboard.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151) Keyboard",
+                              "MacBook Pro 17\" (Model A1229) Keyboard"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) Keyboard",
-                              "MacBook Pro 17\" (Model A1212) Keyboard",
-                              "MacBook Pro 17\" (Model A1261) Keyboard",
-                              "MacBook Pro 17\" (Model A1229) Keyboard"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "16",
-                            "past_30_days": "32",
-                            "all_time": "71,066"
+                            "past_24_hours": "11",
+                            "past_7_days": "27",
+                            "past_30_days": "43",
+                            "all_time": "71,077"
                           },
                           "completed": "74",
                           "favorites": "18",
@@ -2745,21 +3697,21 @@
                           "difficulty": "Difficult",
                           "introduction": "Use this guide to replace just the LCD rather than the entire display assembly.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151 / A1212 / A1229 / A1261) LCD Panel",
+                              "MacBook Pro 17\" (Model A1261 Hi‑Res) LCD LED Panel"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151 / A1212 / A1229 / A1261) LCD Panel",
-                              "MacBook Pro 17\" (Model A1261 Hi‑Res) LCD LED Panel"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "13",
-                            "past_30_days": "41",
-                            "all_time": "52,845"
+                            "past_24_hours": "11",
+                            "past_7_days": "24",
+                            "past_30_days": "52",
+                            "all_time": "52,856"
                           },
                           "completed": "50",
                           "favorites": "28",
@@ -3062,20 +4014,20 @@
                           "difficulty": "Difficult",
                           "introduction": "Replace a damaged clutch hinge to keep your display opening smoothly.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" Left Clutch Hinge"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Left Clutch Hinge"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "10",
-                            "past_30_days": "16",
-                            "all_time": "7,334"
+                            "past_24_hours": "11",
+                            "past_7_days": "21",
+                            "past_30_days": "27",
+                            "all_time": "7,345"
                           },
                           "completed": "6",
                           "favorites": "3",
@@ -3406,23 +4358,21 @@
                           "difficulty": "Difficult",
                           "introduction": "Replacing a defective fan is pretty easy and will keep your laptop running cool.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151) Left Fan",
+                              "MacBook Pro 17\" (Model A1229) Left Fan"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) Left Fan",
-                              "MacBook Pro 17\" (Model A1229) Left Fan",
-                              "MacBook Pro 17\" (Model A1261) Left Fan",
-                              "MacBook Pro 17\" (Model A1212) Left Fan"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "13",
-                            "past_30_days": "27",
-                            "all_time": "46,267"
+                            "past_24_hours": "9",
+                            "past_7_days": "22",
+                            "past_30_days": "36",
+                            "all_time": "46,276"
                           },
                           "completed": "81",
                           "favorites": "24",
@@ -3602,23 +4552,21 @@
                           "difficulty": "Difficult",
                           "introduction": "Provides power to the machine and includes all ports on the left side of the machine.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151) Left I/O Board",
+                              "MacBook Pro 17\" (Model A1261) Left I/O Board"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) Left I/O Board",
-                              "MacBook Pro 17\" (Model A1212) Left I/O Board",
-                              "MacBook Pro 17\" (Model A1229) Left I/O Board",
-                              "MacBook Pro 17\" (Model A1261) Left I/O Board"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "9",
-                            "past_30_days": "21",
-                            "all_time": "21,018"
+                            "past_24_hours": "9",
+                            "past_7_days": "18",
+                            "past_30_days": "30",
+                            "all_time": "21,027"
                           },
                           "completed": "26",
                           "favorites": "6",
@@ -3819,23 +4767,21 @@
                           "difficulty": "Difficult",
                           "introduction": "This connects the left I/O board to the logic board.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151) Left I/O Board Cable",
+                              "MacBook Pro 17\" (Model A1229) Left I/O Board Cable"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) Left I/O Board Cable",
-                              "MacBook Pro 17\" (Model A1212) Left I/O Board Cable",
-                              "MacBook Pro 17\" (Model A1261) Left I/O Board Cable",
-                              "MacBook Pro 17\" (Model A1229) Left I/O Board Cable"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "9",
-                            "past_30_days": "14",
-                            "all_time": "8,038"
+                            "past_24_hours": "9",
+                            "past_7_days": "18",
+                            "past_30_days": "23",
+                            "all_time": "8,047"
                           },
                           "completed": "4",
                           "favorites": "1",
@@ -3970,23 +4916,22 @@
                           "difficulty": "Difficult",
                           "introduction": "Restore balanced sound to your laptop by replacing the left speaker.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151) Left Speaker",
+                              "MacBook Pro 17\" (Model A1229) Left Speaker",
+                              "MacBook Pro 17\" (Model A1261) Left Speaker"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) Left Speaker",
-                              "MacBook Pro 17\" (Model A1212) Left Speaker",
-                              "MacBook Pro 17\" (Model A1229) Left Speaker",
-                              "MacBook Pro 17\" (Model A1261) Left Speaker"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "6",
-                            "past_30_days": "16",
-                            "all_time": "8,427"
+                            "past_24_hours": "8",
+                            "past_7_days": "14",
+                            "past_30_days": "24",
+                            "all_time": "8,435"
                           },
                           "completed": "4",
                           "favorites": "1",
@@ -4130,15 +5075,19 @@
                           "difficulty": "Difficult",
                           "introduction": "The left thermal sensor for Models A1151 and A1212 is the middle thermal sensor for the A1229. Use this guide to replace the middle thermal sensor on a MacBook Pro 17\" Model A1229.\n\nThis detects the internal temperature of your machine for heat management.",
                           "what_you_need": {
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) Left Thermal Sensor"
+                            "Tools": [
+                              "Arctic Silver ArctiClean",
+                              "Arctic Silver Thermal Paste",
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "12",
-                            "past_30_days": "24",
-                            "all_time": "10,869"
+                            "past_24_hours": "9",
+                            "past_7_days": "21",
+                            "past_30_days": "33",
+                            "all_time": "10,878"
                           },
                           "favorites": "3",
                           "videos": [],
@@ -4331,15 +5280,19 @@
                           "difficulty": "Difficult",
                           "introduction": "This detects the internal temperature of your machine for heat management.",
                           "what_you_need": {
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1229) Left Thermal Sensor"
+                            "Tools": [
+                              "Arctic Silver ArctiClean",
+                              "Arctic Silver Thermal Paste",
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "4",
-                            "past_30_days": "14",
-                            "all_time": "6,643"
+                            "past_24_hours": "9",
+                            "past_7_days": "13",
+                            "past_30_days": "23",
+                            "all_time": "6,652"
                           },
                           "completed": "2",
                           "favorites": "1",
@@ -4629,13 +5582,20 @@
                               "MacBook Pro 17\" (Model A1229) 2.4 GHz Logic Board",
                               "MacBook Pro 17\" (Model A1261) 2.5 GHz Logic Board",
                               "MacBook Pro 17\" (Model A1261) 2.6 GHz Logic Board"
+                            ],
+                            "Tools": [
+                              "Arctic Silver ArctiClean",
+                              "Arctic Silver Thermal Paste",
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "13",
-                            "past_30_days": "51",
-                            "all_time": "120,885"
+                            "past_24_hours": "9",
+                            "past_7_days": "22",
+                            "past_30_days": "60",
+                            "all_time": "120,894"
                           },
                           "completed": "105",
                           "favorites": "62",
@@ -4841,13 +5801,20 @@
                               "MacBook Pro 17\" (Model A1212) Lower Case",
                               "MacBook Pro 17\" (Model A1229) Lower Case",
                               "MacBook Pro 17\" (Model A1261) Lower Case"
+                            ],
+                            "Tools": [
+                              "Arctic Silver ArctiClean",
+                              "Arctic Silver Thermal Paste",
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "2",
-                            "past_7_days": "6",
-                            "past_30_days": "20",
-                            "all_time": "66,338"
+                            "past_24_hours": "10",
+                            "past_7_days": "16",
+                            "past_30_days": "30",
+                            "all_time": "66,348"
                           },
                           "completed": "19",
                           "favorites": "8",
@@ -5194,22 +6161,20 @@
                           "difficulty": "Moderate",
                           "introduction": "Upgrade or replace the SuperDrive.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1229) SuperDrive Cable"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Models A1151/A1212) SuperDrive Cable",
-                              "MacBook Pro 17\" (Model A1261) SuperDrive Cable",
-                              "MacBook Pro 17\" (Model A1229) SuperDrive Cable"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "10",
-                            "past_30_days": "27",
-                            "all_time": "59,120"
+                            "past_24_hours": "9",
+                            "past_7_days": "19",
+                            "past_30_days": "36",
+                            "all_time": "59,129"
                           },
                           "completed": "50",
                           "favorites": "31",
@@ -5360,22 +6325,21 @@
                           "difficulty": "Difficult",
                           "introduction": "The time and date, as well as other settings, are kept by the PRAM battery when your machine is off.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151) PRAM Battery",
+                              "MacBook Pro 17\" (Model A1261) PRAM Battery"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) PRAM Battery",
-                              "MacBook Pro 17\" (Models A1212/A1229) PRAM Battery",
-                              "MacBook Pro 17\" (Model A1261) PRAM Battery"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "2",
-                            "past_7_days": "14",
-                            "past_30_days": "43",
-                            "all_time": "26,130"
+                            "past_24_hours": "10",
+                            "past_7_days": "24",
+                            "past_30_days": "53",
+                            "all_time": "26,140"
                           },
                           "completed": "6",
                           "favorites": "6",
@@ -5510,15 +6474,26 @@
                           "difficulty": "Easy",
                           "introduction": "Two RAM slots allow up to 2 GB of PC2-5300 RAM.",
                           "what_you_need": {
+                            "Fix Kits": [
+                              "MacBook Pro 17\" Model A1151 Memory Maxxer RAM Upgrade Kit",
+                              "MacBook Pro 17\" Model A1212 Memory Maxxer RAM Upgrade Kit",
+                              "MacBook Pro 17\" Model A1229 Memory Maxxer RAM Upgrade Kit",
+                              "MacBook Pro 17\" (Model A1261) Memory Maxxer RAM Upgrade Kit"
+                            ],
+                            "Parts": [
+                              "PC2‑5300 1 GB RAM Chip",
+                              "PC2‑5300 2 GB RAM Chip",
+                              "PC2‑5300 4 GB RAM Chip"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "13",
-                            "past_30_days": "32",
-                            "all_time": "62,356"
+                            "past_24_hours": "12",
+                            "past_7_days": "25",
+                            "past_30_days": "44",
+                            "all_time": "62,368"
                           },
                           "completed": "113",
                           "favorites": "18",
@@ -5575,16 +6550,13 @@
                           "what_you_need": {
                             "Tools": [
                               "Phillips #00 Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Memory Door"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "8",
-                            "past_30_days": "14",
-                            "all_time": "8,000"
+                            "past_24_hours": "9",
+                            "past_7_days": "17",
+                            "past_30_days": "23",
+                            "all_time": "8,009"
                           },
                           "completed": "9",
                           "favorites": "2",
@@ -5621,7 +6593,7 @@
                           "title": "MacBook Pro 17\" Models A1151 A1212 A1229 and A1261 Rear Display Bezel Replacement",
                           "time_required": "No estimate",
                           "difficulty": "Moderate",
-                          "introduction": "",
+                          "introduction": "Remove the rear display bezel to access components inside your MacBook Pro's display.",
                           "what_you_need": {
                             "Tools": [
                               "Phillips #00 Screwdriver",
@@ -5630,10 +6602,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "7",
-                            "past_30_days": "16",
-                            "all_time": "9,732"
+                            "past_24_hours": "9",
+                            "past_7_days": "16",
+                            "past_30_days": "25",
+                            "all_time": "9,741"
                           },
                           "completed": "5",
                           "favorites": "1",
@@ -5826,10 +6798,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "2",
-                            "past_7_days": "10",
-                            "past_30_days": "23",
-                            "all_time": "7,429"
+                            "past_24_hours": "9",
+                            "past_7_days": "19",
+                            "past_30_days": "32",
+                            "all_time": "7,438"
                           },
                           "completed": "5",
                           "favorites": "3",
@@ -6135,22 +7107,21 @@
                           "difficulty": "Moderate",
                           "introduction": "Replacing a defective fan is pretty easy and will keep your laptop running cool.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1151) Right Fan",
+                              "MacBook Pro 17\" (Models A1212/A1229) Right Fan"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) Right Fan",
-                              "MacBook Pro 17\" (Models A1212/A1229) Right Fan",
-                              "MacBook Pro 17\" (Model A1261) Right Fan"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "2",
-                            "past_7_days": "12",
-                            "past_30_days": "28",
-                            "all_time": "44,901"
+                            "past_24_hours": "9",
+                            "past_7_days": "21",
+                            "past_30_days": "37",
+                            "all_time": "44,910"
                           },
                           "completed": "82",
                           "favorites": "15",
@@ -6272,15 +7243,21 @@
                           "what_you_need": {
                             "Parts": [
                               "MacBook Pro 17\" (Models A1151/A1212) Right Speaker",
-                              "MacBook Pro 17\" (Model A1229) Right Speaker",
-                              "MacBook Pro 17\" (Model A1261) Right Speaker"
+                              "MacBook Pro 17\" (Model A1229) Right Speaker"
+                            ],
+                            "Tools": [
+                              "Arctic Silver ArctiClean",
+                              "Arctic Silver Thermal Paste",
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "9",
-                            "past_30_days": "23",
-                            "all_time": "7,702"
+                            "past_24_hours": "10",
+                            "past_7_days": "19",
+                            "past_30_days": "33",
+                            "all_time": "7,712"
                           },
                           "completed": "3",
                           "favorites": "2",
@@ -6531,20 +7508,18 @@
                           "introduction": "This detects the internal temperature of your machine for heat management.",
                           "what_you_need": {
                             "Tools": [
+                              "MacBook Pro 17\" (Models A1212/A1229) Right Thermal Sensor",
+                              "MacBook Pro 17\" (Model A1261) Right Thermal Sensor",
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Models A1212/A1229) Right Thermal Sensor",
-                              "MacBook Pro 17\" (Model A1261) Right Thermal Sensor"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "2",
-                            "past_7_days": "8",
-                            "past_30_days": "24",
-                            "all_time": "9,544"
+                            "past_24_hours": "9",
+                            "past_7_days": "17",
+                            "past_30_days": "33",
+                            "all_time": "9,553"
                           },
                           "favorites": "1",
                           "videos": [],
@@ -6680,23 +7655,21 @@
                           "difficulty": "Moderate",
                           "introduction": "The ins and outs of replacing your upper case.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" (Model A1212) Upper Case",
+                              "MacBook Pro 17\" (Model A1229) Upper Case"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" (Model A1151) Upper Case",
-                              "MacBook Pro 17\" (Model A1261) Upper Case",
-                              "MacBook Pro 17\" (Model A1212) Upper Case",
-                              "MacBook Pro 17\" (Model A1229) Upper Case"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "2",
-                            "past_7_days": "6",
-                            "past_30_days": "21",
-                            "all_time": "24,363"
+                            "past_24_hours": "9",
+                            "past_7_days": "15",
+                            "past_30_days": "30",
+                            "all_time": "24,372"
                           },
                           "completed": "16",
                           "favorites": "11",
@@ -6917,17 +7890,13 @@
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook 802.11g Airport Extreme Card",
-                              "MacBook 802.11n Airport Extreme Card"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "2",
-                            "past_7_days": "3",
-                            "past_30_days": "10",
-                            "all_time": "8,807"
+                            "past_24_hours": "9",
+                            "past_7_days": "12",
+                            "past_30_days": "19",
+                            "all_time": "8,816"
                           },
                           "completed": "3",
                           "favorites": "0",
@@ -7062,10 +8031,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "6",
-                            "past_7_days": "75",
-                            "past_30_days": "127",
-                            "all_time": "17,051"
+                            "past_24_hours": "13",
+                            "past_7_days": "88",
+                            "past_30_days": "140",
+                            "all_time": "17,064"
                           },
                           "completed": "9",
                           "favorites": "14",
@@ -7264,20 +8233,20 @@
                           "difficulty": "Moderate",
                           "introduction": "Having issues with wireless connectivity? The problem could lie inside the AirPort Board.\n\nThis guide will show you how to replace the AirPort card installed in the display frame of the Early 2009 and Mid 2009 MacBook Pro 17\" Unibody. This guide does not apply to the Mid 2010 and Late 2011 MacBook Pro 17\" Unibody. The AirPort card in the later models is mounted beside the optical drive.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 15\"/17\" Unibody (2008‑2009) Airport Extreme Card"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 15\"/17\" Unibody (2008‑2009) Airport Extreme Card"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "7",
-                            "past_7_days": "54",
-                            "past_30_days": "108",
-                            "all_time": "22,587"
+                            "past_24_hours": "10",
+                            "past_7_days": "64",
+                            "past_30_days": "118",
+                            "all_time": "22,597"
                           },
                           "completed": "15",
                           "favorites": "16",
@@ -7506,17 +8475,13 @@
                               "Phillips #00 Screwdriver",
                               "iFixit Opening Tool",
                               "Tri‑point Y0 Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody (Early and Late 2011) Replacement Battery",
-                              "MacBook Pro 17\" Unibody (Early2009 to Mid 2010) Replacement Battery"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "32",
-                            "past_7_days": "114",
-                            "past_30_days": "312",
-                            "all_time": "330,536"
+                            "past_24_hours": "15",
+                            "past_7_days": "129",
+                            "past_30_days": "327",
+                            "all_time": "330,551"
                           },
                           "completed": "208",
                           "favorites": "81",
@@ -7582,19 +8547,19 @@
                           "difficulty": "Moderate",
                           "introduction": "Use this guide to replace your Bluetooth board.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" Unibody (Early‑Mid 2009) Bluetooth Board"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody (Early‑Mid 2009) Bluetooth Board"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "6",
-                            "past_7_days": "35",
-                            "past_30_days": "76",
-                            "all_time": "23,516"
+                            "past_24_hours": "11",
+                            "past_7_days": "46",
+                            "past_30_days": "87",
+                            "all_time": "23,527"
                           },
                           "completed": "6",
                           "favorites": "15",
@@ -7677,6 +8642,7 @@
                           "introduction": "iSight acting more like iBlind? Maybe it's time for a new camera. Use this guide to replace a faulty camera.",
                           "what_you_need": {
                             "Tools": [
+                              "Heavy‑Duty Suction Cups (Pair)",
                               "iFixit Opening Picks set of 6",
                               "Phillips #00 Screwdriver",
                               "Spudger",
@@ -7684,10 +8650,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "42",
-                            "past_30_days": "78",
-                            "all_time": "11,734"
+                            "past_24_hours": "9",
+                            "past_7_days": "51",
+                            "past_30_days": "87",
+                            "all_time": "11,743"
                           },
                           "completed": "5",
                           "favorites": "7",
@@ -8035,6 +9001,7 @@
                           "introduction": "Use this guide to replace the camera board.",
                           "what_you_need": {
                             "Tools": [
+                              "Heavy‑Duty Suction Cups (Pair)",
                               "iFixit Opening Picks set of 6",
                               "Phillips #00 Screwdriver",
                               "Spudger",
@@ -8042,10 +9009,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "25",
-                            "past_30_days": "54",
-                            "all_time": "2,457"
+                            "past_24_hours": "9",
+                            "past_7_days": "34",
+                            "past_30_days": "63",
+                            "all_time": "2,466"
                           },
                           "completed": "3",
                           "favorites": "5",
@@ -8401,6 +9368,7 @@
                           "introduction": "If your camera seems to be acting strange, it may be the fault of the camera cable. If you find that the Wi-Fi connection works only when the display is in a certain position, your camera/AirPort cable may be the culprit. Use this guide to replace a broken or damaged cable.",
                           "what_you_need": {
                             "Tools": [
+                              "Heavy‑Duty Suction Cups (Pair)",
                               "iFixit Opening Picks set of 6",
                               "Phillips #00 Screwdriver",
                               "Spudger",
@@ -8408,10 +9376,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "7",
-                            "past_7_days": "28",
-                            "past_30_days": "80",
-                            "all_time": "12,907"
+                            "past_24_hours": "9",
+                            "past_7_days": "37",
+                            "past_30_days": "89",
+                            "all_time": "12,916"
                           },
                           "completed": "3",
                           "favorites": "9",
@@ -8807,10 +9775,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "6",
-                            "past_7_days": "31",
-                            "past_30_days": "84",
-                            "all_time": "20,443"
+                            "past_24_hours": "9",
+                            "past_7_days": "40",
+                            "past_30_days": "93",
+                            "all_time": "20,452"
                           },
                           "completed": "9",
                           "favorites": "13",
@@ -8985,22 +9953,22 @@
                           "difficulty": "Moderate",
                           "introduction": "Use this guide to replace your MacBook Pro's display assembly.",
                           "what_you_need": {
-                            "Tools": [
-                              "Phillips #00 Screwdriver",
-                              "Spudger",
-                              "T6 Torx Screwdriver"
-                            ],
                             "Parts": [
                               "MacBook Pro 17\" Unibody (Early‑Mid 2009) Display Assembly",
                               "MacBook Pro 17\" Unibody (Early 2011) Display Assembly",
                               "MacBook Pro 17\" Unibody (Late 2011) Display Assembly"
+                            ],
+                            "Tools": [
+                              "Phillips #00 Screwdriver",
+                              "Spudger",
+                              "T6 Torx Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "7",
-                            "past_7_days": "49",
-                            "past_30_days": "99",
-                            "all_time": "74,326"
+                            "past_24_hours": "11",
+                            "past_7_days": "60",
+                            "past_30_days": "110",
+                            "all_time": "74,337"
                           },
                           "completed": "43",
                           "favorites": "24",
@@ -9157,16 +10125,23 @@
                           "difficulty": "Moderate",
                           "introduction": "There are many benefits to adding a second drive (either HDD or SSD) to your laptop, such as improved speeds, greater storage space, and less heartache when installing new software. Use this guide to install one using our optical bay hard drive enclosure.\n\nWarning! If you have an older 3.0 Gb/s (SATA II) based system you need to make sure the drive you use is able to run at this slower speed. Review your drives spec sheet, make sure it clearly lists compatibility with 3.0 Gb/s (SATA II) systems. Most drives sold today are fixed speed 6.0 Gb/s (SATA III) which won’t work in 3.0 Gb/s (SATA II) systems properly.",
                           "what_you_need": {
+                            "Fix Kits": [
+                              "500 GB SSD Hybrid 2.5\" Hard Drive (Upgrade Kit)"
+                            ],
+                            "Parts": [
+                              "500 GB SSD",
+                              "Crucial BX500 500GB SSD"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "14",
-                            "past_7_days": "55",
-                            "past_30_days": "112",
-                            "all_time": "66,606"
+                            "past_24_hours": "12",
+                            "past_7_days": "67",
+                            "past_30_days": "124",
+                            "all_time": "66,618"
                           },
                           "completed": "68",
                           "favorites": "62",
@@ -9365,16 +10340,13 @@
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody (Early/Mid 2009) ExpressCard Cage"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "20",
-                            "past_30_days": "38",
-                            "all_time": "12,464"
+                            "past_24_hours": "10",
+                            "past_7_days": "30",
+                            "past_30_days": "48",
+                            "all_time": "12,474"
                           },
                           "completed": "6",
                           "favorites": "9",
@@ -9622,15 +10594,22 @@
                           "difficulty": "Easy",
                           "introduction": "Replace the missing feet for your MacBook Pro 17\".",
                           "what_you_need": {
+                            "Fix Kits": [
+                              "Adhesive Cleanup Kit (Set of 12)"
+                            ],
                             "Parts": [
                               "MacBook and MacBook Pro Unibody Plastic Feet"
+                            ],
+                            "Tools": [
+                              "Phillips #00 Screwdriver",
+                              "Tweezers"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "20",
-                            "past_30_days": "44",
-                            "all_time": "2,518"
+                            "past_24_hours": "9",
+                            "past_7_days": "29",
+                            "past_30_days": "53",
+                            "all_time": "2,527"
                           },
                           "completed": "10",
                           "favorites": "1",
@@ -9716,6 +10695,7 @@
                           "introduction": "Have you ever wondered how your display seems to work just fine, despite the huge cracks running across the front of it? Likely, you have just cracked the protective glass covering the LCD. Use this guide to remove a damaged or cracked display glass.",
                           "what_you_need": {
                             "Tools": [
+                              "Heavy‑Duty Suction Cups (Pair)",
                               "iFixit Opening Picks set of 6",
                               "Phillips #00 Screwdriver",
                               "Spudger",
@@ -9723,10 +10703,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "26",
-                            "past_30_days": "41",
-                            "all_time": "14,482"
+                            "past_24_hours": "10",
+                            "past_7_days": "36",
+                            "past_30_days": "51",
+                            "all_time": "14,492"
                           },
                           "completed": "8",
                           "favorites": "13",
@@ -9986,16 +10966,27 @@
                           "difficulty": "Moderate",
                           "introduction": "Use this guide to install a new hard drive in your MacBook Pro 17\" Unibody for more storage space.\n\nWarning! If you have an older 3.0 Gb/s (SATA II) based system you need to make sure the drive you use is able to run at this slower speed. Review your drives spec sheet, make sure it clearly lists compatibility with 3.0 Gb/s (SATA II) systems. Most drives sold today are fixed speed 6.0 Gb/s (SATA III) which won’t work in 3.0 Gb/s (SATA II) systems properly.",
                           "what_you_need": {
+                            "Fix Kits": [
+                              "MacBook and MacBook Pro (Non‑Retina) SSD Upgrade Kit",
+                              "500 GB SSD Hybrid 2.5\" Hard Drive (Upgrade Kit)"
+                            ],
+                            "Parts": [
+                              "500 GB SSD",
+                              "Crucial BX500 500GB SSD",
+                              "500 GB 5400 RPM 2.5\" Hard Drive",
+                              "1 TB 5400 RPM 2.5\" Hard Drive",
+                              "MacBook Pro 17\" Unibody Hard Drive Bracket"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "T6 Torx Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "13",
-                            "past_7_days": "68",
-                            "past_30_days": "238",
-                            "all_time": "274,093"
+                            "past_24_hours": "25",
+                            "past_7_days": "93",
+                            "past_30_days": "263",
+                            "all_time": "274,118"
                           },
                           "completed": "242",
                           "favorites": "95",
@@ -10079,18 +11070,18 @@
                           "difficulty": "Moderate",
                           "introduction": "Use this guide to replace the hard drive bracket nearest the front edge of the MacBook Pro 17\" Unibody.",
                           "what_you_need": {
-                            "Tools": [
-                              "Phillips #00 Screwdriver"
-                            ],
                             "Parts": [
                               "MacBook Pro 17\" Unibody Front Hard Drive Bracket"
+                            ],
+                            "Tools": [
+                              "Phillips #00 Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "17",
-                            "past_30_days": "48",
-                            "all_time": "4,817"
+                            "past_24_hours": "11",
+                            "past_7_days": "28",
+                            "past_30_days": "59",
+                            "all_time": "4,828"
                           },
                           "completed": "10",
                           "favorites": "6",
@@ -10183,20 +11174,19 @@
                           "difficulty": "Moderate",
                           "introduction": "Use this guide to replace a hard drive cable that is torn or has broken connectors.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" Unibody (Early 2011) Hard Drive Cable"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody (Early 2009 to Mid 2010) Hard Drive Cable",
-                              "MacBook Pro 17\" Unibody (Early 2011) Hard Drive Cable"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "19",
-                            "past_30_days": "55",
-                            "all_time": "20,522"
+                            "past_24_hours": "9",
+                            "past_7_days": "28",
+                            "past_30_days": "64",
+                            "all_time": "20,531"
                           },
                           "completed": "16",
                           "favorites": "12",
@@ -10298,13 +11288,19 @@
                           "what_you_need": {
                             "Parts": [
                               "MacBook Pro 17\" Unibody (Early‑Mid 2009) Heat Sink"
+                            ],
+                            "Tools": [
+                              "Arctic Silver ArctiClean",
+                              "Arctic Silver Thermal Paste",
+                              "Phillips #000 Screwdriver",
+                              "Spudger"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "9",
-                            "past_7_days": "34",
-                            "past_30_days": "81",
-                            "all_time": "40,356"
+                            "past_24_hours": "19",
+                            "past_7_days": "53",
+                            "past_30_days": "100",
+                            "all_time": "40,375"
                           },
                           "completed": "33",
                           "favorites": "29",
@@ -10543,22 +11539,23 @@
                           "difficulty": "Difficult",
                           "introduction": "A cracked LCD is no fun at all. Colors go wonky, things don't look right, it's an overall bad experience. Mysterious white lines and faded displays can often be fixed by replacing the LCD. Use this guide to help you out.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" Unibody LCD Panel",
+                              "MacBook Pro 17\" Unibody LVDS Display Cable"
+                            ],
                             "Tools": [
+                              "Heavy‑Duty Suction Cups (Pair)",
                               "iFixit Opening Picks set of 6",
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody LCD Panel",
-                              "MacBook Pro 17\" Unibody LVDS Display Cable"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "10",
-                            "past_7_days": "53",
-                            "past_30_days": "165",
-                            "all_time": "75,238"
+                            "past_24_hours": "15",
+                            "past_7_days": "68",
+                            "past_30_days": "180",
+                            "all_time": "75,253"
                           },
                           "completed": "32",
                           "favorites": "17",
@@ -10888,10 +11885,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "6",
-                            "past_7_days": "18",
-                            "past_30_days": "56",
-                            "all_time": "7,166"
+                            "past_24_hours": "10",
+                            "past_7_days": "28",
+                            "past_30_days": "66",
+                            "all_time": "7,176"
                           },
                           "completed": "7",
                           "favorites": "7",
@@ -11084,20 +12081,20 @@
                           "difficulty": "Moderate",
                           "introduction": "Computer running hot? Use this guide to replace a burned-out fan.",
                           "what_you_need": {
-                            "Tools": [
-                              "Phillips #00 Screwdriver",
-                              "Spudger"
-                            ],
                             "Parts": [
                               "MacBook Pro 17\" Unibody (Early‑Mid 2009) Left Fan",
                               "MacBook Pro 17\" Unibody (Mid 2010‑Late 2011) Left Fan"
+                            ],
+                            "Tools": [
+                              "Phillips #00 Screwdriver",
+                              "Spudger"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "18",
-                            "past_30_days": "53",
-                            "all_time": "24,023"
+                            "past_24_hours": "9",
+                            "past_7_days": "27",
+                            "past_30_days": "62",
+                            "all_time": "24,032"
                           },
                           "completed": "32",
                           "favorites": "14",
@@ -11165,20 +12162,20 @@
                           "difficulty": "Difficult",
                           "introduction": "Left side of your MacBook Pro mute? Use this guide to replace the left speaker.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" Unibody (Early‑Mid 2009) Left Speaker"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger",
                               "T6 Torx Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody (Early‑Mid 2009) Left Speaker"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "23",
-                            "past_30_days": "69",
-                            "all_time": "21,502"
+                            "past_24_hours": "17",
+                            "past_7_days": "40",
+                            "past_30_days": "86",
+                            "all_time": "21,519"
                           },
                           "completed": "18",
                           "favorites": "13",
@@ -11427,13 +12424,19 @@
                               "MacBook Pro 17\" Unibody (Early 2011) 2.2 GHz Logic Board",
                               "MacBook Pro 17\" Unibody (Early 2011) 2.3 GHz Logic Board",
                               "MacBook Pro 17\" Unibody (Late 2011) 2.4 GHz Logic Board"
+                            ],
+                            "Tools": [
+                              "Arctic Silver ArctiClean",
+                              "Arctic Silver Thermal Paste",
+                              "Phillips #00 Screwdriver",
+                              "Spudger"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "6",
-                            "past_7_days": "35",
-                            "past_30_days": "130",
-                            "all_time": "141,925"
+                            "past_24_hours": "12",
+                            "past_7_days": "47",
+                            "past_30_days": "142",
+                            "all_time": "141,937"
                           },
                           "completed": "100",
                           "favorites": "44",
@@ -11704,20 +12707,21 @@
                           "title": "MacBook Pro 17\" Unibody Lower Case Replacement",
                           "time_required": "3 minutes",
                           "difficulty": "Easy",
-                          "introduction": "Cancel: I did not complete this guide.\n\n20 other people completed this guide.",
+                          "introduction": "Remove the lower case to access most components in your MacBook Pro 17\" Unibody.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro Unibody Lower Case Screw Set",
+                              "MacBook Pro 17\" Unibody (Early‑Mid 2009) Lower Case"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro Unibody Lower Case Screw Set"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "19",
-                            "past_30_days": "36",
-                            "all_time": "18,282"
+                            "past_24_hours": "8",
+                            "past_7_days": "27",
+                            "past_30_days": "44",
+                            "all_time": "18,290"
                           },
                           "completed": "20",
                           "favorites": "10",
@@ -11749,20 +12753,20 @@
                           "difficulty": "Difficult",
                           "introduction": "Use this guide to replace the DC-in board on your MacBook Pro.",
                           "what_you_need": {
-                            "Tools": [
-                              "Phillips #00 Screwdriver",
-                              "Spudger"
-                            ],
                             "Parts": [
                               "MacBook Pro 17\" Unibody (Early‑Mid 2009) MagSafe DC-In Board",
                               "MacBook Pro 17\" Unibody (Mid 2010 Late 2011) MagSafe DC‑In Board"
+                            ],
+                            "Tools": [
+                              "Phillips #00 Screwdriver",
+                              "Spudger"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "7",
-                            "past_7_days": "31",
-                            "past_30_days": "50",
-                            "all_time": "29,601"
+                            "past_24_hours": "9",
+                            "past_7_days": "40",
+                            "past_30_days": "59",
+                            "all_time": "29,610"
                           },
                           "completed": "30",
                           "favorites": "13",
@@ -11991,10 +12995,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "22",
-                            "past_30_days": "57",
-                            "all_time": "9,318"
+                            "past_24_hours": "7",
+                            "past_7_days": "29",
+                            "past_30_days": "64",
+                            "all_time": "9,325"
                           },
                           "completed": "4",
                           "favorites": "11",
@@ -12238,16 +13242,13 @@
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody (Early 2009) 8x SATA SuperDrive (Used)"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "23",
-                            "past_30_days": "57",
-                            "all_time": "94,234"
+                            "past_24_hours": "7",
+                            "past_7_days": "30",
+                            "past_30_days": "64",
+                            "all_time": "94,241"
                           },
                           "completed": "59",
                           "favorites": "40",
@@ -12388,19 +13389,19 @@
                           "difficulty": "Moderate",
                           "introduction": "Use this guide to replace your MacBook Pro's optical drive cable.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" Unibody SATA SuperDrive Cable"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "Spudger"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody SATA SuperDrive Cable"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "16",
-                            "past_30_days": "52",
-                            "all_time": "11,140"
+                            "past_24_hours": "8",
+                            "past_7_days": "24",
+                            "past_30_days": "60",
+                            "all_time": "11,148"
                           },
                           "completed": "9",
                           "favorites": "13",
@@ -12524,15 +13525,27 @@
                           "difficulty": "Easy",
                           "introduction": "Use this guide to replace your MacBook Pro's RAM.",
                           "what_you_need": {
+                            "Fix Kits": [
+                              "MacBook Pro 17\" Unibody (Early 2009) Memory Maxxer RAM Upgrade Kit",
+                              "MacBook Pro 17\" Unibody (Mid 2009) Memory Maxxer RAM Upgrade Kit",
+                              "MacBook Pro 17\" Unibody (Mid 2010) Memory Maxxer RAM Upgrade Kit",
+                              "MacBook Pro 17\" Unibody (Early 2011) Memory Maxxer RAM Upgrade Kit",
+                              "MacBook Pro 17\" Unibody (Late 2011) Memory Maxxer RAM Upgrade Kit"
+                            ],
+                            "Parts": [
+                              "PC3‑8500 4 GB RAM Chip",
+                              "PC3‑8500 2 GB RAM Chip",
+                              "PC3‑8500 1 GB RAM Chip"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "7",
-                            "past_7_days": "37",
-                            "past_30_days": "95",
-                            "all_time": "97,865"
+                            "past_24_hours": "10",
+                            "past_7_days": "47",
+                            "past_30_days": "105",
+                            "all_time": "97,875"
                           },
                           "completed": "133",
                           "favorites": "52",
@@ -12591,13 +13604,18 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "6",
-                            "past_7_days": "17",
-                            "past_30_days": "52",
-                            "all_time": "6,692"
+                            "past_24_hours": "10",
+                            "past_7_days": "27",
+                            "past_30_days": "62",
+                            "all_time": "6,702"
                           },
                           "favorites": "7",
-                          "videos": [],
+                          "videos": [
+                            {
+                              "url": "https://youtu.be/HLwO1YV5M8M",
+                              "title": "https://youtu.be/HLwO1YV5M8M"
+                            }
+                          ],
                           "steps": [
                             {
                               "title": "Step 1 Lower Case",
@@ -13033,10 +14051,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "3",
-                            "past_7_days": "20",
-                            "past_30_days": "80",
-                            "all_time": "18,365"
+                            "past_24_hours": "8",
+                            "past_7_days": "28",
+                            "past_30_days": "88",
+                            "all_time": "18,373"
                           },
                           "completed": "7",
                           "favorites": "10",
@@ -13228,20 +14246,20 @@
                           "difficulty": "Moderate",
                           "introduction": "Running hot? Use this guide to replace a worn-out right fan.",
                           "what_you_need": {
-                            "Tools": [
-                              "Phillips #00 Screwdriver",
-                              "Spudger"
-                            ],
                             "Parts": [
                               "MacBook Pro 15\" Unibody (2.53 GHz Mid 2009) or 17\" Unibody (Early/Mid 2009) Right Fan",
                               "MacBook Pro 17\" Unibody (Mid 2010‑Late 2011) Right Fan"
+                            ],
+                            "Tools": [
+                              "Phillips #00 Screwdriver",
+                              "Spudger"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "22",
-                            "past_30_days": "38",
-                            "all_time": "23,947"
+                            "past_24_hours": "7",
+                            "past_7_days": "29",
+                            "past_30_days": "45",
+                            "all_time": "23,954"
                           },
                           "completed": "33",
                           "favorites": "13",
@@ -13309,20 +14327,20 @@
                           "difficulty": "Moderate",
                           "introduction": "No sound from the right side of your MacBook Pro? Use this guide to replace the subwoofer and right speaker assembly.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" Unibody (Early‑Mid 2009) Subwoofer/Right Speaker"
+                            ],
                             "Tools": [
                               "Phillips #00 Screwdriver",
                               "iFixit Opening Tool",
                               "Spudger"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody (Early‑Mid 2009) Subwoofer/Right Speaker"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "19",
-                            "past_30_days": "46",
-                            "all_time": "26,733"
+                            "past_24_hours": "13",
+                            "past_7_days": "32",
+                            "past_30_days": "59",
+                            "all_time": "26,746"
                           },
                           "completed": "18",
                           "favorites": "16",
@@ -13470,25 +14488,25 @@
                           "difficulty": "Difficult",
                           "introduction": "Use this guide to replace your MacBook Pro's upper case. Replacing the upper case requires removal of most components inside your computer, including the display assembly.",
                           "what_you_need": {
+                            "Parts": [
+                              "MacBook Pro 17\" Unibody (Mid 2010) Upper Case",
+                              "MacBook Pro 17\" Unibody (Early 2011) Upper Case",
+                              "MacBook Pro 17\" Unibody (Early‑Mid 2009) Upper Case"
+                            ],
                             "Tools": [
+                              "MacBook Pro 17\" Unibody (Early 2009‑Late 2011) Trackpad",
                               "Phillips #00 Screwdriver",
                               "iFixit Opening Tool",
                               "Spudger",
                               "T6 Torx Screwdriver",
                               "Y1 Tri‑point Screwdriver"
-                            ],
-                            "Parts": [
-                              "MacBook Pro 17\" Unibody (Mid 2010) Upper Case",
-                              "MacBook Pro 17\" Unibody (Early 2011) Upper Case",
-                              "MacBook Pro 17\" Unibody (Early‑Mid 2009) Upper Case",
-                              "MacBook Pro 17\" Unibody (Early 2009‑Late 2011) Trackpad"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "5",
-                            "past_7_days": "22",
-                            "past_30_days": "41",
-                            "all_time": "75,159"
+                            "past_24_hours": "8",
+                            "past_7_days": "30",
+                            "past_30_days": "49",
+                            "all_time": "75,167"
                           },
                           "completed": "45",
                           "favorites": "31",
@@ -13913,9 +14931,9 @@
                           },
                           "view_statistics": {
                             "past_24_hours": "13",
-                            "past_7_days": "65",
-                            "past_30_days": "212",
-                            "all_time": "421,058"
+                            "past_7_days": "78",
+                            "past_30_days": "225",
+                            "all_time": "421,071"
                           },
                           "favorites": "158",
                           "videos": [],
@@ -14149,10 +15167,10 @@
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "4",
-                            "past_7_days": "19",
-                            "past_30_days": "45",
-                            "all_time": "10,103"
+                            "past_24_hours": "9",
+                            "past_7_days": "28",
+                            "past_30_days": "54",
+                            "all_time": "10,112"
                           },
                           "completed": "13",
                           "favorites": "3",
@@ -14247,21 +15265,17 @@
                           "title": "MacBook Pro Screen Conversion",
                           "time_required": "2 - 8 hours",
                           "difficulty": "Very difficult",
-                          "introduction": "Typically, screens last thirty years Sadly, they often go to waste. While the rest of your old computer may be totally obsolete, that screen is still in its adolescence and has decades of potential service-life remaining. In this guide, You’ll learn how to reclaim the use of your laptop’s screen, so it can continue to serve you for decades to come. Important Notes: • This guide assumes you have a competent understand of computer building/repair, use of power tools, shop safety, etc. Wear safety gloves when cutting metal. Wear eye protection. Don’t be stupid. • This guide requires you to be competent in wood-shop and/or metal working. (Any highshool graduate who took at least a year of ‘Shop classes will do fine!). • This guide’s author has done this build a half dozen times, with a half-dozen different recycled screens. The photos in this guide were taken at various times from different instances. Thus, some photos may have “plot holes” or minor inconsistencies with the ‘continuity’. • This guide is a work in progress! It’s “done enough” that an seasoned DIY-er could follow it, but it’s not necessarily ready for regular folks yet.",
+                          "introduction": "Sadly, they often go to waste. While the rest of your old computer may be totally obsolete, that screen is still in its adolescence and has decades of potential service-life remaining.\n\nIn this guide, You’ll learn how to reclaim the use of your laptop’s screen, so it can continue to serve you for decades to come.\n\n• This guide assumes you have a competent understand of computer building/repair, use of power tools, shop safety, etc. Wear safety gloves when cutting metal. Wear eye protection. Don’t be stupid.\n\n• This guide requires you to be competent in wood-shop and/or metal working. (Any highshool graduate who took at least a year of ‘Shop classes will do fine!).\n\n• This guide’s author has done this build a half dozen times, with a half-dozen different recycled screens. The photos in this guide were taken at various times from different instances. Thus, some photos may have “plot holes” or minor inconsistencies with the ‘continuity’.\n\n• This guide is a work in progress! It’s “done enough” that an seasoned DIY-er could follow it, but it’s not necessarily ready for regular folks yet.",
                           "what_you_need": {
                             "Tools": [
-                              "Phillips #00 Screwdriver",
-                              "Pop rivet tool"
-                            ],
-                            "Parts": [
-                              "Video Control Board"
+                              "Phillips #00 Screwdriver"
                             ]
                           },
                           "view_statistics": {
-                            "past_24_hours": "6",
-                            "past_7_days": "40",
-                            "past_30_days": "84",
-                            "all_time": "2,566"
+                            "past_24_hours": "12",
+                            "past_7_days": "52",
+                            "past_30_days": "96",
+                            "all_time": "2,578"
                           },
                           "favorites": "1",
                           "videos": [],
@@ -14400,10 +15414,10 @@
                       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Fan+Loud/506012",
                       "title": "MacBook Fan Loud",
                       "view_statistics": {
-                        "past_24_hours": "131",
-                        "past_7_days": "1,892",
-                        "past_30_days": "8,634",
-                        "all_time": "56,472"
+                        "past_24_hours": "222",
+                        "past_7_days": "2,109",
+                        "past_30_days": "8,851",
+                        "all_time": "56,689"
                       },
                       "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Especially if you have not done so recently.\n\nFor the best results, uncheck the “Reopen windows when logging back in” box in the confirmation pop up.Check for updates to macOS.. You may be running into a bug which Apple resolved later via update.If your Mac is on Mojave 10.14 or newer, software updates can be performed within System Preferences.High Sierra 10.13 and older will have software updates in the App Store.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory which contains system settings for the Mac.\n\nResetting it may clear a bad setting.Run Apple’s Diagnostic Suite to check for any blatant errors.. High fan speed can manifest in errors with the fans themselves, the System Management Controller (SMC) or Power Management systems.",
                       "causes": [
@@ -14470,10 +15484,10 @@
                       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Will+Not+Turn+On/483799",
                       "title": "MacBook Won't Turn On",
                       "view_statistics": {
-                        "past_24_hours": "233",
-                        "past_7_days": "1,183",
-                        "past_30_days": "5,455",
-                        "all_time": "117,524"
+                        "past_24_hours": "204",
+                        "past_7_days": "1,385",
+                        "past_30_days": "5,657",
+                        "all_time": "117,726"
                       },
                       "introduction": "There are few electronics problems more disheartening than a device that doesn't power on.. Other issues have workarounds.\n\nBut a device that won't power on can't be circumvented.. It feels so final like there are only so many things you can try before you write its death certificate and toss it in the trash.\n\nIn truth, resurrecting a dead MacBook is more like a mystery novel.. A few good clues can make all the difference.",
                       "the_basics": "Before undertaking any of the more time-consuming solutions below, these are a few fundamentals to get you started.Perform a hard reset.. Press and hold your power button for about fifteen seconds, then release it.\n\nWait a few seconds, then try to power it on again.Disconnect any peripherals.. Docks or multi-port hubs are notoriously problematic, especially if they have many items connected.Reset the System Management Controller (or SMC).\n\nThey can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory that contains system settings for the Mac.\n\nResetting it may clear a bad setting.Check for any signs of power.. If you're getting any response here, your issue is more likely to be related to a blank display.Trackpad clicks.\n\nNote: This only applies to MacBook Pros 2015 and newer, MacBook Airs 2018 and newer, and all Retina MacBooks.Keyboard lights are onCAPS Lock LED lights when pressedThe Touch Bar is on.Audible fan spin, or heat exhausting from the vents.The display backlight is on.\n\nThis can be subtle and is best observed in a dark room.. The Apple logo would also be lit if your model has a white Apple logo on the lid.Sound when connecting a charger.",
@@ -14550,10 +15564,10 @@
                       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Keyboard+Not+Working/505002",
                       "title": "MacBook Keyboard Not Working",
                       "view_statistics": {
-                        "past_24_hours": "93",
-                        "past_7_days": "755",
-                        "past_30_days": "3,666",
-                        "all_time": "72,465"
+                        "past_24_hours": "109",
+                        "past_7_days": "859",
+                        "past_30_days": "3,770",
+                        "all_time": "72,569"
                       },
                       "the_basics": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Uncheck the box to \"Reopen windows when logging back in.\" This ensures a problematic app or session does not reopen.Reset the PRAM or NVRAM.\n\nThese are terms for a small amount of memory which contains some pre-boot settings for the Mac.. Clearing changes made may restore keyboard function.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings or resolve issues where your Mac is stuck in sleep.Note: An external keyboard may be necessary for these steps, but try on the native keyboard first.\n\nJust because keystrokes aren't appearing, doesn't mean the signals from the keyboard aren't transmitting.",
                       "causes": [
@@ -14620,10 +15634,10 @@
                       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Black+Screen/478598",
                       "title": "MacBook Black Screen",
                       "view_statistics": {
-                        "past_24_hours": "64",
-                        "past_7_days": "550",
-                        "past_30_days": "2,493",
-                        "all_time": "56,181"
+                        "past_24_hours": "109",
+                        "past_7_days": "657",
+                        "past_30_days": "2,600",
+                        "all_time": "56,288"
                       },
                       "triage": "Troubleshooting is a process that often resembles medical diagnosis.. Certain information can help hone in on a specific problem.\n\nTry these tests to point yourself in the right direction.. Move your cursor around, especially towards the corners, or edges of the display.\n\nTry to get menus to appear.. If you're getting any sort of pointer, your display hardware is working properly.\n\nHave a look at software fixes.. Is your screen lighting up?. Try powering on in a dark room for easier observation.Pro Tip: Macs with a white Apple logo on the lid use the display backlight to illuminate.\n\nIf the Apple lights up, your backlight is working.. Pro Tip: Macs with a white Apple logo on the lid use the display backlight to illuminate.\n\nIf you don’t have any signs of backlight, check for an image on screen by shining a flashlight at your display.. No backlight and no display means you can safely rule out software.Pro Tip: This is easiest to spot during boot up.\n\nThe high contrast between the on screen Apple logo and the background significantly increases visibility.Bonus Pro Tip: If your Mac has the aforementioned white Apple logo on the lid, shine a light through it to emulate your backlight.\n\nCan you see an image now?. Bonus Pro Tip: If your Mac has the aforementioned white Apple logo on the lid, shine a light through it to emulate your backlight.\n\nNo image or backlight?. Connect your Mac to an external display.\n\nYou may need a dock, or an adapter to accomplish this.. If you get normal image on the external monitor, graphics processing is working properly.\n\nGetting trackpad click, but nothing else?. See if the Caps Lock LED lights when you press the key.\n\nIf no, you may have a firmware issue.",
                       "introduction": "Have you ever booted your MacBook and found it unresponsive?. If you have encountered a black or white screen while restarting or booting up your MacBook, or you’re simply getting nothing on screen at all, don't panic, it’s possible you’ll even be able to solve your issue without the need for a costly repair.If your Mac doesn’t seem like it’s powering on, you may want to head over to the troubleshooting page for that instead.",
@@ -14687,10 +15701,10 @@
                       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Slow/484308",
                       "title": "MacBook Slow",
                       "view_statistics": {
-                        "past_24_hours": "50",
-                        "past_7_days": "240",
-                        "past_30_days": "1,075",
-                        "all_time": "22,273"
+                        "past_24_hours": "43",
+                        "past_7_days": "279",
+                        "past_30_days": "1,114",
+                        "all_time": "22,312"
                       },
                       "the_basics": "Before undertaking any of the more time-consuming solutions below, these are a few fundamentals to get you started.Restart your Mac.. Especially if you have not done so recently.\n\nBe sure to uncheck the “Reopen windows when logging back in” box in the confirmation pop-up.Check for updates to macOS.. You may be running into a bug that Apple resolved later via an update.If your Mac is on Mojave 10.14 or newer, software updates can be performed within System Preferences.High Sierra 10.13 and older will have software updates in the App Store.Reset the System Management Controller (or SMC).\n\nThis can clear any incorrect or bad startup settings which the SMC handles.Reset the PRAM or NVRAM.. These are terms for a small amount of memory that contains system settings for the Mac.\n\nResetting it may clear a bad setting.Run Apple’s Diagnostic Suite to check for any blatant errors.. Be aware that this test is designed to optimize quick results.\n\nTrust a failure, but not a pass.",
                       "causes": [
@@ -14758,10 +15772,10 @@
                       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Folder+With+Question+Mark/484463",
                       "title": "MacBook Folder With Question Mark",
                       "view_statistics": {
-                        "past_24_hours": "43",
-                        "past_7_days": "215",
-                        "past_30_days": "984",
-                        "all_time": "26,265"
+                        "past_24_hours": "42",
+                        "past_7_days": "253",
+                        "past_30_days": "1,022",
+                        "all_time": "26,303"
                       },
                       "introduction": "It seems logical to expect that opening your MacBook would lead to your usual login screen.. Or perhaps the Apple logo and a progress bar.\n\nBut what if instead you're faced with a mysterious flashing folder, and no other information.. This folder with a question mark icon, indicates that your MacBook cannot detect an operating system.\n\nIf it can't find that, your log in screen is out of the question.",
                       "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Perform a hard reset.. Press and hold your power button for about fifteen seconds, then release.\n\nWait a few seconds, then try to power on again.. This can resolve any minor hang ups in the startup process.Reset the System Management Controller (or SMC).\n\nThe can clear any incorrect or bad startup settings which are handled by the SMC.Reset the PRAM or NVRAM.. These are terms for a small amount of memory which contains system settings for the Mac.\n\nClearing it resets the default startup disk, amongst other settings.If you have a 2012 13\" Unibody MacBook Pro, consider foregoing additional triage and replace your hard drive cable.. They are notorious for failure on this model.\n\nThere was an Apple Service Program at one time which covered this repair, but it has since expired leaving the repair up to you.",
@@ -14804,10 +15818,10 @@
                       "url": "https://www.ifixit.com/Troubleshooting/Mac_Laptop/MacBook+Stuck+On+Loading+Screen/486734",
                       "title": "MacBook Stuck On Loading Screen",
                       "view_statistics": {
-                        "past_24_hours": "15",
-                        "past_7_days": "98",
-                        "past_30_days": "493",
-                        "all_time": "12,908"
+                        "past_24_hours": "18",
+                        "past_7_days": "116",
+                        "past_30_days": "511",
+                        "all_time": "12,926"
                       },
                       "first_steps": "Before undertaking any of the more time consuming solutions below, these are a few fundamentals to get you started.Consider how long you've been waiting.. Patience is key.\n\nSometimes a Mac is doing a software update, but you don't realize because there's no hallmark \"Estimated time\" and a grossly incorrect approximation under it.. Give it another 15 minutes.Put a sticky note or some tape on the display with its edge aligned with the progress bar so you can tell if it's made any progress.If your waiting isn't fruitful, perform a force shutdown of your Mac.\n\nPress and hold the power button for fifteen seconds.. Don't be fooled by a black screen, keep holding for a few seconds even past that.\n\nThen try and power back up again.Disconnect all peripherals before power on.Perform both an SMC and an NVRAM reset.. This clears many settings used during startup and can correct a faulty configuration.Run a repair on your startup disk using Internet Recovery.Run Apple’s Diagnostic Suite to check for any blatant errors.\n\nBe aware that this test is designed to optimize quick results.. Trust a failure, but not a pass.",
                       "causes": [

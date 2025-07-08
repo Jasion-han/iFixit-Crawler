@@ -302,21 +302,39 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                             guide_data["introduction"] = intro_text
                             break
 
-            # 方法2b：直接查找Introduction标题后的第一个div内容
+            # 方法2b：直接查找Introduction标题后的内容
             if not guide_data["introduction"]:
                 intro_headers = soup.find_all(['h1', 'h2', 'h3'], string=lambda text: text and "Introduction" in text)
                 for header in intro_headers:
-                    next_div = header.find_next_sibling('div')
-                    if next_div:
-                        div_text = next_div.get_text().strip()
-                        # 清理文本并检查是否是有效的介绍内容
-                        if (div_text and len(div_text) > 20 and
-                            not any(stop_word in div_text.lower() for stop_word in
-                                   ['step 1', 'step 2', 'remove the', 'install the'])):
-                            # 清理多余的空白字符
-                            div_text = re.sub(r'\s+', ' ', div_text).strip()
-                            guide_data["introduction"] = div_text
-                            break
+                    # 查找下一个兄弟元素（可能是div或其他元素）
+                    next_elem = header.find_next_sibling()
+                    if next_elem:
+                        # 如果是div，提取其中的文本
+                        if next_elem.name == 'div':
+                            # 查找div中的段落
+                            paragraphs = next_elem.find_all('p')
+                            if paragraphs:
+                                intro_texts = []
+                                for p in paragraphs:
+                                    p_text = p.get_text().strip()
+                                    if p_text and len(p_text) > 10:
+                                        intro_texts.append(p_text)
+                                if intro_texts:
+                                    intro_text = '\n\n'.join(intro_texts)
+                                    guide_data["introduction"] = intro_text
+                                    break
+                            else:
+                                # 如果div中没有p标签，直接取div的文本
+                                div_text = next_elem.get_text().strip()
+                                if div_text and len(div_text) > 10:
+                                    guide_data["introduction"] = div_text
+                                    break
+                        # 如果直接是段落
+                        elif next_elem.name == 'p':
+                            p_text = next_elem.get_text().strip()
+                            if p_text and len(p_text) > 10:
+                                guide_data["introduction"] = p_text
+                                break
 
             # 方法3：查找页面开头的描述性段落，但要避免步骤内容
             if not guide_data["introduction"]:
@@ -437,8 +455,8 @@ class EnhancedIFixitCrawler(IFixitCrawler):
 
 
 
-            # 提取视频 - 去重
-            videos = self.extract_youtube_videos(soup, guide_url)
+            # 提取视频 - 去重，使用改进的视频提取方法
+            videos = self.extract_all_videos_from_page(soup)
             seen_video_urls = set()
             for video in videos:
                 video_url = video.get("url", "")
@@ -535,6 +553,8 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         what_you_need = {}
 
         try:
+            # 对于所有页面，都正常处理"What you need"部分和步骤中的工具
+
             # 如果内容是动态加载的，尝试使用Playwright获取完整页面
             if guide_url:
                 try:
@@ -602,11 +622,28 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                         what_you_need_section = section
                         break
 
-            if not what_you_need_section:
-                return what_you_need
+            # 方法3：完整提取What you need部分的所有内容
+            if what_you_need_section:
+                # 使用完整的提取方法，包括Fix Kits、Parts、Tools
+                what_you_need = self._extract_what_you_need_complete(what_you_need_section)
+                if self.verbose:
+                    print(f"从What you need部分完整提取到: {what_you_need}")
+            else:
+                # 从步骤中提取工具信息
+                what_you_need = self._extract_tools_from_steps(soup)
+                if self.verbose:
+                    print(f"从步骤中提取到工具: {what_you_need}")
 
-            # 使用新的智能内容识别方法
-            what_you_need = self._extract_products_by_content_analysis(what_you_need_section)
+            # 只有在"What you need"部分没有工具时，才从步骤中提取
+            if not what_you_need.get('Tools'):
+                step_tools = self._extract_tools_from_steps(soup)
+                if step_tools and 'Tools' in step_tools:
+                    what_you_need['Tools'] = step_tools['Tools']
+                    if self.verbose:
+                        print(f"从步骤中补充工具: {step_tools['Tools']}")
+
+            if self.verbose:
+                print(f"最终完整列表: {what_you_need}")
 
             return what_you_need
 
@@ -615,6 +652,560 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                 print(f"提取What you need部分时发生错误: {str(e)}")
 
         return what_you_need
+
+    def _extract_what_you_need_complete(self, section):
+        """完整提取What you need部分的所有内容：Fix Kits、Parts、Tools"""
+        result = {}
+
+        try:
+            if self.verbose:
+                print("开始完整提取What you need部分...")
+
+            # 收集所有产品，然后进行分类
+            all_products = self._collect_all_products(section)
+
+            # 分类产品
+            fix_kits = []
+            parts = []
+            tools = []
+
+            for product in all_products:
+                if self._is_valid_fix_kit(product):
+                    fix_kits.append(product)
+                elif self._is_valid_tool_name(product):
+                    tools.append(product)
+                elif self._is_valid_part(product):
+                    parts.append(product)
+
+            # 去重并添加到结果中
+            if fix_kits:
+                result['Fix Kits'] = list(dict.fromkeys(fix_kits))  # 保持顺序的去重
+                if self.verbose:
+                    print(f"提取到 {len(result['Fix Kits'])} 个Fix Kits")
+
+            if parts:
+                result['Parts'] = list(dict.fromkeys(parts))
+                if self.verbose:
+                    print(f"提取到 {len(result['Parts'])} 个Parts")
+
+            if tools:
+                result['Tools'] = list(dict.fromkeys(tools))
+                if self.verbose:
+                    print(f"提取到 {len(result['Tools'])} 个Tools")
+
+            if self.verbose:
+                print(f"完整提取结果: {result}")
+
+        except Exception as e:
+            if self.verbose:
+                print(f"完整提取What you need时发生错误: {str(e)}")
+
+        return result
+
+    def _collect_all_products(self, section):
+        """收集What you need部分的所有产品"""
+        products = []
+
+        try:
+            # 查找所有产品链接
+            product_links = section.find_all('a', href=lambda x: x and '/products/' in x)
+
+            for link in product_links:
+                product_name = link.get_text().strip()
+                if product_name:
+                    cleaned_product = self._clean_product_text(product_name)
+                    # 验证是否为真正的产品名称
+                    if (cleaned_product and len(cleaned_product) > 2 and
+                        self._is_actual_product_name(cleaned_product)):
+                        products.append(cleaned_product)
+
+            # 如果没有找到产品链接，尝试查找其他可能的产品名称
+            if not products:
+                # 查找列表项
+                list_items = section.find_all('li')
+                for item in list_items:
+                    text = item.get_text().strip()
+                    if text and len(text) > 5:  # 过滤太短的文本
+                        cleaned_text = self._clean_product_text(text)
+                        if cleaned_text and self._is_actual_product_name(cleaned_text):
+                            products.append(cleaned_text)
+
+        except Exception as e:
+            if self.verbose:
+                print(f"收集产品时发生错误: {str(e)}")
+
+        return products
+
+    def _is_actual_product_name(self, text):
+        """验证是否为真正的产品名称，而不是描述性文字"""
+        if not text:
+            return False
+
+        text_lower = text.lower()
+
+        # 排除明显的描述性文字
+        descriptive_phrases = [
+            'this kit contains', 'these kits contain', 'this guide', 'these guides',
+            'all the parts and tools needed', 'to complete this guide', 'needed to complete',
+            'parts and tools', 'contains all', 'needed for', 'show more', 'view more',
+            'available for', 'sale price', 'add to cart', 'buy now', 'in stock',
+            'out of stock', 'free shipping', 'customer reviews', 'product rating',
+            'complete this guide', 'follow these', 'instructions', 'step by step'
+        ]
+
+        for phrase in descriptive_phrases:
+            if phrase in text_lower:
+                return False
+
+        # 排除单独的分类词汇
+        category_words = ['fix kit', 'fix kits', 'parts', 'tools', 'components', 'materials']
+        if text_lower in category_words:
+            return False
+
+        # 排除太长的描述性文本（通常产品名称不会超过100个字符）
+        if len(text) > 100:
+            return False
+
+        # 如果包含具体的产品特征，认为是有效的产品名称
+        product_indicators = [
+            # 工具类
+            'screwdriver', 'driver', 'opener', 'wrench', 'pick', 'spudger', 'tweezers',
+            'kit', 'set', 'tool', 'precision', 'torx', 'phillips', 'pentalobe',
+            # 零件类
+            'battery', 'screen', 'display', 'cable', 'connector', 'replacement', 'board',
+            'assembly', 'module', 'component', 'part', 'chip', 'sensor', 'speaker',
+            # 维修材料类
+            'thermal', 'paste', 'compound', 'grease', 'arctic', 'silver', 'clean', 'cleaner',
+            'adhesive', 'tape', 'glue', 'lubricant', 'flux', 'solder', 'alcohol',
+            'isopropyl', 'arcticlean', 'pad', 'film', 'strip', 'remover',
+            # 品牌和型号
+            'macbook', 'iphone', 'ipad', 'samsung', 'lg', 'sony', 'dell', 'hp', 'apple',
+            'model', 'inch', '"', 'gb', 'tb', 'ssd', 'hdd', 'ram', 'memory', 'pro', 'air',
+            # 规格和尺寸
+            'mm', 'cm', '#00', '#0', '#1', '#2', 't6', 't8', 't10', 'p2', 'p5'
+        ]
+
+        return any(indicator in text_lower for indicator in product_indicators)
+
+    def _extract_fix_kits(self, section):
+        """提取Fix Kits部分的内容"""
+        fix_kits = []
+
+        try:
+            # 查找Fix Kits标题
+            fix_kits_headers = section.find_all(string=lambda text: text and 'Fix Kit' in text)
+
+            for header in fix_kits_headers:
+                # 向上查找包含Fix Kits的容器
+                container = header.parent
+                for _ in range(5):  # 最多向上查找5层
+                    if container and container.name in ['div', 'section', 'ul', 'ol']:
+                        # 在这个容器中查找产品链接
+                        product_links = container.find_all('a', href=lambda x: x and '/products/' in x)
+                        for link in product_links:
+                            kit_name = link.get_text().strip()
+                            if kit_name and self._is_valid_fix_kit(kit_name):
+                                cleaned_kit = self._clean_product_text(kit_name)
+                                if cleaned_kit and cleaned_kit not in fix_kits:
+                                    fix_kits.append(cleaned_kit)
+                        break
+                    container = container.parent if container else None
+
+            # 如果没有找到专门的Fix Kits部分，查找包含"kit"的产品
+            if not fix_kits:
+                all_links = section.find_all('a', href=lambda x: x and '/products/' in x)
+                for link in all_links:
+                    product_name = link.get_text().strip()
+                    if product_name and self._is_valid_fix_kit(product_name):
+                        cleaned_kit = self._clean_product_text(product_name)
+                        if cleaned_kit and cleaned_kit not in fix_kits:
+                            fix_kits.append(cleaned_kit)
+
+        except Exception as e:
+            if self.verbose:
+                print(f"提取Fix Kits时发生错误: {str(e)}")
+
+        return fix_kits
+
+    def _extract_parts(self, section):
+        """提取Parts部分的内容"""
+        parts = []
+
+        try:
+            # 查找Parts标题
+            parts_headers = section.find_all(string=lambda text: text and 'Parts' in text)
+
+            for header in parts_headers:
+                # 向上查找包含Parts的容器
+                container = header.parent
+                for _ in range(5):  # 最多向上查找5层
+                    if container and container.name in ['div', 'section', 'ul', 'ol']:
+                        # 在这个容器中查找产品链接
+                        product_links = container.find_all('a', href=lambda x: x and '/products/' in x)
+                        for link in product_links:
+                            part_name = link.get_text().strip()
+                            if part_name and self._is_valid_part(part_name):
+                                cleaned_part = self._clean_product_text(part_name)
+                                if cleaned_part and cleaned_part not in parts:
+                                    parts.append(cleaned_part)
+                        break
+                    container = container.parent if container else None
+
+        except Exception as e:
+            if self.verbose:
+                print(f"提取Parts时发生错误: {str(e)}")
+
+        return parts
+
+    def _extract_tools(self, section):
+        """提取Tools部分的内容"""
+        tools = []
+
+        try:
+            # 查找Tools标题
+            tools_headers = section.find_all(string=lambda text: text and 'Tools' in text)
+
+            for header in tools_headers:
+                # 向上查找包含Tools的容器
+                container = header.parent
+                for _ in range(5):  # 最多向上查找5层
+                    if container and container.name in ['div', 'section', 'ul', 'ol']:
+                        # 在这个容器中查找产品链接
+                        product_links = container.find_all('a', href=lambda x: x and '/products/' in x)
+                        for link in product_links:
+                            tool_name = link.get_text().strip()
+                            if tool_name and self._is_valid_tool_name(tool_name):
+                                cleaned_tool = self._clean_product_text(tool_name)
+                                if cleaned_tool and cleaned_tool not in tools:
+                                    tools.append(cleaned_tool)
+                        break
+                    container = container.parent if container else None
+
+            # 如果没有找到专门的Tools部分，使用原有的通用方法
+            if not tools:
+                # 查找所有工具项目，按页面出现顺序
+                tool_items = section.find_all('li')
+
+                for item in tool_items:
+                    # 查找工具链接
+                    tool_link = item.find('a', href=lambda x: x and '/products/' in x)
+                    if tool_link:
+                        tool_name = tool_link.get_text().strip()
+                        if tool_name and self._is_valid_tool_name(tool_name):
+                            cleaned_tool = self._clean_product_text(tool_name)
+                            if cleaned_tool and cleaned_tool not in tools:
+                                tools.append(cleaned_tool)
+
+                # 如果还是没有找到足够的工具，查找所有产品链接
+                if len(tools) < 3:
+                    all_product_links = section.find_all('a', href=lambda x: x and '/products/' in x)
+                    for link in all_product_links:
+                        tool_name = link.get_text().strip()
+                        if tool_name and self._is_valid_tool_name(tool_name):
+                            cleaned_tool = self._clean_product_text(tool_name)
+                            if cleaned_tool and cleaned_tool not in tools:
+                                tools.append(cleaned_tool)
+
+        except Exception as e:
+            if self.verbose:
+                print(f"提取Tools时发生错误: {str(e)}")
+
+        return tools
+
+    def _is_valid_fix_kit(self, product_name):
+        """判断是否为有效的Fix Kit"""
+        if not product_name:
+            return False
+
+        product_lower = product_name.lower()
+
+        # Fix Kit关键词
+        fix_kit_keywords = ['kit', 'upgrade kit', 'repair kit', 'replacement kit']
+
+        # 排除的关键词（这些通常是工具）
+        exclude_keywords = ['screwdriver', 'spudger', 'opening tool', 'tweezers', 'suction cup']
+
+        # 检查是否包含Fix Kit关键词
+        has_kit_keyword = any(keyword in product_lower for keyword in fix_kit_keywords)
+
+        # 检查是否包含排除关键词
+        has_exclude_keyword = any(keyword in product_lower for keyword in exclude_keywords)
+
+        return has_kit_keyword and not has_exclude_keyword
+
+    def _is_valid_part(self, product_name):
+        """判断是否为有效的Part"""
+        if not product_name:
+            return False
+
+        product_lower = product_name.lower()
+
+        # 排除的关键词（这些通常是工具或套件，但不包括维修材料）
+        exclude_keywords = [
+            'screwdriver', 'spudger', 'opening tool', 'tweezers', 'suction cup',
+            'view', 'show more', 'buy', 'add to cart', 'torx', 'phillips', 'driver',
+            'opener', 'wrench', 'pick', 'pry', 'precision'
+        ]
+
+        # 零件关键词（扩展识别范围）
+        part_keywords = [
+            # 存储设备
+            'ssd', 'hard drive', 'hdd', 'storage', 'drive', 'disk',
+            # 显示相关
+            'screen', 'display', 'lcd', 'oled', 'retina', 'panel', 'digitizer',
+            # 电源相关
+            'battery', 'charger', 'adapter', 'power', 'charging',
+            # 连接器和线缆
+            'cable', 'connector', 'flex', 'ribbon', 'wire', 'cord',
+            # 主板和芯片
+            'board', 'logic board', 'motherboard', 'chip', 'processor', 'cpu', 'gpu',
+            # 机械部件
+            'fan', 'speaker', 'antenna', 'hinge', 'bezel', 'bracket', 'housing',
+            'case', 'cover', 'frame', 'assembly', 'module', 'component',
+            # 输入设备
+            'keyboard', 'trackpad', 'touchpad', 'button', 'key',
+            # 内存
+            'ram', 'memory', 'dimm', 'sodimm',
+            # 型号标识
+            'model', 'replacement', 'part', 'spare'
+        ]
+
+        # 检查是否包含排除关键词
+        has_exclude_keyword = any(keyword in product_lower for keyword in exclude_keywords)
+
+        # 如果包含排除关键词，则不是零件
+        if has_exclude_keyword:
+            return False
+
+        # 如果包含零件关键词，则很可能是零件
+        has_part_keyword = any(keyword in product_lower for keyword in part_keywords)
+
+        # 如果有零件关键词或者名称足够长（可能是具体的零件名称），则认为是零件
+        return has_part_keyword or len(product_name.strip()) > 10
+
+    def _extract_from_data_props(self, soup):
+        """从页面的data-props属性中提取动态加载的工具和零件信息"""
+        products = {}
+
+        try:
+            # 查找包含data-props的元素
+            elements_with_props = soup.find_all(attrs={'data-props': True})
+
+            for element in elements_with_props:
+                data_props = element.get('data-props')
+                if not data_props:
+                    continue
+
+                try:
+                    # 解析JSON数据
+                    import json
+                    props_data = json.loads(data_props)
+
+                    # 查找productData中的tools和parts
+                    if 'productData' in props_data:
+                        product_data = props_data['productData']
+
+                        # 提取工具
+                        if 'tools' in product_data and product_data['tools']:
+                            tools = []
+                            for tool in product_data['tools']:
+                                if 'name' in tool:
+                                    tool_name = self._clean_product_text(tool['name'])
+                                    if tool_name and tool_name not in tools:
+                                        tools.append(tool_name)
+                            if tools:
+                                products['Tools'] = tools
+
+                        # 提取零件
+                        if 'parts' in product_data and product_data['parts']:
+                            parts = []
+                            for part in product_data['parts']:
+                                if 'name' in part:
+                                    part_name = self._clean_product_text(part['name'])
+                                    if part_name and part_name not in parts:
+                                        parts.append(part_name)
+                            if parts:
+                                products['Parts'] = parts
+
+                except json.JSONDecodeError:
+                    if self.verbose:
+                        print("无法解析data-props JSON数据")
+                    continue
+                except Exception as e:
+                    if self.verbose:
+                        print(f"解析data-props时发生错误: {str(e)}")
+                    continue
+
+        except Exception as e:
+            if self.verbose:
+                print(f"从data-props提取数据时发生错误: {str(e)}")
+
+        return products
+
+    def _extract_tools_from_steps(self, soup):
+        """从步骤中提取工具信息 - 只提取明确在步骤中使用的工具"""
+        tools = []
+
+        try:
+            # 只查找明确标注"在这个步骤中使用的工具"的部分
+            tool_keywords = [
+                '在这个步骤中使用的工具：',
+                'Tool used on this step:',
+                'Tool used in this step:',
+                'Tools used on this step:'
+            ]
+
+            for keyword in tool_keywords:
+                tool_sections = soup.find_all(string=lambda text: text and keyword in text)
+
+                for tool_section in tool_sections:
+                    # 查找工具名称，通常在相邻的元素中
+                    container = tool_section.find_parent()
+                    if container:
+                        # 查找下一个兄弟元素，通常包含工具名称
+                        next_sibling = container.find_next_sibling()
+                        if next_sibling:
+                            tool_text = next_sibling.get_text().strip()
+                            if tool_text and self._is_valid_tool_name(tool_text):
+                                cleaned_tool = self._clean_product_text(tool_text)
+                                if cleaned_tool and cleaned_tool not in tools:
+                                    tools.append(cleaned_tool)
+
+                        # 也检查同一容器内的其他元素
+                        for elem in container.find_all(['span', 'div', 'p']):
+                            tool_text = elem.get_text().strip()
+                            if (tool_text and tool_text != keyword and
+                                self._is_valid_tool_name(tool_text) and
+                                '$' not in tool_text):  # 排除价格信息
+                                cleaned_tool = self._clean_product_text(tool_text)
+                                if cleaned_tool and cleaned_tool not in tools:
+                                    tools.append(cleaned_tool)
+
+            if self.verbose:
+                print(f"从步骤中提取到工具: {tools}")
+
+        except Exception as e:
+            if self.verbose:
+                print(f"从步骤中提取工具时发生错误: {str(e)}")
+
+        return {"Tools": tools} if tools else {}
+
+    def _is_duplicate_tool(self, new_tool, existing_tools):
+        """检测工具是否重复或相似"""
+        if not new_tool or not existing_tools:
+            return False
+
+        new_tool_lower = new_tool.lower().strip()
+
+        for existing_tool in existing_tools:
+            existing_tool_lower = existing_tool.lower().strip()
+
+            # 完全相同
+            if new_tool_lower == existing_tool_lower:
+                return True
+
+            # 检查是否是同一类工具的不同版本
+            # 例如: "Marlin Screwdriver Set - 5 Precision" vs "Marlin Screwdriver Set ‑ 15 Precision"
+            if self._are_similar_tools(new_tool_lower, existing_tool_lower):
+                return True
+
+        return False
+
+    def _are_similar_tools(self, tool1, tool2):
+        """检查两个工具是否是相似的（同一类工具的不同版本）"""
+        # 首先检查数字差异 - 如果包含不同数字，很可能是不同规格的产品
+        numbers1 = re.findall(r'\d+', tool1.lower())
+        numbers2 = re.findall(r'\d+', tool2.lower())
+
+        # 如果两个工具都包含数字且数字不同，认为是不同的产品
+        if numbers1 and numbers2 and numbers1 != numbers2:
+            # 对于包含数字的工具（套装、规格等），数字不同通常意味着不同的产品
+            return False
+
+        # 移除特殊字符和常见变体词汇进行比较（但保留数字和设备特定词汇）
+        def normalize_tool_name(name):
+            # 标准化连字符：将所有类型的连字符统一为普通连字符
+            name = re.sub(r'[‑−–—]', '-', name)
+            # 移除特殊字符和标点，但保留数字和连字符
+            name = re.sub(r'[^\w\s\d\-]', ' ', name)
+            # 移除常见的变体词汇，但保留设备特定词汇如 'iphone'
+            variants = ['precision', 'screwdrivers', 'for', 'set', 'kit']
+            words = name.split()
+            words = [w for w in words if w not in variants]
+            return ' '.join(sorted(words)).strip()
+
+        normalized1 = normalize_tool_name(tool1)
+        normalized2 = normalize_tool_name(tool2)
+
+        # 如果标准化后的名称相同，认为是重复
+        if normalized1 == normalized2:
+            return True
+
+        # 更严格的相似性检查 - 避免误判不同功能的产品
+        words1 = set(normalized1.split())
+        words2 = set(normalized2.split())
+
+        if len(words1) > 0 and len(words2) > 0:
+            common_words = words1.intersection(words2)
+
+            # 特殊处理：如果包含功能性关键词，则不认为是重复
+            functional_keywords = {
+                'arcticlean', 'thermal', 'paste', 'cleaner', 'adhesive', 'remover',
+                'screwdriver', 'spudger', 'picks', 'suction', 'cups', 'tweezers'
+            }
+
+            # 检查是否有不同的功能性关键词
+            func_words1 = words1.intersection(functional_keywords)
+            func_words2 = words2.intersection(functional_keywords)
+
+            if func_words1 and func_words2 and func_words1 != func_words2:
+                # 有不同的功能性关键词，不认为是重复
+                return False
+
+            # 只有在共同关键词占比很高且没有功能性差异时才认为是重复
+            if len(common_words) >= 3 and len(common_words) >= min(len(words1), len(words2)) * 0.8:
+                return True
+
+        return False
+
+    def _is_valid_tool_name(self, text):
+        """判断文本是否是有效的工具名称"""
+        if not text or len(text.strip()) < 3:
+            return False
+
+        text_lower = text.lower()
+
+        # 排除明显不是工具的文本
+        exclude_keywords = ['tool used on this step', 'step', 'image', 'teardown', 'alt=']
+        if any(keyword in text_lower for keyword in exclude_keywords):
+            return False
+
+        # 排除纯价格文本
+        if re.match(r'^\$\d+\.\d+$', text.strip()):
+            return False
+
+        # 包含工具关键词
+        tool_keywords = [
+            'screwdriver', 'driver', 'opener', 'wheel', 'kit', 'spudger', 'pick', 'pry',
+            'wrench', 'suction', 'cups', 'tweezers', 'marlin', 'torx', 'phillips',
+            'pentalobe', 'nut driver', 'precision', 'heavy-duty', 'opening',
+            # 维修材料和化学品
+            'thermal', 'paste', 'compound', 'grease', 'arctic', 'silver', 'clean', 'cleaner',
+            'adhesive', 'tape', 'glue', 'lubricant', 'flux', 'solder', 'alcohol',
+            'isopropyl', 'arcticlean', 'pad', 'film', 'strip', 'remover'
+        ]
+
+        # 特定工具名称
+        specific_tools = [
+            'imac opening wheel', 'tweezers', 'heavy-duty suction cups',
+            'marlin screwdriver set', 'spudger', 'opening picks',
+            'arctic silver arcticlean', 'arctic silver thermal paste',
+            'thermal paste', 'thermal compound', 'thermal pad'
+        ]
+
+        # 检查是否包含工具关键词或是特定工具
+        return (any(keyword in text_lower for keyword in tool_keywords) or
+                any(tool in text_lower for tool in specific_tools))
 
     def _extract_products_by_content_analysis(self, section):
         """基于内容语义分析提取产品信息 - 通用方法，不依赖特定URL模式"""
@@ -737,9 +1328,25 @@ class EnhancedIFixitCrawler(IFixitCrawler):
 
         text_lower = text.lower()
 
+        # 排除描述性文字和说明文本
+        descriptive_phrases = [
+            'this kit contains', 'these kits contain', 'this guide', 'these guides',
+            'all the parts and tools needed', 'to complete this guide', 'needed to complete',
+            'parts and tools', 'contains all', 'needed for', 'show more', 'view more',
+            'available for', 'sale price', 'add to cart', 'buy now', 'in stock',
+            'out of stock', 'free shipping', 'customer reviews', 'product rating'
+        ]
+
+        if any(phrase in text_lower for phrase in descriptive_phrases):
+            return False
+
         # 排除明显不是产品的文本
         exclude_keywords = ['view', 'more', 'see', 'all', 'available', 'sale', 'price', 'buy', 'shop', 'cart']
         if any(keyword in text_lower for keyword in exclude_keywords):
+            return False
+
+        # 排除单独的分类标题
+        if text_lower in ['fix kit', 'fix kits', 'parts', 'tools', 'components']:
             return False
 
         # 根据分类类型判断
@@ -765,11 +1372,43 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         # 移除评分信息
         text = re.sub(r'[\d.]+\s*out of.*$', '', text).strip()
         text = re.sub(r'[\d.]+\s*stars?.*$', '', text).strip()
+        text = re.sub(r'[\d.]+\s*review.*$', '', text).strip()
         # 移除销售信息
         text = re.sub(r'Sale price.*$', '', text).strip()
         text = re.sub(r'Available for.*$', '', text).strip()
+        text = re.sub(r'Buy.*$', '', text).strip()
+        text = re.sub(r'Add to cart.*$', '', text).strip()
+        # 移除无效的UI元素
+        text = re.sub(r'^(View|Show more|Buy|Cart|Add).*$', '', text, flags=re.IGNORECASE).strip()
+
+        # 移除描述性文字 - 这些不是产品名称
+        descriptive_patterns = [
+            r'^This kit contains.*$',
+            r'^These kits contain.*$',
+            r'^This guide.*$',
+            r'^These guides.*$',
+            r'^.*all the parts and tools needed.*$',
+            r'^.*to complete this guide.*$',
+            r'^.*needed to complete.*$',
+            r'^.*parts and tools.*$',
+            r'^Fix Kit$',
+            r'^Parts$',
+            r'^Tools$',
+            r'^Show more.*$',
+            r'^.*contains all.*$',
+            r'^.*needed for.*$'
+        ]
+
+        for pattern in descriptive_patterns:
+            if re.match(pattern, text, flags=re.IGNORECASE):
+                return ""
+
         # 清理多余空白
         text = re.sub(r'\s+', ' ', text).strip()
+
+        # 过滤太短或无效的文本
+        if len(text) < 3 or text.lower() in ['view', 'buy', 'cart', 'add', 'show', 'more', 'fix kit', 'parts', 'tools']:
+            return ""
 
         return text
 
@@ -960,7 +1599,7 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                                 if field in api_data and api_data[field] and api_data[field].strip():
                                     time_value = api_data[field].strip()
                                     # 只有在包含有效时间格式时才添加
-                                    if re.search(r'\d+\s*(?:[-–]\s*\d+)?\s*(?:minutes?|mins?|hours?|hrs?)', time_value, re.IGNORECASE) or time_value.lower() == 'no estimate':
+                                    if re.search(r'\d+\s*(?:[-–]\s*\d+)?\s*(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)', time_value, re.IGNORECASE) or time_value.lower() == 'no estimate':
                                         time_difficulty["time_required"] = time_value
                                         break
 
@@ -974,7 +1613,40 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                         if self.verbose:
                             print(f"API调用失败: {str(e)}")
 
-            # 只返回真实存在的数据，不进行页面文本搜索
+            # 方法2：如果API失败，尝试从页面HTML中提取
+            if not time_difficulty:
+                # 提取时间信息
+                time_patterns = [
+                    r'(\d+\s*(?:[-–]\s*\d+)?\s*(?:seconds?|minutes?|mins?|hours?|hrs?))',
+                    r'(No\s+estimate)',
+                    r'(\d+\s*(?:[-–]\s*\d+)?\s*(?:second|minute|hour)s?)'
+                ]
+
+                page_text = soup.get_text()
+                for pattern in time_patterns:
+                    time_match = re.search(pattern, page_text, re.IGNORECASE)
+                    if time_match:
+                        time_value = time_match.group(1).strip()
+                        time_difficulty["time_required"] = time_value
+                        if self.verbose:
+                            print(f"从页面HTML提取到时间信息: {time_value}")
+                        break
+
+                # 提取难度信息
+                difficulty_patterns = [
+                    r'(Very\s+easy|Easy|Moderate|Difficult|Very\s+difficult)',
+                    r'(Very\s+hard|Hard)'
+                ]
+
+                for pattern in difficulty_patterns:
+                    diff_match = re.search(pattern, page_text, re.IGNORECASE)
+                    if diff_match:
+                        difficulty_value = diff_match.group(1).strip()
+                        time_difficulty["difficulty"] = self.standardize_difficulty(difficulty_value)
+                        if self.verbose:
+                            print(f"从页面HTML提取到难度信息: {difficulty_value}")
+                        break
+
             return time_difficulty
 
         except Exception as e:
@@ -1412,6 +2084,121 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         except Exception as e:
             print(f"从section提取视频时发生错误: {str(e)}")
             return []
+
+    def extract_all_videos_from_page(self, soup):
+        """从页面中提取所有类型的视频，包括iframe嵌入的YouTube视频"""
+        videos = []
+        seen_urls = set()
+
+        try:
+            # 方法1: 查找iframe中的YouTube视频
+            iframes = soup.find_all('iframe')
+            for iframe in iframes:
+                src = iframe.get('src', '')
+                if src and ('youtube.com' in src or 'youtube-nocookie.com' in src or 'youtu.be' in src):
+                    # 提取YouTube视频URL
+                    video_url = self.extract_youtube_url_from_iframe(src)
+                    if video_url and video_url not in seen_urls:
+                        seen_urls.add(video_url)
+
+                        # 尝试获取视频标题
+                        title = iframe.get('title', '')
+                        if not title:
+                            # 查找相邻的标题
+                            title_elem = iframe.find_previous(['h1', 'h2', 'h3', 'h4'])
+                            if title_elem:
+                                title = title_elem.get_text().strip()
+                                # 移除中文字符
+                                title = re.sub(r'[\u4e00-\u9fff]+', '', title)
+                                title = re.sub(r'\s+', ' ', title).strip()
+
+                        if not title:
+                            title = "Video Guide"
+
+                        videos.append({
+                            "url": video_url,
+                            "title": title
+                        })
+
+            # 方法2: 查找具有videoid属性的元素
+            video_elems = soup.find_all(attrs={'videoid': True})
+            for video_elem in video_elems:
+                video_id = video_elem.get('videoid')
+                if video_id:
+                    video_url = f"https://www.youtube.com/watch?v={video_id}"
+                    if video_url not in seen_urls:
+                        seen_urls.add(video_url)
+
+                        # 尝试提取视频标题
+                        title = video_elem.get('title', '')
+                        if not title:
+                            prev_header = video_elem.find_previous(['h1', 'h2', 'h3', 'h4', 'h5'])
+                            if prev_header:
+                                title = prev_header.get_text().strip()
+                                # 移除中文字符
+                                title = re.sub(r'[\u4e00-\u9fff]+', '', title)
+                                title = re.sub(r'\s+', ' ', title).strip()
+
+                        if not title:
+                            title = "Video Guide"
+
+                        videos.append({
+                            "url": video_url,
+                            "title": title
+                        })
+
+            # 方法3: 查找YouTube链接
+            youtube_links = soup.find_all('a', href=True)
+            for link in youtube_links:
+                href = link.get('href', '')
+                if href and ('youtube.com/watch' in href or 'youtu.be/' in href):
+                    if href not in seen_urls and self.is_valid_video_url(href):
+                        seen_urls.add(href)
+                        link_text = link.get_text().strip()
+
+                        # 移除中文字符
+                        link_text = re.sub(r'[\u4e00-\u9fff]+', '', link_text)
+                        link_text = re.sub(r'\s+', ' ', link_text).strip()
+
+                        if not link_text:
+                            link_text = "Video Guide"
+
+                        videos.append({
+                            "url": href,
+                            "title": link_text
+                        })
+
+            print(f"提取到 {len(videos)} 个视频")
+            return videos
+
+        except Exception as e:
+            print(f"提取视频时发生错误: {str(e)}")
+            return []
+
+    def extract_youtube_url_from_iframe(self, iframe_src):
+        """从iframe src中提取YouTube视频URL"""
+        try:
+            if 'youtube.com/embed/' in iframe_src or 'youtube-nocookie.com/embed/' in iframe_src:
+                # 从embed URL中提取视频ID (支持youtube.com和youtube-nocookie.com)
+                import re
+                match = re.search(r'youtube(?:-nocookie)?\.com/embed/([^?&]+)', iframe_src)
+                if match:
+                    video_id = match.group(1)
+                    return f"https://www.youtube.com/watch?v={video_id}"
+            elif 'youtu.be/' in iframe_src:
+                # 从短链接中提取视频ID
+                import re
+                match = re.search(r'youtu\.be/([^?&]+)', iframe_src)
+                if match:
+                    video_id = match.group(1)
+                    return f"https://www.youtube.com/watch?v={video_id}"
+            elif 'youtube.com/watch' in iframe_src:
+                # 直接返回watch URL
+                return iframe_src
+        except Exception as e:
+            print(f"解析iframe URL时发生错误: {str(e)}")
+
+        return None
 
     def extract_dynamic_sections(self, soup):
         """动态提取页面上的真实字段名称和内容，基于实际页面结构，确保字段分离和无重复"""
@@ -5680,6 +6467,39 @@ def main():
             # 直接使用完整URL
             device_url = ensure_lang_param(input_text)
             print(f"使用提供的URL: {device_url}")
+
+            # 检测URL类型
+            if "/Guide/" in device_url or "/Teardown/" in device_url:
+                # 这是一个指南页面，直接爬取指南内容
+                print("检测到指南页面，直接爬取指南内容...")
+                try:
+                    guide_data = crawler.extract_guide_content(device_url)
+                    if guide_data:
+                        # 保存单个指南数据
+                        import re
+                        url_id = re.search(r'/(\d+)(?:\?|$)', device_url)
+                        if url_id:
+                            filename = f"results/single_guide_{url_id.group(1)}.json"
+                        else:
+                            filename = f"results/single_guide_{int(time.time())}.json"
+
+                        import json
+                        with open(filename, 'w', encoding='utf-8') as f:
+                            json.dump(guide_data, f, ensure_ascii=False, indent=2)
+
+                        print(f"✅ 指南内容已保存到: {filename}")
+                        print(f"📊 指南标题: {guide_data.get('title', 'N/A')}")
+                        if 'what_you_need' in guide_data:
+                            tools_count = len(guide_data['what_you_need'].get('Tools', []))
+                            print(f"🔧 工具数量: {tools_count}")
+                        if 'steps' in guide_data:
+                            print(f"📝 步骤数量: {len(guide_data['steps'])}")
+                    else:
+                        print("❌ 无法提取指南内容")
+                except Exception as e:
+                    print(f"❌ 爬取指南时发生错误: {str(e)}")
+                return
+
         elif "/Device/" in input_text:
             # 处理部分URL
             device_url = process_input(input_text)
