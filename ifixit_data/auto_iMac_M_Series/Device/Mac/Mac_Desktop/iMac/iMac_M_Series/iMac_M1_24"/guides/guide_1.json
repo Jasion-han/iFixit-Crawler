@@ -1,0 +1,207 @@
+{
+  "url": "https://www.ifixit.com/Teardown/iMac+M1+24-Inch+Teardown/142850#teardownConclusion?lang=en",
+  "title": "iMac M1 24\" Teardown",
+  "introduction": "Is the new M1 iMac just a silly-sized M1 iPad, a detached-keyboard M1 MacBook, an M1 Mac Mini stretched out like pizza dough? We’ll only know by getting inside, however tough that might be. It’s time for a teardown.\n\nFor more teardown and repair action, check out our YouTube channel, our Instagram, and our Twitter. Or, to get your iFixit fix right in your digital mailbox, subscribe to our newsletter.",
+  "what_you_need": {
+    "Tools": [
+      "Spudger",
+      "iFixit Opening Picks (Set of 6)",
+      "iMac Opening Wheel",
+      "Tweezers",
+      "2.5 mm Nut Driver for iPhone",
+      "Marlin Screwdriver Set - 15 Precision Screwdrivers",
+      "3.5 mm Nut Driver",
+      "T3 Torx Screwdriver",
+      "T5 Torx Screwdriver",
+      "T6 Torx Screwdriver"
+    ]
+  },
+  "view_statistics": {
+    "past_24_hours": "42",
+    "past_7_days": "268",
+    "past_30_days": "1,468",
+    "all_time": "314,076"
+  },
+  "favorites": "5",
+  "videos": [
+    {
+      "url": "https://youtu.be/JdBYVNuky1M?t=1420",
+      "title": "Each fan blows inward across the logic board"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Step 1 iMac M1 24\" Teardown",
+      "content": "You can have this teardown in any color you want, so long as it's purple. We opted for the mid-tier model with the following specs:\nApple M1 chip with 8-core CPU (four performance cores and four efficiency cores) and 16-core Neural Engine\nApple M1 integrated 8-core GPU\n8 GB of unified memory\n23.5-inch (diagonal) True Tone display with 4480 × 2520 resolution and support for one billion colors (P3 color gamut)\n256 GB of SSD storage\nSpecs aside, at first glance this iMac looks alarmingly like an iPad on a stand. If you've ever attempted to take apart an iPad, you know why we're a little hesitant to dig into this narrow slab.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/ce9b2618.jpg",
+        "auto_iMac_M_Series/Device/media/2193c7c9.jpg",
+        "auto_iMac_M_Series/Device/media/f8eca424.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 2",
+      "content": "We've been doing iMac teardowns a long time, so we're fairly quick by now—but if you're impatient, nothing beats an X-ray. Check out this beauty from our friends at Creative Electron.\nCompared to an X-ray of the 27\" Intel iMac, we noticed:\nThe new iMac's interior is dominated by two huge metal plates. What are those for?\nThe Apple logo provides a convenient RF pass-thru for some antenna hardware—but unlike in the past, the antenna itself is not Apple-shaped.\nAlmost all of the silicon is concentrated into narrow horizontal strips at the top (the display board) and bottom (main logic board). If you've seen our other M1 Mac teardowns, you might've expected this.\nPS: Are those two circles in the middle coin cell batteries?",
+      "images": [
+        "auto_iMac_M_Series/Device/media/c3523ffa.jpg",
+        "auto_iMac_M_Series/Device/media/1820bcb9.jpg",
+        "auto_iMac_M_Series/Device/media/54649737.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 3",
+      "content": "The bundled Magic Keyboard gets its first update since 2017, now featuring round-er corners, iMac-matching color choices, and reorganized function keys.\nNot to mention, shiny new identifying numbers: model A2449 and EMC 3579.\nThe new Touch ID sensor at the top right looks nothing like MacBook Touch ID—in fact, it's a dead ringer for an iPhone home button. This is Touch ID's first-ever appearance in a peripheral, which has some interesting security/repair implications.\nApple has always locked each device's original Touch ID button to its logic board in the name of security, making replacements problematic at best. So what about peripherals that connect wirelessly?\nWe'll circle back to keyboard disassembly and Touch ID testing shortly!",
+      "images": [
+        "auto_iMac_M_Series/Device/media/3d1893de.jpg",
+        "auto_iMac_M_Series/Device/media/0313b568.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 4",
+      "content": "Our midrange unit comes with two Thunderbolt 4 ports and two regular USB-C ports. That's double the base model, but not much for a desktop. Maybe there's room internally for expansion?\nBut hey, if it's color options you're after, you're in luck—there are more of those than there are ports.\nThe circular power port looks like something out of the Matrix. Better take this iMac apart quick, before it learns kung fu.\nThe foot features a new model number: A2438 plus the unique EMC 3663, and touts \"Made in Thailand.\"\nHistorically iMacs were assembled in China, while a few were built in the States. China may be on the outs due to recent tensions (and tariffs).\nThe M1 iMac is two iPads thin—not deep enough for a headphone jack, so Apple turned its jack sideways to fit.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/bf12a766.jpg",
+        "auto_iMac_M_Series/Device/media/dcdee53c.jpg",
+        "auto_iMac_M_Series/Device/media/f7dc0e7d.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 5",
+      "content": "Huzzah! The M1 iMac still uses the classic iMac adhesive—it's not quite the goopy iPad nightmare that we feared.\nWe don't love glued-together desktops—but if you insist, then this sort of split-friendly foam adhesive has been our go-to recommendation since we first encountered it in the 2012 iMac. It carves open easily with our handy-dandy cutting wheel.\nIt's not all familiar though. The surprisingly shallow cutting action is disconcertingly bumpy—fortunately, our pizza cutter is just rolling over a series of protective plastic screw posts, nothing delicate.\nUnlike on past iMacs, it has a single piece of glass—no metal chin to block access to internals. Good slack in the cables and no booby traps!\nWe can't wait to take a look at those radiator-looking bits—could they be speaker chambers?",
+      "images": [
+        "auto_iMac_M_Series/Device/media/bda497c8.jpg",
+        "auto_iMac_M_Series/Device/media/0ee806d8.jpg",
+        "auto_iMac_M_Series/Device/media/0ad75669.jpg",
+        "auto_iMac_M_Series/Device/media/8968becd.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 6",
+      "content": "Our 2.5 mm nut driver makes a rare appearance (you may remember its role in the iPhone 6s Teardown)—removing logic board standoff screws. Thanks to our iPhone Marlin kit, we're covered!\nGood to see incredibly-thin computers opting for screws over glues. Hey, iPad team, take note?\nThe fanless M1 MacBook Air-sized logic board is housed in the artificial \"chin\" of the iMac.\nUnlike the one in the MacBook Air, this M1 is actively cooled by a pair of fans. Each fan blows inward across the logic board, where the heatsink draws heat away from the M1 with a copper heat pipe and two short heatsinks.\nWe'll circle back later for a closer look at those fans, but we can't resist a bare logic board!",
+      "images": [
+        "auto_iMac_M_Series/Device/media/443e0f46.jpg",
+        "auto_iMac_M_Series/Device/media/04409f20.jpg",
+        "auto_iMac_M_Series/Device/media/dab94d52.jpg",
+        "auto_iMac_M_Series/Device/media/ddb54efe.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 7",
+      "content": "Thanks to the M1 architecture, this is the smallest iMac logic board yet. Let's take a closer look:\nApple APL1102/339S00817 64-bit M1 8-core SoC (system on a chip).\nSK Hynix H9HCNNNCRMMVGR-NEH 8 GB (2 x 4 GB) LPDDR4 memory\nKioxia KICM225VE4779 128 GB NAND flash storage\nMurata 339S00763 Wi-Fi/Bluetooth module\nApple APL1096/343S00474 power management IC\nApple APL1097/343S00475 power management IC\nRichtek RT4541GQV power management IC",
+      "images": [
+        "auto_iMac_M_Series/Device/media/f3dcffac.jpg",
+        "auto_iMac_M_Series/Device/media/8cc77e4d.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 8",
+      "content": "Let's put this thing down, flip it, and reverse it:\nKioxia KICM225VE4779 128 GB NAND flash storage\nMacronix MX25U6472F 64 MB serial NOR flash memory\nBroadcom BCM57762 ethernet controller\nInfineon (formerly Cypress Semiconductor) CYPDC1185B2-32LQXQ USB-C cable controller\nTexas Instruments TPS259827ON 15-amp eFuse with load current monitoring and transient fault management\nCirrus Logic CS42L83A audio codec\nA mysterious button with three LEDs beneath it—what could it be for? Diagnostics? Secret direct-Morse-code line to Tim Cook? Leave your thoughts in the comments!",
+      "images": [
+        "auto_iMac_M_Series/Device/media/db47ca02.jpg",
+        "auto_iMac_M_Series/Device/media/33c0fbe4.jpg",
+        "auto_iMac_M_Series/Device/media/b211f477.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 9",
+      "content": "Let’s talk ports! The USB-C boards flip up like the covers of cigarette lighter sockets in your car. From there, they easily disconnect from the (crazy thin) interconnect board.\nEven the \"Pro\" iMac had all its ports soldered to the logic board. While a desktop is less likely to experience port wear than a mobile device, it's always nice to have the option to replace.\nEven these little guys are color-coordinated. We don't always agree with Apple's choices, but there's no denying their efforts making them.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/ff803ee5.jpg",
+        "auto_iMac_M_Series/Device/media/274341b4.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 10",
+      "content": "With this wafer-thin interconnect board out, let's dive in for our second helping of chip ID:\nASMedia ASM3142 PCIe-to-USB 3.1 Gen 2 controller\nTexas Instruments CD3218B12 USB-C port/power delivery controller\nIntel JHL8040R Thunderbolt 4 retimer\nASMedia ASM1543 10 Gbps 4:2 mux switch with USB-C 3.1 compatibility\nAnalog Devices (formerly Linear Technology) LTC3890-2 two-phase synchronous step-down converter\nTexas Instruments TMP464 five-channel temperature sensor\nAnalog Devices SSM3515B 31-watt class-D audio amplifier",
+      "images": [
+        "auto_iMac_M_Series/Device/media/d90aa716.jpg",
+        "auto_iMac_M_Series/Device/media/16ed7537.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 11",
+      "content": "But wait; there’s more! For the low, low price of zero dollars, we have a whole reference guide full of identified iMac M1 silicon. We didn’t have room for all of it here, so our loss is your gain!",
+      "images": [],
+      "videos": []
+    },
+    {
+      "title": "Step 12",
+      "content": "If you—like us, and some keen-eyed tweeters—guessed those shiny metal chambers were part of the new speaker system, you were right!\nThey're impossibly thin (about 1.5 mm at the opening), but their sprawling surface area equates to quite a lot of internal volume, and therefore more air, and fuller sound. Pretty nifty use of what might otherwise be empty space!\nApple's obsession with audio quality shows throughout their product lineup, as recent teardowns from headphones to AirTags have proven.\nSpeaking of air, our mid-tier iMac comes with two small fans (vs. just one in the base model). This marks the first dual-fan setup in an M1 machine—which ought to be more than enough, considering how well the completely fanless M1 MacBook Air seems to perform with the exact same chip.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/b91790bc.jpg",
+        "auto_iMac_M_Series/Device/media/97c58185.jpg",
+        "auto_iMac_M_Series/Device/media/1e005fc0.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 13",
+      "content": "Next, let's zoom in on that battery board. The two pins on the output connector show 3V, which suggests these are probably CMOS batteries wired in parallel. But why two of them? And why the strange placement in the middle of the enclosure?\nOrdinarily, we'd expect to find a single CR2032 battery protecting the NVRAM, like on previous iMacs.\nBest guess: The new iMac design was too thin for a CR2032 on the main board. That's right—they couldn't squeeze in the battery from an AirTag. So Apple instead used two half-height CR2016s, and squirreled them away over here for clearance.\nCloser inspection reveals a camouflaged stretch-release adhesive pull tab under the battery board—the same sort of stuff that secures iPhone batteries.\nWe're fans of this stretchy adhesive when the alternative is poking and prying at a glued-down smartphone battery, but its use here seems ... odd.\nOnce again, thinness suggests an answer: This is a wafer-thin board, set in place with a vanishingly thin strip of adhesive.\nYou can't fully remove or replace either battery while the board is glued in place. Fortunately replacements shouldn't be frequent, but they'll certainly be inconvenient.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/6e1303f8.jpg",
+        "auto_iMac_M_Series/Device/media/986757d3.jpg",
+        "auto_iMac_M_Series/Device/media/69545eda.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 14",
+      "content": "What else can we shake out of this iMacPad? We find:\nA modular headphone jack. Good news, considering this could be the port that sees the most action. The chassis' thinness does have a silver lining: the headphone jack isn't on the back.\nA power button, mounted on a sturdy metal bracket, which is glued directly to the enclosure. It actuates on a little hinge.\nThe \"studio-quality\" triple-microphone array: two up top and one facing forward near the camera.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/b8972ac2.jpg",
+        "auto_iMac_M_Series/Device/media/fa8336b0.jpg",
+        "auto_iMac_M_Series/Device/media/11ceeb32.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 15",
+      "content": "The Apple logo on the back may not glow like on those classic MacBooks, but it's definitely still radiating. Like past iMacs, it has a cutout that acts as a convenient window for a patch antenna.\nThe display shield features two horizontal slots that hang on corresponding tabs in the case—keeping the display securely mounted. History, but no markings, point to LG Display as a likely maker of this panel.\nThe stand’s hinge hardware is no longer accessible from the outside, so choose VESA from the outset or forever hold your peace—or an iMac opening wheel.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/50a53ec9.jpg",
+        "auto_iMac_M_Series/Device/media/e30da75d.jpg",
+        "auto_iMac_M_Series/Device/media/112e73b7.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 16",
+      "content": "As promised, let’s dive back into that shiny new keyboard! Despite the update, it remains a tough nut to crack, but the trifecta of heavy-duty suction, isopropyl alcohol, and patience pays off.\nThe Touch ID key may look like an ordinary keycap on top, but the undercarriage looks very similar to an iPhone 7 Touch ID sensor.\nWhat happens when you swap keyboard Touch ID sensors? They connect just fine and register Touch ID key clicks—but alas, don’t want anything to do with our fingerprints. Each Touch ID sensor seems to be paired to its original keyboard.\nThat's not a total surprise: Touch ID sensors have been cryptographically paired to their original hardware for years. But these Touch ID peripherals are new, so we kept testing:\nTwo iMacs, one keyboard: once a keyboard is paired to an iMac, it must be unpaired in order to be paired to another iMac. Unpairing a keyboard invalidates the Touch ID profile stored on the iMac, even if it's re-paired to the same keyboard later on.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/962db1fa.jpg",
+        "auto_iMac_M_Series/Device/media/70a88ab4.jpg",
+        "auto_iMac_M_Series/Device/media/50cdf4e5.jpg",
+        "auto_iMac_M_Series/Device/media/1f9d5a5a.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 17",
+      "content": "The new power supply (plus integrated ethernet jack) may live on the outside now, but it won’t escape our tools! We had to bust out the heavy duty stuff but it’s worth it.\nRepairability benefits: If the iMac's power supply dies, you can easily replace it. Plus, the lack of large exposed capacitors inside the iMac itself (like we've seen in previous generations) means you'll have a safer time poking around in there.\nOn the other hand, no more capacitor swaps—you’re not getting inside this thing without destroying it.\nThe innards look similar to a standard Apple MacBook power supply, albeit with a network cable passing through.\nThe tiny ethernet board is likely strengthening and piping the internets through the black wire bunch.\nRed wires feed power into the not-Magsafe magnetic umbilical cord.\nThe power supply can pump out a healthy 143 watts, but in our testing, the iMac only draws about 60 watts at most. That's a lot of extra headroom for power-hungry USB-C peripherals.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/9e397080.jpg",
+        "auto_iMac_M_Series/Device/media/be0073fa.jpg",
+        "auto_iMac_M_Series/Device/media/c070daa4.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 18",
+      "content": "This concludes our purplest teardown to date—sorry Pixel.\nApple's newest iMac follows the other M1 machines down an interesting, but even-less-repairable path.\nA lot of impressive engineering went into making this thing as thin as possible, but did anyone really need a thinner all-in-one desktop? Apple's priorities continue to baffle.\nStay tuned! Up next on the teardown table we've got the new Apple TV and Siri Remote, and maybe even an iPad Pro—so keep checking back.\nAs always, we'll let our repairability scale have the final word.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/9dd348ab.jpg"
+      ],
+      "videos": []
+    }
+  ]
+}

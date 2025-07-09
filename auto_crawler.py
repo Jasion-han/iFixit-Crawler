@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-整合爬虫工具 - 结合树形结构和详细内容提取 + 企业级功能
+整合爬虫工具 - 结合树形结构和详细内容提取 + 代理池 + 本地文件存储
 将iFixit网站的设备分类以层级树形结构展示，并为每个节点提取详细内容
-支持代理池、MySQL存储、失败重试等企业级功能
+支持天启IP代理池、本地文件夹存储、媒体文件下载等功能
 用法: python auto_crawler.py [URL或设备名]
 示例: python auto_crawler.py https://www.ifixit.com/Device/Television
       python auto_crawler.py Television
@@ -17,34 +17,234 @@ import time
 import random
 import re
 import requests
-import pymysql
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from pathlib import Path
+import hashlib
+import mimetypes
+import threading
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+import queue
 
 # 导入两个基础爬虫
 from enhanced_crawler import EnhancedIFixitCrawler
 from tree_crawler import TreeCrawler
 
+
+class ProxyManager:
+    """代理管理器 - 从本地proxy.txt文件管理代理池"""
+
+    def __init__(self, proxy_file="proxy.txt", username="yjnvjx", password="gkmb3obc"):
+        self.proxy_file = proxy_file
+        self.username = username
+        self.password = password
+
+        self.proxy_pool = []
+        self.current_proxy = None
+        self.failed_proxies = []
+        self.proxy_switch_count = 0
+        self.proxy_lock = threading.Lock()
+
+        # 加载代理
+        self._load_proxies()
+
+    def _load_proxies(self):
+        """从proxy.txt文件加载代理列表"""
+        proxy_list = []
+
+        try:
+            if not os.path.exists(self.proxy_file):
+                print(f"❌ 代理文件不存在: {self.proxy_file}")
+                return
+
+            with open(self.proxy_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+
+            for line in lines:
+                line = line.strip()
+                if line and ':' in line and not line.startswith('#'):
+                    try:
+                        host, port = line.split(':', 1)
+                        proxy_config = {
+                            'http': f"http://{self.username}:{self.password}@{host.strip()}:{port.strip()}",
+                            'https': f"http://{self.username}:{self.password}@{host.strip()}:{port.strip()}"
+                        }
+                        proxy_list.append(proxy_config)
+                    except ValueError:
+                        print(f"⚠️  跳过格式错误的代理: {line}")
+
+            self.proxy_pool = proxy_list
+            print(f"📋 从 {self.proxy_file} 加载了 {len(proxy_list)} 个代理")
+
+        except Exception as e:
+            print(f"❌ 读取代理文件失败: {e}")
+
+    def get_proxy(self):
+        """获取一个可用的代理"""
+        with self.proxy_lock:
+            # 如果当前代理可用，直接返回
+            if self.current_proxy and self.current_proxy not in self.failed_proxies:
+                return self.current_proxy
+
+            # 从代理池中选择一个未失效的代理
+            available_proxies = []
+            for p in self.proxy_pool:
+                is_failed = False
+                for failed in self.failed_proxies:
+                    if p['http'] == failed['http']:
+                        is_failed = True
+                        break
+                if not is_failed:
+                    available_proxies.append(p)
+
+            if not available_proxies:
+                # 如果所有代理都失效了，重置失效列表，重新开始
+                print("⚠️  所有代理都已失效，重置代理池...")
+                self.failed_proxies.clear()
+                available_proxies = self.proxy_pool
+
+            if available_proxies:
+                self.current_proxy = random.choice(available_proxies)
+                self.proxy_switch_count += 1
+
+                # 提取IP和端口用于显示
+                proxy_url = self.current_proxy['http']
+                if '@' in proxy_url:
+                    ip_port = proxy_url.split('@')[1]
+                    if ':' in ip_port:
+                        display_ip, display_port = ip_port.rsplit(':', 1)
+                    else:
+                        display_ip, display_port = ip_port, "Unknown"
+                else:
+                    display_ip, display_port = "Unknown", "Unknown"
+
+                current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+                print(f"🔄 切换代理 (第{self.proxy_switch_count}次): {display_ip}:{display_port}")
+
+                return self.current_proxy
+            else:
+                print("❌ 没有可用的代理")
+                return None
+
+    def mark_proxy_failed(self, proxy, reason=""):
+        """标记代理为失效"""
+        with self.proxy_lock:
+            # 检查是否已经在失效列表中
+            already_failed = False
+            for failed in self.failed_proxies:
+                if failed['http'] == proxy['http']:
+                    already_failed = True
+                    break
+
+            if not already_failed:
+                self.failed_proxies.append(proxy)
+
+            # 提取IP和端口用于显示
+            proxy_url = proxy['http']
+            if '@' in proxy_url:
+                ip_port = proxy_url.split('@')[1]
+                if ':' in ip_port:
+                    display_ip, display_port = ip_port.rsplit(':', 1)
+                else:
+                    display_ip, display_port = ip_port, "Unknown"
+            else:
+                display_ip, display_port = "Unknown", "Unknown"
+
+            print(f"❌ 代理失效: {display_ip}:{display_port} - {reason}")
+
+            # 如果失效的是当前代理，清除当前代理
+            if self.current_proxy == proxy:
+                self.current_proxy = None
+
+    def get_stats(self):
+        """获取代理池统计信息"""
+        return {
+            'total_proxies': len(self.proxy_pool),
+            'failed_proxies': len(self.failed_proxies),
+            'available_proxies': len(self.proxy_pool) - len(self.failed_proxies),
+            'switch_count': self.proxy_switch_count
+        }
+
 class CombinedIFixitCrawler(EnhancedIFixitCrawler):
-    def __init__(self, base_url="https://www.ifixit.com", verbose=False, use_proxy=False, use_database=False):
+    def __init__(self, base_url="https://www.ifixit.com", verbose=False, use_proxy=True,
+                 use_cache=True, force_refresh=False, max_workers=4, max_retries=5,
+                 download_videos=False, max_video_size_mb=50):
         super().__init__(base_url, verbose)
+
+        # 立即初始化日志系统，确保logger可用
+        self._setup_logging()
+
         self.tree_crawler = TreeCrawler(base_url)
         self.processed_nodes = set()
         self.target_url = None
 
-        # 企业级功能
+        # 代理池配置
         self.use_proxy = use_proxy
-        self.use_database = use_database
-        self.proxy_pool = []
-        self.current_proxy_index = 0
-        self.db_connection = None
+        self.proxy_manager = ProxyManager() if use_proxy else None
+        self.failed_urls = set()  # 添加失败URL集合
+
+        # 视频处理配置
+        self.download_videos = download_videos
+        self.max_video_size_mb = max_video_size_mb
+        self.video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.flv']
+
+        # 性能统计
+        self.stats = {
+            "total_requests": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "retry_success": 0,
+            "retry_failed": 0,
+            "media_downloaded": 0,
+            "media_failed": 0,
+            "videos_skipped": 0,
+            "videos_downloaded": 0
+        }
+
+        # 本地存储配置
+        self.storage_root = "ifixit_data"
+        self.media_folder = "media"
+
+        # 缓存配置
+        self.use_cache = use_cache
+        self.force_refresh = force_refresh
+
+        # 并发配置
+        self.max_workers = max_workers
+        self.max_retries = max_retries
+        self.thread_local = threading.local()
+
+        # 错误处理配置
+        self.failed_log_file = "failed_urls.log"
+
+        # 打印视频处理配置
+        if self.download_videos:
+            self.logger.info(f"✅ 视频下载已启用，最大文件大小: {max_video_size_mb}MB")
+        else:
+            self.logger.info("⚠️ 视频下载已禁用，将保留原始URL")
+
+    def _load_proxy_config(self):
+        """加载代理配置"""
+        print("📋 使用天启IP代理服务")
+
+        # 天启IP代理认证信息
+        self.proxy_username = "yjnvjx"  # 您的天启IP用户名
+        self.proxy_password = "gkmb3obc"  # 您的天启IP密码
+
+        self.current_proxy = None
+        self.proxy_switch_count = 0
         self.failed_urls = set()
 
-        if use_proxy:
+        # 这些配置已在__init__中设置，此处不再重复
+
+        # 初始化日志
+        self._setup_logging()
+
+        if self.use_proxy:
             self._init_proxy_pool()
-        if use_database:
-            self._init_database()
 
         # 复制树形爬虫的重要方法到当前类
         self.find_exact_path = self.tree_crawler.find_exact_path
@@ -56,73 +256,292 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         # 重写tree_crawler的get_soup方法，让它使用我们的增强版本
         self.tree_crawler.get_soup = self._tree_crawler_get_soup
 
+    def _setup_logging(self):
+        """设置日志系统"""
+        log_format = '%(asctime)s - %(levelname)s - %(message)s'
+        logging.basicConfig(
+            level=logging.INFO if self.verbose else logging.WARNING,
+            format=log_format,
+            handlers=[
+                logging.FileHandler('crawler.log', encoding='utf-8'),
+                logging.StreamHandler()
+            ]
+        )
+        self.logger = logging.getLogger(__name__)
+
+    def _check_cache_validity(self, url, local_path):
+        """检查本地缓存是否有效"""
+        if not self.use_cache or self.force_refresh:
+            return False
+
+        if not local_path.exists():
+            return False
+
+        # 检查info.json是否存在
+        info_file = local_path / "info.json"
+        if not info_file.exists():
+            self.logger.info(f"缓存无效: 缺少info.json - {url}")
+            return False
+
+        try:
+            with open(info_file, 'r', encoding='utf-8') as f:
+                info_data = json.load(f)
+
+            # 检查guides目录
+            if 'guides' in info_data:
+                guides_dir = local_path / "guides"
+                if not guides_dir.exists():
+                    self.logger.info(f"缓存无效: 缺少guides目录 - {url}")
+                    return False
+
+            # 检查troubleshooting目录
+            if 'troubleshooting' in info_data:
+                ts_dir = local_path / "troubleshooting"
+                if not ts_dir.exists():
+                    self.logger.info(f"缓存无效: 缺少troubleshooting目录 - {url}")
+                    return False
+
+            # 检查media文件
+            media_dir = local_path / self.media_folder
+            if media_dir.exists():
+                # 简单检查：如果media目录存在但为空，可能是下载失败
+                media_files = list(media_dir.glob("*"))
+                if len(media_files) == 0:
+                    # 检查是否应该有媒体文件
+                    if self._should_have_media(info_data):
+                        self.logger.info(f"缓存无效: media目录为空但应该有媒体文件 - {url}")
+                        return False
+
+            self.logger.info(f"✅ 缓存命中，跳过爬取: {url}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"缓存检查失败: {e} - {url}")
+            return False
+
+    def _should_have_media(self, data):
+        """检查数据中是否应该包含媒体文件"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key in ['image', 'video', 'thumbnail', 'photo'] and value:
+                    return True
+                elif key == 'images' and isinstance(value, list) and value:
+                    return True
+                elif isinstance(value, (dict, list)):
+                    if self._should_have_media(value):
+                        return True
+        elif isinstance(data, list):
+            for item in data:
+                if self._should_have_media(item):
+                    return True
+        return False
+
+    def _log_failed_url(self, url, error, retry_count=0):
+        """记录失败的URL到日志文件"""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = f"{timestamp} | {url} | {error} | retry_count: {retry_count}\n"
+
+        try:
+            with open(self.failed_log_file, 'a', encoding='utf-8') as f:
+                f.write(log_entry)
+        except Exception as e:
+            self.logger.error(f"无法写入失败日志: {e}")
+
+    def _exponential_backoff(self, attempt):
+        """指数退避延迟"""
+        delay = min(300, (2 ** attempt) + random.uniform(0, 1))
+        time.sleep(delay)
+        return delay
+
+    def _is_temporary_error(self, error):
+        """判断是否为临时性错误"""
+        temporary_errors = [
+            "timeout", "connection", "network", "502", "503", "504",
+            "429", "500", "ConnectionError", "Timeout", "ReadTimeout"
+        ]
+        error_str = str(error).lower()
+        return any(temp_err in error_str for temp_err in temporary_errors)
+
+    def _retry_with_backoff(self, func, *args, **kwargs):
+        """带指数退避的重试机制"""
+        last_error = None
+
+        for attempt in range(self.max_retries):
+            try:
+                result = func(*args, **kwargs)
+                if attempt > 0:
+                    self.stats["retry_success"] += 1
+                    self.logger.info(f"重试成功 (第{attempt+1}次尝试)")
+                return result
+
+            except Exception as e:
+                last_error = e
+                self.stats["total_retries"] += 1
+
+                if not self._is_temporary_error(e):
+                    self.logger.error(f"永久性错误，停止重试: {e}")
+                    break
+
+                if attempt < self.max_retries - 1:
+                    delay = self._exponential_backoff(attempt)
+                    self.logger.warning(f"重试 {attempt+1}/{self.max_retries} (延迟{delay:.1f}s): {e}")
+
+                    # 网络错误时切换代理
+                    if self.use_proxy and "network" in str(e).lower():
+                        self._switch_proxy(f"重试时网络错误: {str(e)}")
+                else:
+                    self.logger.error(f"重试失败，已达最大重试次数: {e}")
+
+        self.stats["retry_failed"] += 1
+        if last_error:
+            raise last_error
+        else:
+            raise Exception("重试失败，未知错误")
+
     def _init_proxy_pool(self):
-        """初始化代理池"""
-        self.proxy_pool = [
-            {'http': 'http://proxy1:8080', 'https': 'https://proxy1:8080'},
-            {'http': 'http://proxy2:8080', 'https': 'https://proxy2:8080'},
+        """初始化代理池 - 从天启IP API获取代理"""
+        print("=" * 50)
+        print("🚀 启动代理池系统")
+        print("=" * 50)
+        self._get_new_proxy()
+
+    def _get_new_proxy(self):
+        """从天启IP API获取新的代理IP"""
+        api_url = "http://api.tianqiip.com/getip"
+        params = {
+            'secret': 'c3ljdpezjim64de5',
+            'num': '200',
+            'type': 'txt',
+            'port': '2',
+            'time': '3',
+            'mr': '1',
+            'sign': '2704663b3f023a2e4097093d70f24acb'
+        }
+
+        try:
+            print(f"📡 正在从天启IP API获取代理...")
+            print(f"🔗 API地址: {api_url}")
+
+            response = requests.get(api_url, params=params, timeout=15)
+
+            if response.status_code == 200:
+                proxy_text = response.text.strip()
+                print(f"🔍 API响应内容预览: {proxy_text[:200]}...")
+
+                # 解析文本格式的代理列表 (IP:PORT格式)
+                proxy_lines = [line.strip() for line in proxy_text.split('\n') if line.strip()]
+
+                if proxy_lines:
+                    # 随机选择一个代理
+                    import random
+                    selected_proxy = random.choice(proxy_lines)
+
+                    if ':' in selected_proxy:
+                        proxy_host, proxy_port = selected_proxy.split(':', 1)
+
+                        # 构建带认证的代理配置
+                        proxy_meta = f"http://{self.proxy_username}:{self.proxy_password}@{proxy_host}:{proxy_port}"
+                        self.current_proxy = {
+                            'http': proxy_meta,
+                            'https': proxy_meta
+                        }
+
+                        self.proxy_switch_count += 1
+                        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+
+                        print("✅ 天启IP代理获取成功!")
+                        print(f"🕒 时间: {current_time}")
+                        print(f"🌐 代理IP: {proxy_host}")
+                        print(f"🔌 端口: {proxy_port}")
+                        print(f"🔄 切换次数: 第 {self.proxy_switch_count} 次")
+                        print(f"📊 可用代理总数: {len(proxy_lines)}")
+                        print("=" * 50)
+
+                        # 代理获取成功
+
+                        return True
+                    else:
+                        print(f"❌ 代理格式错误: {selected_proxy}")
+                else:
+                    print("❌ 未获取到有效的代理列表")
+            else:
+                print(f"❌ HTTP状态码: {response.status_code}")
+                print(f"❌ 响应内容: {response.text[:200]}")
+
+        except Exception as e:
+            print(f"❌ 获取天启IP代理失败: {e}")
+
+        # API失败时使用演示模式
+        print("⚠️  天启IP API调用失败，使用演示模式")
+        print("💡 请检查:")
+        print("   1. 天启IP账号是否有效")
+        print("   2. 账号余额是否充足")
+        print("   3. API参数是否正确")
+        print("   4. 网络连接是否正常")
+        return self._get_demo_proxy()
+
+    def _get_demo_proxy(self):
+        """获取模拟代理用于演示"""
+        import random
+
+        # 模拟代理IP池
+        demo_proxies = [
+            {"ip": "192.168.1.100", "port": "8080"},
+            {"ip": "10.0.0.50", "port": "3128"},
+            {"ip": "172.16.0.25", "port": "8888"},
         ]
 
-    def _init_database(self):
-        """初始化MySQL数据库连接"""
-        try:
-            self.db_connection = pymysql.connect(
-                host='localhost',
-                user='root',
-                password='password',
-                database='ifixit_crawler',
-                charset='utf8mb4'
-            )
-            self._create_tables()
-        except Exception as e:
-            print(f"数据库连接失败: {e}")
-            self.use_database = False
+        proxy_info = random.choice(demo_proxies)
+        proxy_host = proxy_info['ip']
+        proxy_port = proxy_info['port']
 
-    def _create_tables(self):
-        """创建数据库表"""
-        if not self.db_connection:
-            return
+        # 演示模式也使用认证信息
+        proxy_meta = f"http://{self.proxy_username}:{self.proxy_password}@{proxy_host}:{proxy_port}"
+        self.current_proxy = {
+            'http': proxy_meta,
+            'https': proxy_meta
+        }
 
-        cursor = self.db_connection.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS crawl_data (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                url VARCHAR(500) UNIQUE,
-                name VARCHAR(200),
-                title VARCHAR(500),
-                content LONGTEXT,
-                status ENUM('pending', 'success', 'failed') DEFAULT 'pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            )
-        """)
-        self.db_connection.commit()
+        self.proxy_switch_count += 1
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        print("✅ 模拟代理获取成功! (演示模式)")
+        print(f"🕒 时间: {current_time}")
+        print(f"🌐 代理IP: {proxy_host}")
+        print(f"🔌 端口: {proxy_port}")
+        print(f"🔄 切换次数: 第 {self.proxy_switch_count} 次")
+        print("💡 注意: 这是演示模式，实际使用需要配置真实的天启IP API")
+        print("=" * 50)
+        return True
+
+
 
     def _get_next_proxy(self):
-        """获取下一个代理"""
-        if not self.proxy_pool:
+        """获取当前代理或切换新代理"""
+        if not self.use_proxy or not self.proxy_manager:
             return None
-        proxy = self.proxy_pool[self.current_proxy_index]
-        self.current_proxy_index = (self.current_proxy_index + 1) % len(self.proxy_pool)
-        return proxy
 
-    def _save_to_database(self, data, url):
-        """保存数据到数据库"""
-        if not self.use_database or not self.db_connection:
-            return
+        return self.proxy_manager.get_proxy()
 
-        try:
-            cursor = self.db_connection.cursor()
-            cursor.execute("""
-                INSERT INTO crawl_data (url, name, title, content, status)
-                VALUES (%s, %s, %s, %s, 'success')
-                ON DUPLICATE KEY UPDATE
-                name = VALUES(name), title = VALUES(title),
-                content = VALUES(content), status = 'success'
-            """, (url, data.get('name', ''), data.get('title', ''), json.dumps(data, ensure_ascii=False)))
-            self.db_connection.commit()
-        except Exception as e:
-            print(f"数据库保存失败: {e}")
+    def _switch_proxy(self, reason="请求失败"):
+        """切换代理IP"""
+        self.logger.warning(f"⚠️  代理切换原因: {reason}")
+
+        if not self.use_proxy or not self.proxy_manager:
+            return False
+
+        # 标记当前代理为失效
+        current_proxy = self.proxy_manager.current_proxy
+        if current_proxy:
+            self.proxy_manager.mark_proxy_failed(current_proxy, reason)
+
+        # 获取新代理
+        new_proxy = self.proxy_manager.get_proxy()
+        return new_proxy is not None
+
+    # 代理池相关方法已集成到ProxyManager类中
+
+
 
     def get_soup(self, url, use_playwright=False):
         """重写get_soup方法，支持代理池、重试机制和Playwright渲染"""
@@ -130,6 +549,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             return None
 
         if url in self.failed_urls:
+            self.logger.warning(f"跳过已知失败URL: {url}")
             return None
 
         if 'zh.ifixit.com' in url:
@@ -140,45 +560,63 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         else:
             url += '?lang=en'
 
+        self.stats["total_requests"] += 1
+
         # 如果需要JavaScript渲染，使用Playwright
         if use_playwright:
-            return self._get_soup_with_playwright(url)
+            return self._retry_with_backoff(self._get_soup_with_playwright, url)
 
         # 否则使用传统的requests方法
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                session = requests.Session()
-                retry_strategy = Retry(
-                    total=3,
-                    backoff_factor=1,
-                    status_forcelist=[429, 500, 502, 503, 504],
-                )
-                adapter = HTTPAdapter(max_retries=retry_strategy)
-                session.mount("http://", adapter)
-                session.mount("https://", adapter)
+        return self._retry_with_backoff(self._get_soup_requests, url)
 
-                proxies = self._get_next_proxy() if self.use_proxy else None
+    def _get_soup_requests(self, url):
+        """使用requests获取页面内容，支持智能代理切换"""
+        session = requests.Session()
+        retry_strategy = Retry(
+            total=2,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
 
-                response = session.get(
-                    url,
-                    headers=self.headers,
-                    timeout=30,
-                    proxies=proxies
-                )
-                response.raise_for_status()
+        # 获取代理
+        proxies = self._get_next_proxy() if self.use_proxy else None
 
-                from bs4 import BeautifulSoup
-                return BeautifulSoup(response.content, 'html.parser')
+        try:
+            response = session.get(
+                url,
+                headers=self.headers,
+                timeout=30,
+                proxies=proxies
+            )
+            response.raise_for_status()
 
-            except Exception as e:
-                if attempt == max_retries - 1:
-                    print(f"获取页面失败 {url}: {e}")
-                    self.failed_urls.add(url)
-                    return None
-                time.sleep(random.uniform(1, 3))
+            from bs4 import BeautifulSoup
+            return BeautifulSoup(response.content, 'html.parser')
 
-        return None
+        except (requests.exceptions.ProxyError,
+                requests.exceptions.ConnectTimeout,
+                requests.exceptions.ConnectionError) as e:
+            # 代理相关错误，尝试切换代理
+            if self.use_proxy:
+                print(f"🔄 代理错误，尝试切换: {str(e)[:100]}")
+                if self._switch_proxy(f"代理错误: {str(e)[:50]}"):
+                    # 使用新代理重试一次
+                    new_proxies = self._get_next_proxy()
+                    response = session.get(
+                        url,
+                        headers=self.headers,
+                        timeout=30,
+                        proxies=new_proxies
+                    )
+                    response.raise_for_status()
+
+                    from bs4 import BeautifulSoup
+                    return BeautifulSoup(response.content, 'html.parser')
+            # 如果切换代理失败或不使用代理，重新抛出异常
+            raise
 
     def _get_soup_with_playwright(self, url):
         """使用Playwright获取JavaScript渲染后的页面内容"""
@@ -209,6 +647,113 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             print(f"Playwright获取页面失败 {url}: {e}")
             self.failed_urls.add(url)
             return None
+
+    def _create_local_directory(self, path):
+        """创建本地目录结构"""
+        full_path = Path(self.storage_root) / path
+        full_path.mkdir(parents=True, exist_ok=True)
+        return full_path
+
+    def _get_file_size_from_url(self, url):
+        """获取URL文件的大小（MB）"""
+        try:
+            proxies = self._get_next_proxy() if self.use_proxy else None
+            response = requests.head(url, headers=self.headers, timeout=10, proxies=proxies)
+            if response.status_code == 200:
+                content_length = response.headers.get('content-length')
+                if content_length:
+                    size_bytes = int(content_length)
+                    size_mb = size_bytes / (1024 * 1024)
+                    return size_mb
+        except Exception as e:
+            self.logger.warning(f"无法获取文件大小 {url}: {e}")
+        return None
+
+    def _is_video_file(self, url):
+        """检查URL是否为视频文件"""
+        if not url:
+            return False
+        url_path = url.split('?')[0].lower()
+        return any(url_path.endswith(ext) for ext in self.video_extensions)
+
+    def _download_media_file(self, url, local_dir, filename=None):
+        """下载媒体文件到本地（带重试机制和视频处理策略）"""
+        if not url or not url.startswith('http'):
+            return None
+
+        # 检查是否为视频文件
+        if self._is_video_file(url):
+            if not self.download_videos:
+                self.logger.info(f"跳过视频下载（已禁用）: {url}")
+                self.stats["videos_skipped"] += 1
+                return url
+
+            # 检查视频文件大小
+            file_size_mb = self._get_file_size_from_url(url)
+            if file_size_mb and file_size_mb > self.max_video_size_mb:
+                self.logger.warning(f"跳过大视频文件 ({file_size_mb:.1f}MB > {self.max_video_size_mb}MB): {url}")
+                self.stats["videos_skipped"] += 1
+                return url
+
+            self.logger.info(f"准备下载视频文件 ({file_size_mb:.1f}MB): {url}")
+
+        try:
+            result = self._retry_with_backoff(self._download_media_file_impl, url, local_dir, filename)
+            if self._is_video_file(url) and result != url:
+                self.stats["videos_downloaded"] += 1
+            return result
+        except Exception as e:
+            self.logger.error(f"媒体文件下载最终失败 {url}: {e}")
+            self.stats["media_failed"] += 1
+            self._log_failed_url(url, f"媒体下载失败: {str(e)}")
+            return url
+
+    def _download_media_file_impl(self, url, local_dir, filename=None):
+        """媒体文件下载的具体实现"""
+        if not filename:
+            url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+            url_path = url.split('?')[0]
+            if '.' in url_path:
+                ext = '.' + url_path.split('.')[-1].lower()
+                if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.avi']:
+                    ext = '.jpg'
+            else:
+                ext = '.jpg'
+            filename = f"{url_hash}{ext}"
+
+        local_path = local_dir / self.media_folder / filename
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if local_path.exists():
+            self.stats["media_downloaded"] += 1
+            return str(local_path.relative_to(Path(self.storage_root)))
+
+        proxies = self._get_next_proxy() if self.use_proxy else None
+        response = requests.get(url, headers=self.headers, timeout=30, proxies=proxies)
+        response.raise_for_status()
+
+        with open(local_path, 'wb') as f:
+            f.write(response.content)
+
+        self.stats["media_downloaded"] += 1
+        self.logger.info(f"媒体文件下载成功: {filename}")
+        return str(local_path.relative_to(Path(self.storage_root)))
+
+    def _process_media_urls(self, data, local_dir):
+        """递归处理数据中的媒体URL，下载并替换为本地路径"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key in ['image', 'video', 'thumbnail', 'photo'] and isinstance(value, str) and value.startswith('http'):
+                    data[key] = self._download_media_file(value, local_dir)
+                elif key == 'images' and isinstance(value, list):
+                    for i, img_url in enumerate(value):
+                        if isinstance(img_url, str) and img_url.startswith('http'):
+                            value[i] = self._download_media_file(img_url, local_dir)
+                elif isinstance(value, (dict, list)):
+                    self._process_media_urls(value, local_dir)
+        elif isinstance(data, list):
+            for item in data:
+                self._process_media_urls(item, local_dir)
 
     def _tree_crawler_get_soup(self, url):
         """为tree_crawler提供的get_soup方法，在需要面包屑导航时使用Playwright"""
@@ -289,50 +834,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         return ""
 
-    def extract_real_view_statistics(self, soup, url):
-        """从页面HTML中提取真实的浏览统计数据"""
-        if not soup:
-            return {}
-
-        stats = {}
-        stat_selectors = [
-            '.view-count', '.stats-item', '.view-stats', '[data-stats]', '.page-stats'
-        ]
-
-        for selector in stat_selectors:
-            elements = soup.select(selector)
-            for elem in elements:
-                text = elem.get_text().strip()
-                if 'past 24 hours' in text.lower() or '24h' in text.lower():
-                    import re
-                    numbers = re.findall(r'[\d,]+', text)
-                    if numbers:
-                        stats['past_24_hours'] = numbers[0]
-                elif 'past 7 days' in text.lower() or '7d' in text.lower():
-                    numbers = re.findall(r'[\d,]+', text)
-                    if numbers:
-                        stats['past_7_days'] = numbers[0]
-                elif 'past 30 days' in text.lower() or '30d' in text.lower():
-                    numbers = re.findall(r'[\d,]+', text)
-                    if numbers:
-                        stats['past_30_days'] = numbers[0]
-                elif 'all time' in text.lower() or 'total' in text.lower():
-                    numbers = re.findall(r'[\d,]+', text)
-                    if numbers:
-                        stats['all_time'] = numbers[0]
-
-        if not stats:
-            script_tags = soup.find_all('script')
-            for script in script_tags:
-                if script.string:
-                    script_content = script.string
-                    if 'viewCount' in script_content or 'statistics' in script_content:
-                        import re
-                        view_matches = re.findall(r'"viewCount[^"]*":\s*"?(\d+[,\d]*)"?', script_content)
-                        if view_matches:
-                            stats['all_time'] = view_matches[0]
-
-        return stats
+    # 第一个extract_real_view_statistics方法已移除，使用下面的实现
 
     def _is_specified_target_url(self, url):
         """
@@ -476,10 +978,10 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             # 获取当前URL的路径部分
             from urllib.parse import urlparse, urlunparse
             parsed = urlparse(current_url)
-            path_parts = [p for p in parsed.path.split('/') if p]
+            path_parts = [p for p in str(parsed.path).split('/') if p]
 
             # 添加新的路径段
-            path_parts.append(segment)
+            path_parts.append(str(segment))
 
             # 重新构建URL
             new_path = '/' + '/'.join(path_parts)
@@ -589,7 +1091,17 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if not url or url in self.processed_nodes:
             return node
 
+        # 检查缓存
+        node_name = node.get('name', 'unknown')
+        safe_name = node_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+        local_path = Path(self.storage_root) / safe_name
+
+        if self._check_cache_validity(url, local_path):
+            self.stats["cache_hits"] += 1
+            return node
+
         self.processed_nodes.add(url)
+        self.stats["cache_misses"] += 1
 
         time.sleep(random.uniform(0.5, 1.0))
         soup = self.get_soup(url)
@@ -598,7 +1110,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         node = self.fix_node_data(node, soup)
 
         if self.verbose:
-            print(f"处理节点: {node.get('name', '')} - {url}")
+            self.logger.info(f"处理节点: {node.get('name', '')} - {url}")
         else:
             print(f"处理: {node.get('name', '')}")
 
@@ -612,6 +1124,153 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             node['children'] = enriched_children
 
         return node
+
+    def _process_content_concurrently(self, guide_links, device_url, skip_troubleshooting, soup):
+        """并发处理guides和troubleshooting内容"""
+        guides_data = []
+        troubleshooting_data = []
+
+        # 准备任务列表
+        tasks = []
+
+        # 添加guide任务
+        for guide_link in guide_links:
+            tasks.append(('guide', guide_link))
+
+        # 添加troubleshooting任务
+        if not skip_troubleshooting:
+            troubleshooting_links = self.extract_troubleshooting_from_device_page(soup, device_url)
+            print(f"  找到 {len(troubleshooting_links)} 个故障排除页面")
+
+            for ts_link in troubleshooting_links:
+                if isinstance(ts_link, dict):
+                    ts_url = ts_link.get('url', '')
+                else:
+                    ts_url = ts_link
+                if ts_url:
+                    tasks.append(('troubleshooting', ts_url))
+
+        # 使用线程池并发处理
+        if self.max_workers > 1 and len(tasks) > 1:
+            with ThreadPoolExecutor(max_workers=min(self.max_workers, len(tasks))) as executor:
+                future_to_task = {}
+
+                for task_type, url in tasks:
+                    if task_type == 'guide':
+                        future = executor.submit(self._process_guide_task, url)
+                    else:  # troubleshooting
+                        future = executor.submit(self._process_troubleshooting_task, url)
+                    future_to_task[future] = (task_type, url)
+
+                # 收集结果
+                for future in as_completed(future_to_task):
+                    task_type, url = future_to_task[future]
+                    try:
+                        result = future.result()
+                        if result:
+                            if task_type == 'guide':
+                                guides_data.append(result)
+                                print(f"    ✓ 指南: {result.get('title', '')}")
+                            else:
+                                troubleshooting_data.append(result)
+                                print(f"    ✓ 故障排除: {result.get('title', '')}")
+                    except Exception as e:
+                        self.logger.error(f"并发任务失败 {task_type} {url}: {e}")
+        else:
+            # 单线程处理
+            for task_type, url in tasks:
+                try:
+                    if task_type == 'guide':
+                        result = self._process_guide_task(url)
+                        if result:
+                            guides_data.append(result)
+                            print(f"    ✓ 指南: {result.get('title', '')}")
+                    else:
+                        result = self._process_troubleshooting_task(url)
+                        if result:
+                            troubleshooting_data.append(result)
+                            print(f"    ✓ 故障排除: {result.get('title', '')}")
+                except Exception as e:
+                    self.logger.error(f"任务失败 {task_type} {url}: {e}")
+
+        return guides_data, troubleshooting_data
+
+    def _process_guide_task(self, guide_url):
+        """处理单个guide任务"""
+        try:
+            guide_content = self.extract_guide_content(guide_url)
+            if guide_content:
+                guide_content['url'] = guide_url
+                return guide_content
+        except Exception as e:
+            self.logger.error(f"处理guide失败 {guide_url}: {e}")
+            self._log_failed_url(guide_url, f"Guide处理失败: {str(e)}")
+        return None
+
+    def _process_troubleshooting_task(self, ts_url):
+        """处理单个troubleshooting任务"""
+        try:
+            ts_content = self.extract_troubleshooting_content(ts_url)
+            if ts_content:
+                ts_content['url'] = ts_url
+                return ts_content
+        except Exception as e:
+            self.logger.error(f"处理troubleshooting失败 {ts_url}: {e}")
+            self._log_failed_url(ts_url, f"Troubleshooting处理失败: {str(e)}")
+        return None
+
+    def _print_performance_stats(self):
+        """打印性能统计信息"""
+        print("\n" + "=" * 60)
+        print("📊 性能统计报告")
+        print("=" * 60)
+
+        total_requests = self.stats["total_requests"]
+        cache_hits = self.stats["cache_hits"]
+        cache_misses = self.stats["cache_misses"]
+
+        if total_requests > 0:
+            cache_hit_rate = (cache_hits / (cache_hits + cache_misses)) * 100 if (cache_hits + cache_misses) > 0 else 0
+            print(f"🌐 总请求数: {total_requests}")
+            print(f"💾 缓存命中: {cache_hits} ({cache_hit_rate:.1f}%)")
+            print(f"🔄 缓存未命中: {cache_misses}")
+
+        retry_success = self.stats["retry_success"]
+        retry_failed = self.stats["retry_failed"]
+        total_retries = retry_success + retry_failed
+
+        if total_retries > 0:
+            retry_success_rate = (retry_success / total_retries) * 100
+            print(f"🔁 重试成功: {retry_success}/{total_retries} ({retry_success_rate:.1f}%)")
+            print(f"❌ 重试失败: {retry_failed}")
+
+        media_downloaded = self.stats["media_downloaded"]
+        media_failed = self.stats["media_failed"]
+        total_media = media_downloaded + media_failed
+
+        if total_media > 0:
+            media_success_rate = (media_downloaded / total_media) * 100
+            print(f"📁 媒体下载成功: {media_downloaded}/{total_media} ({media_success_rate:.1f}%)")
+            print(f"📁 媒体下载失败: {media_failed}")
+
+        # 视频处理统计
+        videos_downloaded = self.stats.get("videos_downloaded", 0)
+        videos_skipped = self.stats.get("videos_skipped", 0)
+        total_videos = videos_downloaded + videos_skipped
+
+        if total_videos > 0:
+            print(f"🎥 视频文件处理:")
+            print(f"   ✅ 已下载: {videos_downloaded}")
+            print(f"   ⏭️ 已跳过: {videos_skipped}")
+            if not self.download_videos:
+                print(f"   💡 提示: 视频下载已禁用，如需下载请设置 download_videos=True")
+            else:
+                print(f"   📏 大小限制: {self.max_video_size_mb}MB")
+
+        if self.use_proxy and hasattr(self, 'proxy_switch_count'):
+            print(f"🔄 代理切换次数: {self.proxy_switch_count}")
+
+        print("=" * 60)
         
 
 
@@ -621,15 +1280,28 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         """
         count = {'guides': 0, 'troubleshooting': 0, 'products': 0, 'categories': 0}
 
+        # 统计当前节点的guides和troubleshooting数组
+        if 'guides' in node and isinstance(node['guides'], list):
+            count['guides'] += len(node['guides'])
+
+        if 'troubleshooting' in node and isinstance(node['troubleshooting'], list):
+            count['troubleshooting'] += len(node['troubleshooting'])
+
+        # 判断节点类型
         if 'title' in node and 'steps' in node:
+            # 这是一个独立的指南节点（不在guides数组中）
             count['guides'] += 1
         elif 'causes' in node:
+            # 这是一个独立的故障排除节点（不在troubleshooting数组中）
             count['troubleshooting'] += 1
-        elif 'product_name' in node:
+        elif 'product_name' in node or ('title' in node and 'instruction_url' in node):
+            # 产品节点
             count['products'] += 1
         else:
+            # 分类节点
             count['categories'] += 1
 
+        # 递归统计子节点
         if 'children' in node and node['children']:
             for child in node['children']:
                 child_count = self.count_detailed_nodes(child)
@@ -892,32 +1564,10 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                     guide_links = [guide["url"] for guide in guides]
                     print(f"  找到 {len(guide_links)} 个指南")
 
-                    guides_data = []
-                    troubleshooting_data = []
-
-                    for guide_link in guide_links:
-                        guide_content = self.extract_guide_content(guide_link)
-                        if guide_content:
-                            guide_content['url'] = guide_link
-                            guides_data.append(guide_content)
-                            print(f"    ✓ 指南: {guide_content.get('title', '')}")
-
-                    if not skip_troubleshooting:
-                        troubleshooting_links = self.extract_troubleshooting_from_device_page(soup, url)
-                        print(f"  找到 {len(troubleshooting_links)} 个故障排除页面")
-
-                        for ts_link in troubleshooting_links:
-                            if isinstance(ts_link, dict):
-                                ts_url = ts_link.get('url', '')
-                            else:
-                                ts_url = ts_link
-
-                            if ts_url:
-                                ts_content = self.extract_troubleshooting_content(ts_url)
-                                if ts_content:
-                                    ts_content['url'] = ts_url
-                                    troubleshooting_data.append(ts_content)
-                                    print(f"    ✓ 故障排除: {ts_content.get('title', '')}")
+                    # 使用并发处理guides和troubleshooting
+                    guides_data, troubleshooting_data = self._process_content_concurrently(
+                        guide_links, url, skip_troubleshooting, soup
+                    )
 
                     if guides_data:
                         node['guides'] = guides_data
@@ -953,9 +1603,6 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
                     print(f"  总计: {len(guides_data)} 个指南, {len(troubleshooting_data)} 个故障排除")
 
-                    if self.use_database:
-                        self._save_to_database(node, url)
-
             except Exception as e:
                 print(f"  ✗ 深入爬取时出错: {str(e)}")
 
@@ -965,61 +1612,143 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         return node
         
-    def save_combined_result(self, tree_data, filename=None, target_name=None):
-        """保存整合结果到JSON文件或数据库"""
-        if self.use_database:
-            self._save_to_database(tree_data, tree_data.get('url', ''))
-            print(f"\n整合结果已保存到数据库")
-            return "database"
+    def save_combined_result(self, tree_data, target_name=None):
+        """保存整合结果到本地文件夹结构"""
+        # 创建根目录
+        if target_name:
+            safe_name = target_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+            root_dir = self._create_local_directory(f"auto_{safe_name}")
+        else:
+            root_name = tree_data.get("name", "auto")
+            if " > " in root_name:
+                root_name = root_name.split(" > ")[-1]
+            root_name = root_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+            root_dir = self._create_local_directory(f"auto_{root_name}")
 
-        os.makedirs("results", exist_ok=True)
+        # 处理媒体文件并保存数据结构
+        self._save_node_to_filesystem(tree_data, root_dir, "")
 
-        if not filename:
-            if target_name:
-                safe_name = target_name.replace("/", "_").replace("\\", "_").replace(":", "_")
-                filename = f"results/auto_{safe_name}.json"
-            else:
-                root_name = tree_data.get("name", "auto")
-                if " > " in root_name:
-                    root_name = root_name.split(" > ")[-1]
-                root_name = root_name.replace("/", "_").replace("\\", "_").replace(":", "_")
-                filename = f"results/auto_{root_name}.json"
+        print(f"\n整合结果已保存到本地文件夹: {root_dir}")
+        return str(root_dir)
 
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(tree_data, f, ensure_ascii=False, indent=2)
+    def _save_node_to_filesystem(self, node, base_dir, path_prefix):
+        """递归保存节点到文件系统"""
+        if not node or not isinstance(node, dict):
+            return
 
-        print(f"\n整合结果已保存到: {filename}")
-        return filename
+        node_name = node.get('name', 'unknown')
+        safe_name = node_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+
+        # 创建当前节点目录
+        current_path = path_prefix + "/" + safe_name if path_prefix else safe_name
+        node_dir = base_dir / current_path
+        node_dir.mkdir(parents=True, exist_ok=True)
+
+        # 复制节点数据并处理媒体URL
+        node_data = node.copy()
+        self._process_media_urls(node_data, node_dir)
+
+        # 保存节点信息到JSON文件
+        info_file = node_dir / "info.json"
+        node_info = {k: v for k, v in node_data.items() if k not in ['children', 'guides', 'troubleshooting']}
+        with open(info_file, 'w', encoding='utf-8') as f:
+            json.dump(node_info, f, ensure_ascii=False, indent=2)
+
+        # 处理guides
+        if 'guides' in node_data and node_data['guides']:
+            guides_dir = node_dir / "guides"
+            guides_dir.mkdir(exist_ok=True)
+            for i, guide in enumerate(node_data['guides']):
+                guide_data = guide.copy()
+                self._process_media_urls(guide_data, guides_dir)
+                guide_file = guides_dir / f"guide_{i+1}.json"
+                with open(guide_file, 'w', encoding='utf-8') as f:
+                    json.dump(guide_data, f, ensure_ascii=False, indent=2)
+
+        # 处理troubleshooting
+        if 'troubleshooting' in node_data and node_data['troubleshooting']:
+            ts_dir = node_dir / "troubleshooting"
+            ts_dir.mkdir(exist_ok=True)
+            for i, ts in enumerate(node_data['troubleshooting']):
+                ts_data = ts.copy()
+                self._process_media_urls(ts_data, ts_dir)
+                ts_file = ts_dir / f"troubleshooting_{i+1}.json"
+                with open(ts_file, 'w', encoding='utf-8') as f:
+                    json.dump(ts_data, f, ensure_ascii=False, indent=2)
+
+        # 递归处理子节点
+        if 'children' in node_data and node_data['children']:
+            for child in node_data['children']:
+                self._save_node_to_filesystem(child, base_dir, current_path)
         
     def print_combined_tree_structure(self, node, level=0):
         """
         打印整合后的树形结构，显示节点类型和内容丰富程度
         """
+        if not node:
+            return
+
         indent = "  " * level
         name = node.get('name', 'Unknown')
-        
+
+        # 统计当前节点的内容
+        guides_count = len(node.get('guides', []))
+        troubleshooting_count = len(node.get('troubleshooting', []))
+        children_count = len(node.get('children', []))
+
         # 判断节点类型并显示相应信息
         if 'title' in node and 'steps' in node:
-            # 指南节点
+            # 独立的指南节点
             steps_count = len(node.get('steps', []))
             print(f"{indent}📖 {name} [指南 - {steps_count}步骤]")
         elif 'causes' in node:
-            # 故障排除节点  
+            # 独立的故障排除节点
             causes_count = len(node.get('causes', []))
             print(f"{indent}🔧 {name} [故障排除 - {causes_count}原因]")
-        elif 'product_name' in node:
+        elif 'product_name' in node or ('title' in node and 'instruction_url' in node):
             # 产品节点
-            print(f"{indent}📱 {name} [产品]")
-        elif 'children' in node and node['children']:
+            content_info = []
+            if guides_count > 0:
+                content_info.append(f"{guides_count}指南")
+            if troubleshooting_count > 0:
+                content_info.append(f"{troubleshooting_count}故障排除")
+            if children_count > 0:
+                content_info.append(f"{children_count}子项")
+
+            content_str = " - " + ", ".join(content_info) if content_info else ""
+            print(f"{indent}📱 {name} [产品{content_str}]")
+        elif children_count > 0 or guides_count > 0 or troubleshooting_count > 0:
             # 分类节点
-            children_count = len(node['children'])
-            print(f"{indent}📁 {name} [分类 - {children_count}子项]")
+            content_info = []
+            if guides_count > 0:
+                content_info.append(f"{guides_count}指南")
+            if troubleshooting_count > 0:
+                content_info.append(f"{troubleshooting_count}故障排除")
+            if children_count > 0:
+                content_info.append(f"{children_count}子项")
+
+            content_str = " - " + ", ".join(content_info) if content_info else ""
+            print(f"{indent}📁 {name} [分类{content_str}]")
         else:
             # 其他节点
             print(f"{indent}❓ {name} [未知类型]")
-            
+
+        # 显示guides内容（缩进显示）
+        if guides_count > 0:
+            for guide in node.get('guides', []):
+                guide_name = guide.get('title', 'Unknown Guide')
+                steps_count = len(guide.get('steps', []))
+                print(f"{indent}  📖 {guide_name} [{steps_count}步骤]")
+
+        # 显示troubleshooting内容（缩进显示）
+        if troubleshooting_count > 0:
+            for ts in node.get('troubleshooting', []):
+                ts_name = ts.get('title', 'Unknown Troubleshooting')
+                causes_count = len(ts.get('causes', []))
+                print(f"{indent}  🔧 {ts_name} [{causes_count}原因]")
+
         # 递归打印子节点
-        if 'children' in node and node['children']:
+        if children_count > 0:
             for child in node['children']:
                 self.print_combined_tree_structure(child, level + 1)
 
@@ -1047,39 +1776,91 @@ def process_input(input_text):
     return f"https://www.ifixit.com/Device/{processed_input}", input_text
 
 def print_usage():
+    print("=" * 60)
+    print("iFixit整合爬虫工具 - 使用说明")
+    print("=" * 60)
     print("使用方法:")
-    print("python auto_crawler.py [URL或设备名] [verbose] [use_proxy] [use_database]")
-    print("例如: python auto_crawler.py https://www.ifixit.com/Device/Television")
-    print("      python auto_crawler.py Television verbose false false")
-    print("      python auto_crawler.py --retry  # 重试失败的URL")
+    print("python auto_crawler.py [URL或设备名] [选项...]")
+    print("\n基本用法:")
+    print("  python auto_crawler.py iMac_M_Series")
+    print("  python auto_crawler.py https://www.ifixit.com/Device/Television")
+    print("  python auto_crawler.py Television")
+    print("\n常用选项:")
+    print("  --verbose              启用详细输出")
+    print("  --no-proxy             关闭代理池")
+    print("  --no-cache             禁用缓存检查")
+    print("  --force-refresh        强制重新爬取（忽略缓存）")
+    print("  --workers N            设置并发线程数（默认4）")
+    print("  --max-retries N        设置最大重试次数（默认5）")
+    print("\n视频处理选项:")
+    print("  --download-videos      启用视频文件下载（默认禁用）")
+    print("  --max-video-size N     设置视频文件大小限制（MB，默认50）")
+    print("\n示例:")
+    print("  # 基本爬取（不下载视频）")
+    print("  python auto_crawler.py iMac_M_Series")
+    print("")
+    print("  # 启用视频下载，限制10MB")
+    print("  python auto_crawler.py iMac_M_Series --download-videos --max-video-size 10")
+    print("")
+    print("  # 详细输出，禁用代理")
+    print("  python auto_crawler.py Television --verbose --no-proxy")
+    print("\n功能说明:")
+    print("- 智能缓存：自动跳过已爬取的内容")
+    print("- 代理池：天启IP自动切换，避免封禁")
+    print("- 并发爬取：多线程提升爬取速度")
+    print("- 错误重试：网络错误自动重试")
+    print("- 媒体下载：自动下载并本地化所有媒体文件")
+    print("- 视频处理：可选择性下载视频文件，支持大小限制")
+    print("=" * 60)
 
 def main():
-    # 检查是否提供了参数
-    if len(sys.argv) > 1:
-        input_text = sys.argv[1]
+    # 解析命令行参数
+    args = sys.argv[1:]
 
-        # 检查帮助参数
-        if input_text.lower() in ['--help', '-h', 'help']:
-            print_usage()
-            return
+    # 检查帮助参数
+    if not args or args[0].lower() in ['--help', '-h', 'help']:
+        print_usage()
+        return
 
-        verbose = len(sys.argv) > 2 and sys.argv[2].lower() in ('verbose', 'debug', 'true', '1')
-        use_proxy = len(sys.argv) > 3 and sys.argv[3].lower() in ('true', '1', 'yes')
-        use_database = len(sys.argv) > 4 and sys.argv[4].lower() in ('true', '1', 'yes')
-    else:
-        print("=" * 60)
-        print("iFixit整合爬虫工具 - 树形结构 + 详细内容 + 企业级功能")
-        print("=" * 60)
-        print("\n请输入要爬取的iFixit产品名称或URL:")
-        print("例如: 70UK6570PUB            - 指定产品型号")
-        print("      https://www.ifixit.com/Device/70UK6570PUB - 指定产品URL")
-        print("      Television             - 电视类别")
-        print("      LG_Television          - 品牌电视类别")
+    # 获取目标URL/名称
+    input_text = args[0]
 
-        input_text = input("\n> ").strip()
-        verbose = input("\n是否开启详细输出? (y/n): ").strip().lower() == 'y'
-        use_proxy = input("是否使用代理池? (y/n): ").strip().lower() == 'y'
-        use_database = input("是否使用MySQL存储? (y/n): ").strip().lower() == 'y'
+    # 解析选项
+    verbose = '--verbose' in args
+    use_proxy = '--no-proxy' not in args  # 默认启用代理
+    use_cache = '--no-cache' not in args  # 默认启用缓存
+    force_refresh = '--force-refresh' in args
+
+    # 解析workers参数
+    max_workers = 4
+    if '--workers' in args:
+        try:
+            workers_idx = args.index('--workers')
+            if workers_idx + 1 < len(args):
+                max_workers = int(args[workers_idx + 1])
+        except (ValueError, IndexError):
+            print("警告: workers参数无效，使用默认值4")
+
+    # 解析max-retries参数
+    max_retries = 5
+    if '--max-retries' in args:
+        try:
+            retries_idx = args.index('--max-retries')
+            if retries_idx + 1 < len(args):
+                max_retries = int(args[retries_idx + 1])
+        except (ValueError, IndexError):
+            print("警告: max-retries参数无效，使用默认值5")
+
+    # 解析视频下载参数
+    download_videos = '--download-videos' in args
+    max_video_size_mb = 50
+    if '--max-video-size' in args:
+        try:
+            size_idx = args.index('--max-video-size')
+            if size_idx + 1 < len(args):
+                max_video_size_mb = int(args[size_idx + 1])
+        except (ValueError, IndexError):
+            print("警告: max-video-size参数无效，使用默认值50MB")
 
     if not input_text:
         print_usage()
@@ -1095,8 +1876,30 @@ def main():
         print("阶段2: 为每个节点提取详细内容")
         print("=" * 60)
 
+        # 显示配置信息
+        print(f"📋 爬取配置:")
+        print(f"   目标: {name}")
+        print(f"   详细输出: {'是' if verbose else '否'}")
+        print(f"   使用代理: {'是' if use_proxy else '否'}")
+        print(f"   使用缓存: {'是' if use_cache else '否'}")
+        print(f"   强制刷新: {'是' if force_refresh else '否'}")
+        print(f"   并发数: {max_workers}")
+        print(f"   最大重试: {max_retries}")
+        print(f"   下载视频: {'是' if download_videos else '否'}")
+        if download_videos:
+            print(f"   视频大小限制: {max_video_size_mb}MB")
+
         # 创建整合爬虫
-        crawler = CombinedIFixitCrawler(verbose=verbose, use_proxy=use_proxy, use_database=use_database)
+        crawler = CombinedIFixitCrawler(
+            verbose=verbose,
+            use_proxy=use_proxy,
+            use_cache=use_cache,
+            force_refresh=force_refresh,
+            max_workers=max_workers,
+            max_retries=max_retries,
+            download_videos=download_videos,
+            max_video_size_mb=max_video_size_mb
+        )
 
         # 记录开始时间
         start_time = time.time()
@@ -1128,14 +1931,18 @@ def main():
                 # 保存结果
                 filename = crawler.save_combined_result(combined_data, target_name=input_text)
 
-                print(f"\n✓ 整合爬取完成!")
-                print(f"✓ 结果已保存到: {filename}")
+                print(f"\n✅ 整合爬取完成!")
+                print(f"📁 数据已保存到本地文件夹: {filename}")
+
+                # 显示性能统计
+                crawler._print_performance_stats()
 
                 # 提供使用建议
-                print(f"\n使用建议:")
-                print(f"- 查看JSON文件了解完整的数据结构")
-                print(f"- 树形结构保持了从根目录到目标的完整路径")
-                print(f"- 每个节点都包含了相应的详细内容数据")
+                print(f"\n💡 使用建议:")
+                print(f"- 查看文件夹结构了解完整的数据层级")
+                print(f"- 每个目录包含info.json、guides/、troubleshooting/子目录")
+                print(f"- 所有媒体文件已下载到media/目录，URL已替换为本地路径")
+                print(f"- 下次爬取相同内容将自动使用缓存，大幅提升速度")
 
             else:
                 print("\n✗ 整合爬取失败")
@@ -1150,5 +1957,74 @@ def main():
     else:
         print_usage()
 
+def test_tianqi_proxy():
+    """测试天启IP代理池功能"""
+    print("=" * 60)
+    print("🧪 测试天启IP代理池功能")
+    print("=" * 60)
+
+    # 创建爬虫实例，启用代理
+    crawler = CombinedIFixitCrawler(
+        verbose=True,
+        use_proxy=True,
+        use_cache=False,
+        max_workers=1
+    )
+
+    # 测试代理获取
+    print("\n1. 测试代理获取...")
+    if crawler.proxy_manager:
+        proxy = crawler.proxy_manager.get_proxy()
+        if proxy:
+            print("✅ 代理获取成功")
+            print(f"当前代理: {proxy}")
+            stats = crawler.proxy_manager.get_stats()
+            print(f"代理池统计: {stats}")
+        else:
+            print("❌ 代理获取失败")
+            return
+    else:
+        print("❌ 代理管理器未初始化")
+        return
+
+    # 测试代理切换
+    print("\n2. 测试代理切换...")
+    old_proxy = crawler.current_proxy.copy() if crawler.current_proxy else None
+    if crawler._switch_proxy("测试切换"):
+        new_proxy = crawler.current_proxy
+        if new_proxy != old_proxy:
+            print("✅ 代理切换成功")
+            print(f"新代理: {new_proxy}")
+        else:
+            print("⚠️  代理未变化（可能是代理池为空）")
+    else:
+        print("❌ 代理切换失败")
+
+    # 测试实际网络请求
+    print("\n3. 测试实际网络请求...")
+    test_url = "https://www.ifixit.com/Device"
+    try:
+        soup = crawler.get_soup(test_url)
+        if soup:
+            title = soup.find('title')
+            print(f"✅ 网络请求成功")
+            print(f"页面标题: {title.get_text() if title else 'No title'}")
+        else:
+            print("❌ 网络请求失败，未获取到页面内容")
+    except Exception as e:
+        print(f"❌ 网络请求异常: {e}")
+
+    print("\n" + "=" * 60)
+    print("🏁 代理池测试完成")
+    print("=" * 60)
+
+
 if __name__ == "__main__":
+    import sys
+
+    # 检查是否是测试模式
+    if len(sys.argv) > 1 and sys.argv[1] == "--test-proxy":
+        test_tianqi_proxy()
+        sys.exit(0)
+
     main()

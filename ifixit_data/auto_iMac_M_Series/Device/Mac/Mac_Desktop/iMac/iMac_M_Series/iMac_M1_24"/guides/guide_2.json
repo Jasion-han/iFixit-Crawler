@@ -1,0 +1,120 @@
+{
+  "url": "https://www.ifixit.com/Guide/iMac+M1+24-Inch+Full+Chip+ID/142907?lang=en",
+  "title": "iMac M1 24\" Full Chip ID",
+  "introduction": "We couldn’t squeeze every last ounce of chip ID into our iMac M1 24” teardown. So if you couldn’t get enough of that sweet silicon, here is a much more thorough look into the chips found on the logic board, interconnect board, and display board.",
+  "view_statistics": {
+    "past_24_hours": "5",
+    "past_7_days": "47",
+    "past_30_days": "146",
+    "all_time": "16,626"
+  },
+  "favorites": "2",
+  "videos": [],
+  "steps": [
+    {
+      "title": "Step 1 iMac M1 24\" Full Chip ID",
+      "content": "Back side of the logic board:\nApple APL1102/339S00817 64-bit M1 8-core SoC (system on a chip).\nSK hynix H9HCNNNCRMMVGR-NEH 8 GB (2 x 4 GB) LPDDR4 SDRAM memory\nKioxia KICM225VE4779 128 GB NAND Flash\nMurata 339S00763 Wi-Fi/Bluetooth module\nApple APL1096/343S00474 power management IC\nApple APL1097/343S00475 power management IC\nRichtek RT4541GQV power management IC",
+      "images": [
+        "auto_iMac_M_Series/Device/media/b661b8d0.jpg",
+        "auto_iMac_M_Series/Device/media/c695262a.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 2",
+      "content": "Back side of the logic board, continued:\nTexas Instruments INA210 bi-directional current sense amplifier\nTexas Instruments INA214 bi-directional current sense amplifier\nTexas Instruments TPS62137 DC-DC converter\nDialog Semiconductor (formerly Silego) SLG59M301V 4-amp load switch\nTexas Instruments SN74AVC4T234 4-bit bus transceiver",
+      "images": [
+        "auto_iMac_M_Series/Device/media/99d29c53.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 3",
+      "content": "Front side of the logic board:\nKioxia KICM225VE4779 128 GB NAND Flash\nBroadcom BCM57762 ethernet controller\nInfineon (formerly Cypress Semiconductor) CYPDC1185B2-32LQXQ USB-C cable controller\nCirrus Logic CS42L83A audio codec\nAnalog Devices SSM3515B 31-watt class-D audio amplifier\nAnalog Devices (formerly Linear Technology) LTC3890-2 two-phase synchronous step-down converter\nTexas Instruments TPS259827ON 15-amp eFuse with load current monitoring and transient fault management",
+      "images": [
+        "auto_iMac_M_Series/Device/media/98321635.jpg",
+        "auto_iMac_M_Series/Device/media/64e00f99.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 4",
+      "content": "Front side of logic board, continued:\nMacronix MX25U6472F 64 MB serial NOR flash memory\nTexas Instruments OPA333 single zero-drift CMOS operational amplifier\nTemperature sensor (likely)\nTexas Instruments INA210 bi-directional current sense amplifier\nNexperia (formerly NXP Semiconductor) 74AVC2T45 2-bit dual-supply voltage level translator/transceiver\nTexas Instruments SN74AHC1G32 single 2-input OR gate\nNXP Semiconductor SN210V NFC controller with secure element",
+      "images": [
+        "auto_iMac_M_Series/Device/media/cefdf197.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 5",
+      "content": "Interconnect board:\nASMedia ASM3142 PCIe-to-USB 3.1 Gen 2 controller\nTexas Instruments CD3218B12 USB-C port/power delivery controller\nIntel JHL8040R Thunderbolt 4 retimer\nASMedia ASM1543 10 Gbps 4:2 mux switch with USB 3.1 type-C compatibility\nAnalog Devices (formerly Linear Technology) LTC3890-2 two-phase synchronous step-down converter\nTexas Instruments TMP464 five-channel temperature sensor\nAnalog Devices SSM3515B 31-watt class-D audio amplifier",
+      "images": [
+        "auto_iMac_M_Series/Device/media/3cc8afc5.jpg",
+        "auto_iMac_M_Series/Device/media/eb368883.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 6",
+      "content": "Interconnect board, continued:\nWinbond W25Q80DVUXIE 8 MB serial NOR flash memory\nTexas Instruments INA231BIYFD 16-bit current/voltage/power monitor\nTexas Instruments TMUX1108 1-channel analog multiplexer (likely)\nTexas Instruments TLV75533P 500 mA LDO regulator\nMaxim Integrated DC-DC converter\nNexperia (formerly NXP Semiconductor) 74AUP1G09 single AND gate\nDialog Semiconductor (formerly Silego) SLG59M301V 4-amp load switch",
+      "images": [
+        "auto_iMac_M_Series/Device/media/238b05c5.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 7",
+      "content": "Interconnect board, continued:\nNexperia (formerly NXP Semiconductor) LSF0101 1-bit bidirectional multi-voltage level translator\nTexas Instruments SN74AXC1T45 dual-supply bus transceiver\nTexas Instruments SN74AUP1G17 Schmitt trigger (likely)",
+      "images": [
+        "auto_iMac_M_Series/Device/media/1ca1990a.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 8",
+      "content": "Left side of the display board:\nParade Technologies DP855A DisplayPort timing controller\nSilicon Works SW50024 LCD level shifter\nWinbond W25Q40EWUXIE 4 MB serial NOR flash memory\nTexas Instruments TMP468 9-channel temperature sensor\nDialog Semiconductor (formerly Silego) SLG46826 mixed signal array\nAnalog Devices (formerly Linear Technology) LTC3115-1 2-amp synchronous buck converter\nTexas Instruments TPS62140 2-amp step-down converter",
+      "images": [
+        "auto_iMac_M_Series/Device/media/7b77ea92.jpg",
+        "auto_iMac_M_Series/Device/media/01abce3c.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 9",
+      "content": "Right side of the display board:\nTexas Instruments BUF18830 18-channel gamma-voltage generator\nRichtek RT6811HGQV display power management\nTexas Instruments TPS259571 eFuse with over-voltage protection\nTexas Instruments TPS26621 800 mA eFuse with I/O reverse polarity protection\nTexas Instruments 2N7001T 1-bit dual-supply buffered voltage signal converter\nTexas Instruments TLV76701 1-amp LDO Regulator\nTexas Instruments SN74LVC1G04 single inverter",
+      "images": [
+        "auto_iMac_M_Series/Device/media/2f0d6fcf.jpg",
+        "auto_iMac_M_Series/Device/media/e91af652.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 10",
+      "content": "Left and right side of the display board, continued:\nTexas Instruments OPA2810 dual rail-to-rail I/O operational amplifier\nON Semiconductor analog switch\nTexas Instruments TPS62137 DC-DC converter\nDialog Semiconductor load switch (likely)\nTexas Instruments microcontroller (likely)\nTexas Instruments regulator (likely)\nDisplay drivers",
+      "images": [
+        "auto_iMac_M_Series/Device/media/a42f22e4.jpg",
+        "auto_iMac_M_Series/Device/media/0bd57126.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 11",
+      "content": "Texas Instruments DRV10975 BLDC motor driver",
+      "images": [
+        "auto_iMac_M_Series/Device/media/0faec92b.jpg",
+        "auto_iMac_M_Series/Device/media/f12b8560.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 12",
+      "content": "A partial list of chips on the power supply board:\nNXP Semiconductor TEA19161T digital power supply controller\nNXP Semiconductor TEA19162T power factor correction controller\nNXP Semiconductor TEA2095TE dual synchronous rectifier switching controller\nTexas Instruments OPA333 single zero-drift CMOS operational amplifier",
+      "images": [
+        "auto_iMac_M_Series/Device/media/6643ab87.jpg",
+        "auto_iMac_M_Series/Device/media/74b08243.jpg",
+        "auto_iMac_M_Series/Device/media/aa79bac1.jpg"
+      ],
+      "videos": []
+    }
+  ]
+}

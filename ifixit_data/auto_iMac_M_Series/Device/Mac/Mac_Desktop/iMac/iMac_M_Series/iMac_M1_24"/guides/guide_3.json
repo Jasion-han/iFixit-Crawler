@@ -1,0 +1,50 @@
+{
+  "url": "https://www.ifixit.com/Guide/iMac+M1+24-Inch+Display+Replacement/143953?lang=en",
+  "title": "iMac M1 24\" Display Replacement",
+  "time_required": "No estimate",
+  "difficulty": "Moderate",
+  "introduction": "Cancel: I did not complete this guide.\n\n8 other people completed this guide.",
+  "view_statistics": {
+    "past_24_hours": "27",
+    "past_7_days": "151",
+    "past_30_days": "494",
+    "all_time": "9,109"
+  },
+  "completed": "8",
+  "favorites": "0",
+  "videos": [],
+  "steps": [
+    {
+      "title": "Step 1 Display",
+      "content": "Start by gently peeling the adhesive off of each side of the iMac by using the iMac Opening Wheel.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/ba4b6373.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 2",
+      "content": "After the adhesive has been removed, you can use a suction cup to help remove the display from the case.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/df3715c7.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 3",
+      "content": "Next, carefully remove the three cables.\n(From left to right) The first cable can be removed with a prying tool or with a fingernail. With the second, the tab on the ZIF Connector must be flipped up so that the cable can be removed. The third requires the tab on the left of the connector to be flipped up to allow it to be removed.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/cdc3cfbe.jpg"
+      ],
+      "videos": []
+    },
+    {
+      "title": "Step 4 Done!",
+      "content": "The display can now be removed. In order to install a new screen follow the instructions in the reverse order.\nIt is highly recommended to apply new adhesive, when reinstalling the screen.",
+      "images": [
+        "auto_iMac_M_Series/Device/media/0751ecc4.jpg"
+      ],
+      "videos": []
+    }
+  ]
+}
