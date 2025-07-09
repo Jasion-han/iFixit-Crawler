@@ -173,13 +173,17 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             print(f"跳过被robots.txt禁止的URL: {guide_url}")
             return None
 
-        if guide_url in self.processed_guides:
-            print(f"Guide already processed, skipping: {guide_url}")
+        # 标准化URL - 移除fragment和多余参数
+        normalized_url = self._normalize_guide_url(guide_url)
+
+        if normalized_url in self.processed_guides:
+            print(f"Guide already processed, skipping: {normalized_url}")
             return None
 
         # 确保使用英文版本
         guide_url = self.ensure_english_url(guide_url)
-        self.processed_guides.add(guide_url)
+        normalized_url = self._normalize_guide_url(guide_url)
+        self.processed_guides.add(normalized_url)
 
         print(f"Crawling guide content: {guide_url}")
 
@@ -549,13 +553,22 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         return text.strip()
 
     def extract_what_you_need(self, soup, guide_url=None):
-        """智能提取指南页面的'What you need'部分内容 - 基于内容语义而非URL模式"""
+        """智能提取指南页面的'What you need'部分内容 - 从React组件props中提取真实数据"""
         what_you_need = {}
 
         try:
-            # 对于所有页面，都正常处理"What you need"部分和步骤中的工具
+            if self.verbose:
+                print(f"开始提取What you need部分: {guide_url}")
 
-            # 如果内容是动态加载的，尝试使用Playwright获取完整页面
+            # 首先尝试从React组件的data-props中提取真实数据
+            react_data = self._extract_from_react_props(soup)
+            if react_data:
+                what_you_need = react_data
+                if self.verbose:
+                    print(f"从React props提取到: {what_you_need}")
+                return what_you_need
+
+            # 如果React数据提取失败，使用Playwright获取完整页面
             if guide_url:
                 try:
                     from playwright.sync_api import sync_playwright
@@ -580,67 +593,27 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                         html_content = page.content()
                         browser.close()
 
-                        # 重新解析HTML
+                        # 重新解析HTML并尝试提取React数据
                         from bs4 import BeautifulSoup
                         soup = BeautifulSoup(html_content, 'html.parser')
 
+                        react_data = self._extract_from_react_props(soup)
+                        if react_data:
+                            what_you_need = react_data
+                            if self.verbose:
+                                print(f"从Playwright + React props提取到: {what_you_need}")
+                            return what_you_need
+
                 except Exception as e:
                     if self.verbose:
-                        print(f"使用Playwright获取页面失败，使用原始soup: {str(e)}")
+                        print(f"使用Playwright获取页面失败: {str(e)}")
 
-            # 查找"What you need"部分的标题
-            what_you_need_keywords = [
-                "What you need", "what you need", "WHAT YOU NEED",
-                "你所需要的", "所需工具", "需要的工具", "Tools and Parts"
-            ]
+            # 如果React数据提取失败，说明页面可能没有"What you need"部分
+            if self.verbose:
+                print("React数据提取失败，页面可能没有What you need部分")
 
-            what_you_need_section = None
-
-            # 方法1：通过标题文本查找
-            for keyword in what_you_need_keywords:
-                headers = soup.find_all(string=lambda text: text and keyword in text)
-                for header in headers:
-                    parent = header.parent
-                    if parent and parent.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
-                        # 找到标题后，查找其父容器
-                        container = parent.parent
-                        if container:
-                            what_you_need_section = container
-                            break
-                if what_you_need_section:
-                    break
-
-            # 方法2：通过常见的CSS类名查找
-            if not what_you_need_section:
-                selectors = [
-                    ".what-you-need", ".tools-parts", ".requirements",
-                    ".guide-requirements", ".needed-items"
-                ]
-                for selector in selectors:
-                    section = soup.select_one(selector)
-                    if section:
-                        what_you_need_section = section
-                        break
-
-            # 方法3：完整提取What you need部分的所有内容
-            if what_you_need_section:
-                # 使用完整的提取方法，包括Fix Kits、Parts、Tools
-                what_you_need = self._extract_what_you_need_complete(what_you_need_section)
-                if self.verbose:
-                    print(f"从What you need部分完整提取到: {what_you_need}")
-            else:
-                # 从步骤中提取工具信息
-                what_you_need = self._extract_tools_from_steps(soup)
-                if self.verbose:
-                    print(f"从步骤中提取到工具: {what_you_need}")
-
-            # 只有在"What you need"部分没有工具时，才从步骤中提取
-            if not what_you_need.get('Tools'):
-                step_tools = self._extract_tools_from_steps(soup)
-                if step_tools and 'Tools' in step_tools:
-                    what_you_need['Tools'] = step_tools['Tools']
-                    if self.verbose:
-                        print(f"从步骤中补充工具: {step_tools['Tools']}")
+            # 对于没有"What you need"部分的页面，不使用fallback方法
+            # 因为fallback方法可能提取到广告文本或其他无关内容
 
             if self.verbose:
                 print(f"最终完整列表: {what_you_need}")
@@ -652,6 +625,76 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                 print(f"提取What you need部分时发生错误: {str(e)}")
 
         return what_you_need
+
+    def _extract_from_react_props(self, soup):
+        """从React组件的data-props中提取What you need数据"""
+        what_you_need = {}
+
+        try:
+            # 查找GuideTopComponent组件
+            guide_top_component = soup.find('div', {'data-name': 'GuideTopComponent'})
+            if not guide_top_component:
+                if self.verbose:
+                    print("未找到GuideTopComponent")
+                return what_you_need
+
+            # 获取data-props属性
+            data_props = guide_top_component.get('data-props')
+            if not data_props:
+                if self.verbose:
+                    print("未找到data-props属性")
+                return what_you_need
+
+            # 解析JSON数据
+            import json
+            import html
+
+            # HTML解码
+            decoded_props = html.unescape(data_props)
+            props_data = json.loads(decoded_props)
+
+            # 提取productData
+            product_data = props_data.get('productData', {})
+
+            # 提取Fix Kits/Parts
+            kits = product_data.get('kits', [])
+            if kits:
+                fix_kits = []
+                parts = []
+                for kit in kits:
+                    name = kit.get('name', '').strip()
+                    if name:
+                        if 'kit' in name.lower() or 'fix kit' in name.lower():
+                            fix_kits.append(name)
+                        else:
+                            parts.append(name)
+
+                if fix_kits:
+                    what_you_need['Fix Kits'] = fix_kits
+                if parts:
+                    what_you_need['Parts'] = parts
+
+            # 提取Tools
+            tools = product_data.get('tools', [])
+            if tools:
+                tool_names = []
+                for tool in tools:
+                    name = tool.get('name', '').strip()
+                    if name:
+                        tool_names.append(name)
+
+                if tool_names:
+                    what_you_need['Tools'] = tool_names
+
+            if self.verbose:
+                print(f"从React props提取到数据: {what_you_need}")
+
+            return what_you_need
+
+        except Exception as e:
+            if self.verbose:
+                print(f"从React props提取数据时发生错误: {str(e)}")
+            return what_you_need
 
     def _extract_what_you_need_complete(self, section):
         """完整提取What you need部分的所有内容：Fix Kits、Parts、Tools"""
@@ -1043,16 +1086,18 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         return products
 
     def _extract_tools_from_steps(self, soup):
-        """从步骤中提取工具信息 - 只提取明确在步骤中使用的工具"""
+        """从步骤中提取工具信息 - 提取明确在步骤中使用的工具"""
         tools = []
 
         try:
-            # 只查找明确标注"在这个步骤中使用的工具"的部分
+            # 查找明确标注"在这个步骤中使用的工具"的部分
             tool_keywords = [
                 '在这个步骤中使用的工具：',
                 'Tool used on this step:',
                 'Tool used in this step:',
-                'Tools used on this step:'
+                'Tools used on this step:',
+                'Tool used on this step',
+                'Tools used in this step'
             ]
 
             for keyword in tool_keywords:
@@ -1062,26 +1107,51 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                     # 查找工具名称，通常在相邻的元素中
                     container = tool_section.find_parent()
                     if container:
+                        # 查找包含工具信息的整个区域
+                        tool_area = container.find_parent()
+                        if tool_area:
+                            # 在工具区域中查找产品链接
+                            product_links = tool_area.find_all('a', href=lambda x: x and '/products/' in x)
+                            for link in product_links:
+                                tool_text = link.get_text().strip()
+                                if tool_text and self._is_valid_tool_name(tool_text):
+                                    cleaned_tool = self._clean_product_text(tool_text)
+                                    if cleaned_tool and not self._is_duplicate_tool(cleaned_tool, tools):
+                                        tools.append(cleaned_tool)
+
                         # 查找下一个兄弟元素，通常包含工具名称
                         next_sibling = container.find_next_sibling()
                         if next_sibling:
                             tool_text = next_sibling.get_text().strip()
                             if tool_text and self._is_valid_tool_name(tool_text):
                                 cleaned_tool = self._clean_product_text(tool_text)
-                                if cleaned_tool and cleaned_tool not in tools:
+                                if cleaned_tool and not self._is_duplicate_tool(cleaned_tool, tools):
                                     tools.append(cleaned_tool)
 
                         # 也检查同一容器内的其他元素
-                        for elem in container.find_all(['span', 'div', 'p']):
+                        for elem in container.find_all(['span', 'div', 'p', 'a']):
                             tool_text = elem.get_text().strip()
                             if (tool_text and tool_text != keyword and
                                 self._is_valid_tool_name(tool_text) and
                                 '$' not in tool_text):  # 排除价格信息
                                 cleaned_tool = self._clean_product_text(tool_text)
-                                if cleaned_tool and cleaned_tool not in tools:
+                                if cleaned_tool and not self._is_duplicate_tool(cleaned_tool, tools):
                                     tools.append(cleaned_tool)
 
-            if self.verbose:
+            # 如果没有找到明确的工具标注，查找步骤中提到的工具产品
+            if not tools:
+                # 查找所有步骤容器
+                step_containers = soup.find_all(['div', 'section'], class_=lambda x: x and 'step' in x.lower())
+                for container in step_containers:
+                    product_links = container.find_all('a', href=lambda x: x and '/products/' in x)
+                    for link in product_links:
+                        tool_text = link.get_text().strip()
+                        if tool_text and self._is_valid_tool_name(tool_text):
+                            cleaned_tool = self._clean_product_text(tool_text)
+                            if cleaned_tool and not self._is_duplicate_tool(cleaned_tool, tools):
+                                tools.append(cleaned_tool)
+
+            if self.verbose and tools:
                 print(f"从步骤中提取到工具: {tools}")
 
         except Exception as e:
@@ -1089,6 +1159,75 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                 print(f"从步骤中提取工具时发生错误: {str(e)}")
 
         return {"Tools": tools} if tools else {}
+
+    def _extract_tools_fallback(self, soup):
+        """作为fallback的工具提取方法 - 更广泛地搜索页面中的工具信息"""
+        tools = []
+
+        try:
+            # 查找所有包含工具名称的文本
+            tool_patterns = [
+                r'([\w\s]+(?:screwdriver|driver|opener|wrench|pick|spudger|tweezers)[\w\s]*)',
+                r'([\w\s]*(?:torx|phillips|pentalobe|nut driver)[\w\s]*)',
+                r'([\w\s]*(?:opening|suction|heavy-duty)[\w\s]*)',
+                r'([\w\s]*(?:marlin|ifixit|precision)[\w\s]*set[\w\s]*)',
+            ]
+
+            # 搜索页面文本
+            page_text = soup.get_text()
+            for pattern in tool_patterns:
+                matches = re.findall(pattern, page_text, re.IGNORECASE)
+                for match in matches:
+                    tool_name = match.strip()
+                    if (len(tool_name) > 5 and len(tool_name) < 100 and
+                        self._is_valid_tool_name(tool_name) and
+                        not self._is_duplicate_tool(tool_name, tools)):
+                        cleaned_tool = self._clean_product_text(tool_name)
+                        if cleaned_tool:
+                            tools.append(cleaned_tool)
+
+            # 查找产品链接中的工具
+            product_links = soup.find_all('a', href=lambda x: x and '/products/' in x)
+            for link in product_links:
+                tool_name = link.get_text().strip()
+                if (tool_name and self._is_valid_tool_name(tool_name) and
+                    not self._is_duplicate_tool(tool_name, tools)):
+                    cleaned_tool = self._clean_product_text(tool_name)
+                    if cleaned_tool:
+                        tools.append(cleaned_tool)
+
+            # 去重并限制数量
+            unique_tools = []
+            for tool in tools:
+                if not self._is_duplicate_tool(tool, unique_tools):
+                    unique_tools.append(tool)
+
+            if self.verbose and unique_tools:
+                print(f"Fallback方法提取到工具: {unique_tools}")
+
+        except Exception as e:
+            if self.verbose:
+                print(f"Fallback工具提取时发生错误: {str(e)}")
+
+        return unique_tools[:20]  # 限制最多20个工具
+
+    def _normalize_guide_url(self, url):
+        """标准化指南URL，移除fragment和不必要的参数"""
+        if not url:
+            return url
+
+        # 移除fragment部分（#后面的内容）
+        if '#' in url:
+            url = url.split('#')[0]
+
+        # 确保有lang=en参数
+        if '?' in url:
+            if 'lang=' not in url:
+                url += '&lang=en'
+        else:
+            url += '?lang=en'
+
+        return url
 
     def _is_duplicate_tool(self, new_tool, existing_tools):
         """检测工具是否重复或相似"""

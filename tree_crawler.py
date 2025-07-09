@@ -242,9 +242,38 @@ class TreeCrawler(IFixitCrawler):
     def extract_breadcrumbs_from_page(self, soup):
         """从页面提取面包屑导航"""
         breadcrumbs = []
-        
+
         try:
-            # 方法1: 从React组件数据中提取完整面包屑 (最准确的方法)
+            # 方法1: 从新版Chakra UI面包屑导航中提取 (最新的方法)
+            chakra_breadcrumb = soup.select_one("nav[aria-label='breadcrumb'].chakra-breadcrumb")
+            if chakra_breadcrumb:
+                # 提取所有面包屑项目
+                breadcrumb_items = chakra_breadcrumb.select("li[itemtype='http://schema.org/ListItem']")
+                if breadcrumb_items:
+                    chakra_breadcrumbs = []
+                    for item in breadcrumb_items:
+                        # 从data-name属性获取名称
+                        name = item.get("data-name")
+                        if name:
+                            chakra_breadcrumbs.append(name)
+                        else:
+                            # 备选：从链接文本获取
+                            link = item.select_one("a")
+                            if link:
+                                text = link.get_text().strip()
+                                if text:
+                                    chakra_breadcrumbs.append(text)
+
+                    if chakra_breadcrumbs:
+                        # 需要反转顺序，因为页面显示的是反向的
+                        chakra_breadcrumbs.reverse()
+                        # 添加"Home"作为根节点
+                        if chakra_breadcrumbs and chakra_breadcrumbs[0] != "Home":
+                            chakra_breadcrumbs.insert(0, "Home")
+                        print(f"从Chakra UI面包屑提取到: {' > '.join(chakra_breadcrumbs)}")
+                        return chakra_breadcrumbs
+
+            # 方法2: 从React组件数据中提取完整面包屑 (备选方法)
             breadcrumb_component = soup.select_one(".component-NavBreadcrumbs")
             if breadcrumb_component:
                 data_props = breadcrumb_component.get("data-props")
@@ -252,10 +281,10 @@ class TreeCrawler(IFixitCrawler):
                     # 尝试从JSON数据中提取面包屑
                     import json
                     import html
-                    
+
                     # 解码HTML实体
                     decoded_props = html.unescape(data_props)
-                    
+
                     # 解析JSON
                     try:
                         props_data = json.loads(decoded_props)
@@ -265,14 +294,14 @@ class TreeCrawler(IFixitCrawler):
                                 if "name" in crumb and crumb["name"]:
                                     # 这里的name可能是中文的"设备"、"电子产品"等
                                     react_breadcrumbs.append(crumb["name"])
-                            
+
                             if react_breadcrumbs:
                                 print(f"从React组件提取到面包屑: {' > '.join(react_breadcrumbs)}")
                                 return react_breadcrumbs
                     except json.JSONDecodeError:
                         print("无法解析面包屑JSON数据")
-            
-            # 方法2: 从页面的meta标签中提取(备选方法)
+
+            # 方法3: 从页面的meta标签中提取(备选方法)
             breadcrumb_items = soup.select("[itemtype='http://schema.org/BreadcrumbList'] [itemtype='http://schema.org/ListItem']")
             if breadcrumb_items:
                 schema_breadcrumbs = []
@@ -280,7 +309,7 @@ class TreeCrawler(IFixitCrawler):
                     name_meta = item.select_one("[itemprop='name']")
                     if name_meta and name_meta.get("content"):
                         schema_breadcrumbs.append(name_meta.get("content"))
-                
+
                 if schema_breadcrumbs:
                     print(f"从Schema.org标记提取到面包屑: {' > '.join(schema_breadcrumbs)}")
                     return schema_breadcrumbs
