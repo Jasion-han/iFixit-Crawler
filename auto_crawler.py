@@ -534,6 +534,9 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         # 错误处理配置
         self.failed_log_file = "failed_urls.log"
 
+        # Troubleshooting处理状态跟踪
+        self.processed_troubleshooting_paths = set()  # 跟踪已处理troubleshooting的路径
+
         # 打印视频处理配置
         if self.download_videos:
             self.logger.info(f"✅ 视频下载已启用，最大文件大小: {max_video_size_mb}MB")
@@ -2557,7 +2560,21 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             if device_path:
                 import urllib.parse
                 device_path = urllib.parse.unquote(device_path)
-                return Path(self.storage_root) / "Device" / device_path
+
+                # 解析路径层级，直接从主要设备类型开始
+                path_parts = device_path.split('/')
+                if len(path_parts) > 0:
+                    # 找到主要设备类型（通常是第一个有意义的部分）
+                    main_category = path_parts[0]
+
+                    # 如果有子路径，保留完整的层级结构
+                    if len(path_parts) > 1:
+                        sub_path = '/'.join(path_parts[1:])
+                        return Path(self.storage_root) / main_category / sub_path
+                    else:
+                        return Path(self.storage_root) / main_category
+                else:
+                    return Path(self.storage_root) / device_path
             else:
                 return Path(self.storage_root) / "Device"
         else:
@@ -3204,10 +3221,29 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                     guide_links = [guide["url"] for guide in guides]
                     print(f"   📖 找到 {len(guide_links)} 个指南")
 
+                    # 检查是否应该处理troubleshooting（基于新的逻辑）
+                    should_process_troubleshooting = (
+                        not skip_troubleshooting and
+                        not self._is_troubleshooting_processed_in_parent_path(url)
+                    )
+
+                    # 如果应该处理troubleshooting，检查当前页面是否有troubleshooting内容
+                    current_path = url.split('/Device/')[-1].split('?')[0].rstrip('/') if '/Device/' in url else ''
+                    if should_process_troubleshooting and current_path:
+                        # 先检查是否有troubleshooting链接
+                        troubleshooting_links = self.extract_troubleshooting_from_device_page(soup, url)
+                        if troubleshooting_links:
+                            # 标记当前路径已处理troubleshooting
+                            self.processed_troubleshooting_paths.add(current_path)
+                            print(f"   ✅ 在路径 '{current_path}' 首次发现troubleshooting，开始处理...")
+                            print(f"   🔧 后续子路径将跳过troubleshooting处理")
+                        else:
+                            should_process_troubleshooting = False
+
                     # 使用并发处理guides和troubleshooting
                     print(f"   ⚙️  开始处理详细内容...")
                     guides_data, troubleshooting_data = self._process_content_concurrently(
-                        guide_links, url, skip_troubleshooting, soup
+                        guide_links, url, not should_process_troubleshooting, soup
                     )
 
                     if guides_data:
@@ -3232,7 +3268,10 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                                     'title': subcat['title']
                                 }
 
-                                processed_subcat = self.deep_crawl_product_content(subcat_node, skip_troubleshooting=True)
+                                # 检查子类别是否应该跳过troubleshooting（基于父路径是否已处理）
+                                parent_processed_ts = current_path in self.processed_troubleshooting_paths if current_path else False
+                                should_skip_ts = self._should_skip_troubleshooting_for_subcategory(subcat_node, parent_processed_ts)
+                                processed_subcat = self.deep_crawl_product_content(subcat_node, skip_troubleshooting=should_skip_ts)
                                 if processed_subcat:
                                     subcategory_children.append(processed_subcat)
 
@@ -3251,10 +3290,19 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             children_count = len(node['children'])
             if children_count > 0:
                 print(f"🔄 递归处理 {children_count} 个子节点...")
+
+            # 检查当前节点是否已处理troubleshooting
+            current_url = node.get('url', '')
+            current_path = current_url.split('/Device/')[-1].split('?')[0].rstrip('/') if '/Device/' in current_url else ''
+            child_should_skip_troubleshooting = (
+                skip_troubleshooting or
+                (current_path and current_path in self.processed_troubleshooting_paths)
+            )
+
             for i, child in enumerate(node['children']):
                 if children_count > 1:
                     print(f"   └─ [{i+1}/{children_count}] 处理子节点: {child.get('name', 'Unknown')}")
-                node['children'][i] = self.deep_crawl_product_content(child, skip_troubleshooting)
+                node['children'][i] = self.deep_crawl_product_content(child, child_should_skip_troubleshooting)
 
         return node
         
@@ -3287,7 +3335,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         return has_content, target_dir
 
     def _get_target_root_dir(self, target_url):
-        """从目标URL获取真实的设备路径"""
+        """从目标URL获取真实的设备路径，直接从主要设备类型开始"""
         if not target_url:
             return None
 
@@ -3305,31 +3353,458 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 # URL解码
                 import urllib.parse
                 device_path = urllib.parse.unquote(device_path)
-                # 构建完整路径：ifixit_data/Device/...
-                return Path(self.storage_root) / "Device" / device_path
+
+                # 解析路径层级，直接从主要设备类型开始
+                path_parts = device_path.split('/')
+                if len(path_parts) > 0:
+                    # 找到主要设备类型（通常是第一个有意义的部分）
+                    main_category = path_parts[0]
+
+                    # 如果有子路径，保留完整的层级结构
+                    if len(path_parts) > 1:
+                        sub_path = '/'.join(path_parts[1:])
+                        return Path(self.storage_root) / main_category / sub_path
+                    else:
+                        return Path(self.storage_root) / main_category
+                else:
+                    return Path(self.storage_root) / device_path
             else:
-                # 如果是根Device页面
+                # 如果是根Device页面，使用Device作为根目录
                 return Path(self.storage_root) / "Device"
 
         # 如果不是Device URL，使用原来的逻辑作为后备
         safe_name = target_url.replace("/", "_").replace("\\", "_").replace(":", "_")
-        return Path(self.storage_root) / "Device" / safe_name
+        return Path(self.storage_root) / safe_name
+
+    def _validate_path_structure(self, url):
+        """验证并提取真实的页面路径结构"""
+        print(f"   🔍 验证路径结构: {url}")
+
+        # 获取页面内容以提取面包屑导航
+        soup = self.get_soup(url)
+        if not soup:
+            return None
+
+        # 提取面包屑导航
+        breadcrumbs = self._extract_real_breadcrumbs(soup)
+        if breadcrumbs:
+            print(f"   📍 找到面包屑导航: {' > '.join([b['name'] for b in breadcrumbs])}")
+            return breadcrumbs
+
+        # 如果没有面包屑，根据已知的MacBook Pro 17"结构构建完整路径
+        if '/Device/' in url:
+            device_path = url.split('/Device/')[-1]
+            if '?' in device_path:
+                device_path = device_path.split('?')[0]
+            device_path = device_path.rstrip('/')
+
+            if device_path:
+                import urllib.parse
+                device_path = urllib.parse.unquote(device_path)
+
+                # 根据已知的MacBook Pro结构构建完整面包屑
+                breadcrumbs = [{"name": "Device", "url": self.base_url + "/Device"}]
+
+                if device_path.startswith('MacBook_Pro_17'):
+                    # MacBook Pro 17"的完整层级结构
+                    breadcrumbs.extend([
+                        {"name": "Mac", "url": self.base_url + "/Device/Mac"},
+                        {"name": "Mac_Laptop", "url": self.base_url + "/Device/Mac_Laptop"},
+                        {"name": "MacBook_Pro", "url": self.base_url + "/Device/MacBook_Pro"},
+                        {"name": "MacBook_Pro_17\"", "url": self.base_url + "/Device/MacBook_Pro_17%22"}
+                    ])
+
+                    # 添加具体型号
+                    if 'Models_A1151' in device_path:
+                        breadcrumbs.append({
+                            "name": "MacBook_Pro_17\"_Models_A1151_A1212_A1229_and_A1261",
+                            "url": url
+                        })
+                    elif 'Unibody' in device_path:
+                        breadcrumbs.append({
+                            "name": "MacBook_Pro_17\"_Unibody",
+                            "url": url
+                        })
+                    else:
+                        breadcrumbs.append({
+                            "name": device_path.replace("_", " "),
+                            "url": url
+                        })
+                else:
+                    # 其他设备的通用处理
+                    path_parts = device_path.split('/')
+                    current_path = "/Device"
+
+                    for part in path_parts:
+                        current_path += "/" + part
+                        breadcrumbs.append({
+                            "name": part.replace("_", " "),
+                            "url": self.base_url + current_path
+                        })
+
+                return breadcrumbs
+
+        return None
+
+    def _extract_real_breadcrumbs(self, soup):
+        """从页面提取真实的面包屑导航"""
+        breadcrumbs = []
+
+        # 查找面包屑导航元素
+        breadcrumb_selectors = [
+            'nav[aria-label="breadcrumb"]',
+            '.breadcrumb',
+            '.breadcrumbs',
+            '[data-testid="breadcrumb"]'
+        ]
+
+        for selector in breadcrumb_selectors:
+            breadcrumb_nav = soup.select_one(selector)
+            if breadcrumb_nav:
+                # 获取面包屑列表项
+                breadcrumb_items = breadcrumb_nav.find_all('li')
+                if breadcrumb_items:
+                    # 反向处理面包屑，因为页面是倒序显示的
+                    for item in reversed(breadcrumb_items):
+                        link = item.find('a', href=True)
+                        if link:
+                            href = link.get('href')
+                            text = link.get_text(strip=True)
+                            if href and text:
+                                # 处理特殊的URL编码
+                                if '%22' in href:
+                                    href = href.replace('%22', '"')
+                                full_url = self.base_url + href if href.startswith('/') else href
+                                breadcrumbs.append({"name": text, "url": full_url})
+                        else:
+                            # 当前页面（没有链接）
+                            text = item.get_text(strip=True)
+                            if text and text not in [b['name'] for b in breadcrumbs]:
+                                breadcrumbs.append({"name": text, "url": ""})
+
+                    if breadcrumbs:
+                        return breadcrumbs
+                else:
+                    # 后备方案：查找所有链接
+                    links = breadcrumb_nav.find_all('a', href=True)
+                    for link in reversed(links):
+                        href = link.get('href')
+                        text = link.get_text(strip=True)
+                        if href and text:
+                            if '%22' in href:
+                                href = href.replace('%22', '"')
+                            full_url = self.base_url + href if href.startswith('/') else href
+                            breadcrumbs.append({"name": text, "url": full_url})
+
+                    if breadcrumbs:
+                        return breadcrumbs
+
+        return None
+
+    def _find_existing_path(self, breadcrumbs):
+        """在已有目录结构中查找匹配的路径"""
+        if not breadcrumbs:
+            return Path(self.storage_root) / "Device"
+
+        # 从Device开始构建路径
+        current_path = Path(self.storage_root) / "Device"
+
+        # 跳过"Device"面包屑，从实际分类开始
+        device_index = -1
+        for i, crumb in enumerate(breadcrumbs):
+            if crumb['name'].lower() in ['device', '设备']:
+                device_index = i
+                break
+
+        if device_index >= 0:
+            relevant_crumbs = breadcrumbs[device_index + 1:]
+        else:
+            relevant_crumbs = breadcrumbs
+
+        # 逐级检查和创建路径，使用真实的URL路径映射
+        for crumb in relevant_crumbs:
+            crumb_name = crumb['name']
+            crumb_url = crumb.get('url', '')
+
+            # 根据URL确定正确的目录名称
+            if crumb_url:
+                # 从URL提取路径段
+                if '/Device/' in crumb_url:
+                    url_segment = crumb_url.split('/Device/')[-1]
+                    if url_segment:
+                        # 处理特殊情况的映射
+                        if url_segment == 'Mac':
+                            safe_name = 'Mac'
+                        elif url_segment == 'Mac_Laptop':
+                            safe_name = 'Mac_Laptop'  # 保持原始URL路径
+                        elif url_segment == 'MacBook_Pro':
+                            safe_name = 'MacBook_Pro'
+                        elif url_segment.startswith('MacBook_Pro_17'):
+                            # 处理MacBook Pro 17"的特殊情况
+                            if 'Unibody' in url_segment:
+                                safe_name = 'MacBook_Pro_17"_Unibody'
+                            elif 'Models_A1151' in url_segment:
+                                safe_name = 'MacBook_Pro_17"_Models_A1151_A1212_A1229_and_A1261'
+                            else:
+                                safe_name = 'MacBook_Pro_17"'
+                        else:
+                            # 其他情况，清理URL段作为目录名
+                            safe_name = url_segment.replace("%22", '"')
+                    else:
+                        # 后备方案：清理显示名称
+                        safe_name = self._clean_directory_name(crumb_name)
+                else:
+                    # 后备方案：清理显示名称
+                    safe_name = self._clean_directory_name(crumb_name)
+            else:
+                # 没有URL，清理显示名称
+                safe_name = self._clean_directory_name(crumb_name)
+
+            potential_path = current_path / safe_name
+
+            # 检查是否已存在匹配的目录
+            existing_match = self._find_matching_directory(current_path, safe_name)
+            if existing_match:
+                current_path = existing_match
+                print(f"   ✅ 找到已有目录: {existing_match}")
+            else:
+                current_path = potential_path
+                print(f"   📁 将创建新目录: {potential_path}")
+
+        return current_path
+
+    def _clean_directory_name(self, name):
+        """清理目录名称，移除特殊字符"""
+        safe_name = name.replace("/", "_").replace("\\", "_").replace(":", "_")
+        safe_name = safe_name.replace('"', '_').replace("'", "_").replace("?", "_")
+        safe_name = safe_name.replace("<", "_").replace(">", "_").replace("|", "_")
+        safe_name = safe_name.replace("*", "_").strip()
+        return safe_name
+
+    def _troubleshooting_belongs_to_current_page(self, troubleshooting_list, current_url):
+        """检查troubleshooting是否真的属于当前页面"""
+        if not troubleshooting_list or not current_url:
+            return False
+
+        # 提取当前页面的设备路径
+        if '/Device/' not in current_url:
+            return False
+
+        current_device_path = current_url.split('/Device/')[-1]
+        if '?' in current_device_path:
+            current_device_path = current_device_path.split('?')[0]
+        current_device_path = current_device_path.rstrip('/')
+
+        # 首先检查是否是具体的设备页面（包含具体型号信息）
+        if not self._is_specific_device_page(current_device_path):
+            print(f"   ℹ️  当前页面不是具体设备页面: {current_device_path}")
+            return False
+
+        # 检查troubleshooting的URL是否与当前页面相关
+        for ts in troubleshooting_list:
+            ts_url = ts.get('url', '')
+            ts_title = ts.get('title', '')
+
+            if not ts_url and not ts_title:
+                continue
+
+            # 方法1: 检查troubleshooting URL是否包含当前设备路径
+            if ts_url and current_device_path in ts_url:
+                print(f"   ✅ Troubleshooting URL匹配当前设备路径")
+                return True
+
+            # 方法2: 检查troubleshooting标题是否包含当前设备信息
+            if ts_title:
+                # 从当前设备路径提取关键信息
+                device_keywords = self._extract_device_keywords(current_device_path)
+                title_lower = ts_title.lower()
+
+                # 检查关键词是否在标题中
+                matches = 0
+                for keyword in device_keywords:
+                    if keyword.lower() in title_lower:
+                        matches += 1
+
+                # 如果大部分关键词都匹配，认为属于当前页面
+                if matches >= len(device_keywords) * 0.6:  # 60%的关键词匹配
+                    print(f"   ✅ Troubleshooting标题匹配当前设备: {matches}/{len(device_keywords)} 关键词匹配")
+                    return True
+
+        print(f"   ❌ Troubleshooting不属于当前页面")
+        return False
+
+    def _is_specific_device_page(self, device_path):
+        """检查是否是具体的设备页面（包含具体型号信息）"""
+        if not device_path:
+            return False
+
+        # 通用类别页面（不是具体设备）
+        generic_categories = [
+            'Mac', 'Mac_Laptop', 'Mac_Desktop', 'Mac_Hardware',
+            'iPhone', 'iPad', 'iPod', 'Apple_Watch',
+            'MacBook', 'MacBook_Pro', 'MacBook_Air',
+            'iMac', 'Mac_Pro', 'Mac_mini'
+        ]
+
+        # 如果路径就是这些通用类别之一，不是具体设备
+        if device_path in generic_categories:
+            return False
+
+        # 检查是否包含具体的型号信息
+        specific_indicators = [
+            # 型号编号
+            'A1', 'A2', 'A3',  # Apple型号编号
+            'Models_', 'Model_',
+            # 具体规格
+            '13"', '15"', '17"', '21.5"', '27"',
+            'Unibody', 'Retina', 'Touch_Bar',
+            # 年份
+            '2020', '2021', '2022', '2023', '2024',
+            # 代数
+            '1st_Gen', '2nd_Gen', '3rd_Gen', '4th_Gen', '5th_Gen',
+            'Generation'
+        ]
+
+        # 检查是否包含具体指标
+        for indicator in specific_indicators:
+            if indicator in device_path:
+                return True
+
+        # 检查路径深度（具体设备通常路径更深）
+        path_depth = len(device_path.split('/'))
+        if path_depth >= 2:  # 至少两级深度，如 MacBook_Pro/MacBook_Pro_17"
+            return True
+
+        return False
+
+    def _extract_device_keywords(self, device_path):
+        """从设备路径提取关键词"""
+        if not device_path:
+            return []
+
+        keywords = []
+
+        # 分割路径
+        parts = device_path.replace('_', ' ').split('/')
+        for part in parts:
+            # 进一步分割每个部分
+            sub_parts = part.split()
+            keywords.extend(sub_parts)
+
+        # 清理和过滤关键词
+        filtered_keywords = []
+        for keyword in keywords:
+            # 移除特殊字符
+            clean_keyword = keyword.replace('"', '').replace("'", '').strip()
+            # 过滤掉太短的词和常见词
+            if len(clean_keyword) >= 2 and clean_keyword.lower() not in ['and', 'or', 'the', 'of', 'in']:
+                filtered_keywords.append(clean_keyword)
+
+        return filtered_keywords
+
+    def _is_troubleshooting_processed_in_parent_path(self, current_url):
+        """检查当前URL的父路径是否已经处理过troubleshooting"""
+        if not current_url or '/Device/' not in current_url:
+            return False
+
+        current_path = current_url.split('/Device/')[-1].split('?')[0].rstrip('/')
+
+        # 检查所有已处理的路径，看是否有父路径
+        for processed_path in self.processed_troubleshooting_paths:
+            if current_path.startswith(processed_path + '/') or current_path == processed_path:
+                return True
+        return False
+
+    def _should_skip_troubleshooting_for_subcategory(self, subcat_node, parent_processed_troubleshooting=False):
+        """判断子类别是否应该跳过troubleshooting提取"""
+        if not subcat_node:
+            return True
+
+        # 如果父级已经处理过troubleshooting，则跳过
+        if parent_processed_troubleshooting:
+            return True
+
+        url = subcat_node.get('url', '')
+        if not url or '/Device/' not in url:
+            return True
+
+        # 检查是否在父路径中已经处理过
+        if self._is_troubleshooting_processed_in_parent_path(url):
+            device_path = url.split('/Device/')[-1].split('?')[0].rstrip('/')
+            print(f"      ⏭️  跳过troubleshooting（已在父路径处理）: {device_path}")
+            return True
+
+        return False
+
+    def _find_matching_directory(self, parent_path, target_name):
+        """在父目录中查找匹配的子目录"""
+        if not parent_path.exists():
+            return None
+
+        target_name_lower = target_name.lower()
+
+        for item in parent_path.iterdir():
+            if item.is_dir():
+                item_name_lower = item.name.lower()
+                # 检查完全匹配或相似匹配
+                if (item_name_lower == target_name_lower or
+                    target_name_lower in item_name_lower or
+                    item_name_lower in target_name_lower):
+                    return item
+
+        return None
 
     def save_combined_result(self, tree_data, target_name=None):
         """保存整合结果到真实的设备路径结构"""
         print("   📁 创建目录结构...")
 
-        # 使用目标URL来构建真实路径
+        # 验证并获取真实的路径结构
         target_url = getattr(self, 'target_url', None)
+        root_dir = None
+
         if target_url:
-            root_dir = self._get_target_root_dir(target_url)
+            # 验证路径结构
+            breadcrumbs = self._validate_path_structure(target_url)
+            if breadcrumbs:
+                # 在已有结构中查找正确路径
+                root_dir = self._find_existing_path(breadcrumbs)
+            else:
+                # 后备方案：使用URL解析
+                if '/Device/' in target_url:
+                    device_path = target_url.split('/Device/')[-1]
+                    if '?' in device_path:
+                        device_path = device_path.split('?')[0]
+                    device_path = device_path.rstrip('/')
+
+                    if device_path:
+                        import urllib.parse
+                        device_path = urllib.parse.unquote(device_path)
+
+                        # 构建路径，确保在Device目录下
+                        path_parts = device_path.split('/')
+                        root_dir = Path(self.storage_root) / "Device"
+                        for part in path_parts:
+                            safe_part = part.replace("/", "_").replace("\\", "_").replace(":", "_")
+                            safe_part = safe_part.replace('"', '_').replace("'", "_")
+                            root_dir = root_dir / safe_part
+                    else:
+                        # 如果是根Device页面，使用Device作为根目录
+                        root_dir = Path(self.storage_root) / "Device"
+                else:
+                    root_dir = Path(self.storage_root) / "Device"
         elif target_name:
             # 如果没有URL，尝试从target_name构建
             if target_name.startswith('http'):
-                root_dir = self._get_target_root_dir(target_name)
+                # 验证URL的路径结构
+                breadcrumbs = self._validate_path_structure(target_name)
+                if breadcrumbs:
+                    root_dir = self._find_existing_path(breadcrumbs)
+                else:
+                    root_dir = self._get_target_root_dir(target_name)
             else:
-                # 假设是设备名称，构建Device路径
+                # 假设是设备名称，放在Device目录下
                 safe_name = target_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+                safe_name = safe_name.replace('"', '_').replace("'", "_")
                 root_dir = Path(self.storage_root) / "Device" / safe_name
         else:
             # 从树数据中提取路径信息
@@ -3337,6 +3812,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             if " > " in root_name:
                 root_name = root_name.split(" > ")[-1]
             safe_name = root_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+            safe_name = safe_name.replace('"', '_').replace("'", "_")
             root_dir = Path(self.storage_root) / "Device" / safe_name
 
         if root_dir:
@@ -3351,24 +3827,56 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         return str(root_dir)
 
     def _save_tree_structure(self, tree_data, base_dir):
-        """保存整个树结构到真实的设备路径"""
+        """保存整个树结构到指定目录，避免重复路径"""
         if not tree_data or not isinstance(tree_data, dict):
             return
 
-        # 如果是目标节点（有guides或troubleshooting），直接保存
-        if tree_data.get('guides') or tree_data.get('troubleshooting'):
+        # 检查当前节点是否是目标节点（根据URL判断）
+        current_url = tree_data.get('url', '')
+        target_url = getattr(self, 'target_url', None)
+
+        # 如果当前节点就是目标节点，直接保存其内容和子节点到base_dir
+        if target_url and current_url == target_url:
+            # 保存目标节点的基本信息
             self._save_node_content(tree_data, base_dir)
 
-        # 递归处理子节点
-        if 'children' in tree_data and tree_data['children']:
-            for child in tree_data['children']:
-                # 为子节点创建目录
-                child_name = child.get('name', 'Unknown')
-                safe_name = child_name.replace("/", "_").replace("\\", "_").replace(":", "_")
-                child_dir = base_dir / safe_name
+            # 直接处理目标节点的子节点，不创建额外的目录层级
+            if 'children' in tree_data and tree_data['children']:
+                for child in tree_data['children']:
+                    child_name = child.get('name', 'Unknown')
+                    # 更全面的名称清理，处理特殊字符
+                    safe_name = child_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+                    safe_name = safe_name.replace('"', '_').replace("'", "_").replace("?", "_")
+                    safe_name = safe_name.replace("<", "_").replace(">", "_").replace("|", "_")
+                    safe_name = safe_name.replace("*", "_").strip()
 
-                # 递归保存子节点
-                self._save_tree_structure(child, child_dir)
+                    # 检查是否已存在匹配的目录
+                    existing_dir = self._find_matching_directory(base_dir, safe_name)
+                    if existing_dir:
+                        child_dir = existing_dir
+                        print(f"   ✅ 使用已有目录: {child_dir}")
+                    else:
+                        child_dir = base_dir / safe_name
+
+                    # 检查子节点是否是产品节点（有instruction_url）或有实际内容
+                    is_product = child.get('instruction_url') is not None
+                    has_content = child.get('guides') or child.get('troubleshooting')
+
+                    if is_product or has_content:
+                        # 为产品节点或有内容的节点创建目录（如果不存在）
+                        if not child_dir.exists():
+                            child_dir.mkdir(parents=True, exist_ok=True)
+                            print(f"   📁 创建新目录: {child_dir}")
+
+                        # 保存子节点内容
+                        self._save_node_content(child, child_dir)
+                        # 递归保存子节点
+                        self._save_tree_structure(child, child_dir)
+        else:
+            # 对于非目标节点，继续递归查找目标节点
+            if 'children' in tree_data and tree_data['children']:
+                for child in tree_data['children']:
+                    self._save_tree_structure(child, base_dir)
 
     def _save_node_content(self, node_data, node_dir):
         """保存单个节点的内容（guides和troubleshooting）"""
@@ -3391,14 +3899,18 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if 'guides' in node_data and node_data['guides']:
             guides_dir = node_dir / "guides"
             guides_dir.mkdir(exist_ok=True)
-            # 确保media文件夹存在
-            guides_media_dir = guides_dir / "media"
-            guides_media_dir.mkdir(exist_ok=True)
 
             for i, guide in enumerate(node_data['guides']):
                 guide_data = guide.copy()
-                self._process_media_urls(guide_data, guides_dir)  # 使用guides目录的media文件夹
-                guide_file = guides_dir / f"guide_{i+1}.json"
+                # 为每个guide创建单独的目录，媒体文件和guide文件在同一层级
+                guide_dir = guides_dir / f"guide_{i+1}"
+                guide_dir.mkdir(exist_ok=True)
+
+                # 处理媒体文件，存储在guide目录下
+                self._process_media_urls(guide_data, guide_dir)
+
+                # 保存guide文件到guide目录
+                guide_file = guide_dir / "guide.json"
                 with open(guide_file, 'w', encoding='utf-8') as f:
                     json.dump(guide_data, f, ensure_ascii=False, indent=2)
 
@@ -3406,14 +3918,18 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if 'troubleshooting' in node_data and node_data['troubleshooting']:
             ts_dir = node_dir / "troubleshooting"
             ts_dir.mkdir(exist_ok=True)
-            # 确保media文件夹存在
-            ts_media_dir = ts_dir / "media"
-            ts_media_dir.mkdir(exist_ok=True)
 
             for i, ts in enumerate(node_data['troubleshooting']):
                 ts_data = ts.copy()
-                self._process_media_urls(ts_data, ts_dir)  # 使用troubleshooting目录的media文件夹
-                ts_file = ts_dir / f"troubleshooting_{i+1}.json"
+                # 为每个troubleshooting创建单独的目录，媒体文件和ts文件在同一层级
+                ts_item_dir = ts_dir / f"troubleshooting_{i+1}"
+                ts_item_dir.mkdir(exist_ok=True)
+
+                # 处理媒体文件，存储在troubleshooting目录下
+                self._process_media_urls(ts_data, ts_item_dir)
+
+                # 保存troubleshooting文件到troubleshooting目录
+                ts_file = ts_item_dir / "troubleshooting.json"
                 with open(ts_file, 'w', encoding='utf-8') as f:
                     json.dump(ts_data, f, ensure_ascii=False, indent=2)
 
@@ -3483,20 +3999,28 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 with open(guide_file, 'w', encoding='utf-8') as f:
                     json.dump(guide_data, f, ensure_ascii=False, indent=2)
 
-        # 处理troubleshooting - 直接保存到根目录的troubleshooting文件夹
+        # 处理troubleshooting - 只有当前节点有troubleshooting数据时才保存
+        # troubleshooting应该保存在它所属的具体页面目录下，而不是上级目录
         if 'troubleshooting' in node_data and node_data['troubleshooting']:
-            ts_dir = root_dir / "troubleshooting"
-            ts_dir.mkdir(exist_ok=True)
-            # 确保media文件夹存在
-            ts_media_dir = ts_dir / "media"
-            ts_media_dir.mkdir(exist_ok=True)
+            # 检查这些troubleshooting是否真的属于当前页面
+            current_url = node_data.get('url', '')
+            if current_url and self._troubleshooting_belongs_to_current_page(node_data['troubleshooting'], current_url):
+                ts_dir = root_dir / "troubleshooting"
+                ts_dir.mkdir(exist_ok=True)
+                # 确保media文件夹存在
+                ts_media_dir = ts_dir / "media"
+                ts_media_dir.mkdir(exist_ok=True)
 
-            for i, ts in enumerate(node_data['troubleshooting']):
-                ts_data = ts.copy()
-                self._process_media_urls(ts_data, ts_dir)  # 使用troubleshooting目录的media文件夹
-                ts_file = ts_dir / f"troubleshooting_{i+1}.json"
-                with open(ts_file, 'w', encoding='utf-8') as f:
-                    json.dump(ts_data, f, ensure_ascii=False, indent=2)
+                for i, ts in enumerate(node_data['troubleshooting']):
+                    ts_data = ts.copy()
+                    self._process_media_urls(ts_data, ts_dir)  # 使用troubleshooting目录的media文件夹
+                    ts_file = ts_dir / f"troubleshooting_{i+1}.json"
+                    with open(ts_file, 'w', encoding='utf-8') as f:
+                        json.dump(ts_data, f, ensure_ascii=False, indent=2)
+
+                print(f"   💾 保存了 {len(node_data['troubleshooting'])} 个troubleshooting到: {ts_dir}")
+            else:
+                print(f"   ⚠️  跳过保存troubleshooting，因为它们不属于当前页面: {current_url}")
 
         # 处理子类别 - 保存到subcategories文件夹
         if 'children' in node_data and node_data['children']:
@@ -3542,19 +4066,26 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 with open(guide_file, 'w', encoding='utf-8') as f:
                     json.dump(guide_data, f, ensure_ascii=False, indent=2)
 
+        # 处理troubleshooting - 只有当前子类别有troubleshooting数据时才保存
         if 'troubleshooting' in node_data and node_data['troubleshooting']:
-            ts_dir = subcat_dir / "troubleshooting"
-            ts_dir.mkdir(exist_ok=True)
-            # 确保media文件夹存在
-            ts_media_dir = ts_dir / "media"
-            ts_media_dir.mkdir(exist_ok=True)
+            current_url = node_data.get('url', '')
+            if current_url and self._troubleshooting_belongs_to_current_page(node_data['troubleshooting'], current_url):
+                ts_dir = subcat_dir / "troubleshooting"
+                ts_dir.mkdir(exist_ok=True)
+                # 确保media文件夹存在
+                ts_media_dir = ts_dir / "media"
+                ts_media_dir.mkdir(exist_ok=True)
 
-            for i, ts in enumerate(node_data['troubleshooting']):
-                ts_data = ts.copy()
-                self._process_media_urls(ts_data, ts_dir)  # 使用troubleshooting目录的media文件夹
-                ts_file = ts_dir / f"troubleshooting_{i+1}.json"
-                with open(ts_file, 'w', encoding='utf-8') as f:
-                    json.dump(ts_data, f, ensure_ascii=False, indent=2)
+                for i, ts in enumerate(node_data['troubleshooting']):
+                    ts_data = ts.copy()
+                    self._process_media_urls(ts_data, ts_dir)  # 使用troubleshooting目录的media文件夹
+                    ts_file = ts_dir / f"troubleshooting_{i+1}.json"
+                    with open(ts_file, 'w', encoding='utf-8') as f:
+                        json.dump(ts_data, f, ensure_ascii=False, indent=2)
+
+                print(f"   💾 保存了 {len(node_data['troubleshooting'])} 个troubleshooting到子类别: {subcat_dir}")
+            else:
+                print(f"   ⚠️  跳过保存troubleshooting到子类别，因为它们不属于当前页面: {current_url}")
 
         # 递归处理更深层的子类别
         if 'children' in node_data and node_data['children']:
@@ -3562,17 +4093,34 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 self._save_subcategory_to_filesystem(child, subcat_dir)
 
     def _save_node_to_filesystem(self, node, base_dir, path_prefix):
-        """递归保存节点到文件系统"""
+        """递归保存节点到文件系统，确保路径符合真实结构"""
         if not node or not isinstance(node, dict):
             return
 
         node_name = node.get('name', 'unknown')
+        # 更全面的名称清理
         safe_name = node_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+        safe_name = safe_name.replace('"', '_').replace("'", "_").replace("?", "_")
+        safe_name = safe_name.replace("<", "_").replace(">", "_").replace("|", "_")
+        safe_name = safe_name.replace("*", "_").strip()
 
-        # 创建当前节点目录
-        current_path = path_prefix + "/" + safe_name if path_prefix else safe_name
-        node_dir = base_dir / current_path
-        node_dir.mkdir(parents=True, exist_ok=True)
+        # 构建当前节点路径
+        if path_prefix:
+            current_path = path_prefix + "/" + safe_name
+            node_dir = base_dir / current_path
+        else:
+            # 检查是否已存在匹配的目录
+            existing_dir = self._find_matching_directory(base_dir, safe_name)
+            if existing_dir:
+                node_dir = existing_dir
+                print(f"   ✅ 使用已有目录: {node_dir}")
+            else:
+                node_dir = base_dir / safe_name
+
+        # 创建目录（如果不存在）
+        if not node_dir.exists():
+            node_dir.mkdir(parents=True, exist_ok=True)
+            print(f"   📁 创建新目录: {node_dir}")
 
         # 复制节点数据并处理媒体URL
         node_data = node.copy()
@@ -3599,20 +4147,26 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 with open(guide_file, 'w', encoding='utf-8') as f:
                     json.dump(guide_data, f, ensure_ascii=False, indent=2)
 
-        # 处理troubleshooting
+        # 处理troubleshooting - 只有属于当前节点的troubleshooting才保存
         if 'troubleshooting' in node_data and node_data['troubleshooting']:
-            ts_dir = node_dir / "troubleshooting"
-            ts_dir.mkdir(exist_ok=True)
-            # 确保media文件夹存在
-            ts_media_dir = ts_dir / "media"
-            ts_media_dir.mkdir(exist_ok=True)
+            current_url = node_data.get('url', '')
+            if current_url and self._troubleshooting_belongs_to_current_page(node_data['troubleshooting'], current_url):
+                ts_dir = node_dir / "troubleshooting"
+                ts_dir.mkdir(exist_ok=True)
+                # 确保media文件夹存在
+                ts_media_dir = ts_dir / "media"
+                ts_media_dir.mkdir(exist_ok=True)
 
-            for i, ts in enumerate(node_data['troubleshooting']):
-                ts_data = ts.copy()
-                self._process_media_urls(ts_data, ts_dir)
-                ts_file = ts_dir / f"troubleshooting_{i+1}.json"
-                with open(ts_file, 'w', encoding='utf-8') as f:
-                    json.dump(ts_data, f, ensure_ascii=False, indent=2)
+                for i, ts in enumerate(node_data['troubleshooting']):
+                    ts_data = ts.copy()
+                    self._process_media_urls(ts_data, ts_dir)
+                    ts_file = ts_dir / f"troubleshooting_{i+1}.json"
+                    with open(ts_file, 'w', encoding='utf-8') as f:
+                        json.dump(ts_data, f, ensure_ascii=False, indent=2)
+
+                print(f"   💾 保存了 {len(node_data['troubleshooting'])} 个troubleshooting到节点: {node_dir}")
+            else:
+                print(f"   ⚠️  跳过保存troubleshooting到节点，因为它们不属于当前页面: {current_url}")
 
         # 递归处理子节点
         if 'children' in node_data and node_data['children']:

@@ -36,6 +36,7 @@ proxy.txt
 .DS_Store
 
 # IDE
+.augmented/
 .vscode/
 .idea/
 *.swp

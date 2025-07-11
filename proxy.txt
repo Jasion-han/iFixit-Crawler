@@ -1,5 +1,0 @@
-# 天启IP代理格式：username:password@ip:port
-# 以下代理已失效
-yjnvjx:gkmb3obc@180.119.93.61:40011
-yjnvjx:gkmb3obc@49.86.32.28:40019
-yjnvjx:gkmb3obc@114.103.78.83:40022
