@@ -26,7 +26,7 @@ import mimetypes
 import threading
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 import queue
 
 # 导入两个基础爬虫
@@ -207,6 +207,279 @@ class ProxyManager:
         self.reset_cycle_count = 0
         self.failed_proxies.clear()
 
+
+class CacheManager:
+    """智能缓存管理器 - 优化爬虫重复执行效率"""
+
+    def __init__(self, storage_root, logger=None):
+        self.storage_root = Path(storage_root)
+        self.logger = logger or logging.getLogger(__name__)
+        self.cache_index_file = self.storage_root / "cache_index.json"
+        self.cache_index = {}
+        self.stats = {
+            'total_urls': 0,
+            'cached_urls': 0,
+            'new_urls': 0,
+            'invalid_cache': 0,
+            'cache_hits': 0,
+            'cache_misses': 0
+        }
+        self.load_cache_index()
+
+    def load_cache_index(self):
+        """加载缓存索引文件"""
+        try:
+            if self.cache_index_file.exists():
+                with open(self.cache_index_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.cache_index = data.get('entries', {})
+                    self.logger.info(f"已加载缓存索引，包含 {len(self.cache_index)} 个条目")
+            else:
+                self.cache_index = {}
+                self.logger.info("缓存索引文件不存在，创建新的索引")
+        except Exception as e:
+            self.logger.error(f"加载缓存索引失败: {e}")
+            self.cache_index = {}
+
+    def save_cache_index(self):
+        """保存缓存索引文件"""
+        try:
+            self.storage_root.mkdir(parents=True, exist_ok=True)
+            cache_data = {
+                'version': '1.0',
+                'last_updated': datetime.now(timezone.utc).isoformat(),
+                'entries': self.cache_index
+            }
+            with open(self.cache_index_file, 'w', encoding='utf-8') as f:
+                json.dump(cache_data, f, ensure_ascii=False, indent=2)
+            self.logger.info(f"缓存索引已保存，包含 {len(self.cache_index)} 个条目")
+        except Exception as e:
+            self.logger.error(f"保存缓存索引失败: {e}")
+
+    def get_url_hash(self, url):
+        """生成URL的哈希值作为缓存键"""
+        return hashlib.md5(url.encode('utf-8')).hexdigest()
+
+    def is_url_cached_and_valid(self, url, local_path):
+        """检查URL是否已缓存且数据有效"""
+        url_hash = self.get_url_hash(url)
+        self.stats['total_urls'] += 1
+
+        self.logger.info(f"🔍 检查缓存: {url}")
+        self.logger.info(f"   URL哈希: {url_hash}")
+        self.logger.info(f"   本地路径: {local_path}")
+
+        # 检查缓存索引中是否存在
+        if url_hash not in self.cache_index:
+            self.logger.info(f"   ❌ 缓存索引中不存在此URL")
+            self.stats['new_urls'] += 1
+            self.stats['cache_misses'] += 1
+            return False
+
+        cache_entry = self.cache_index[url_hash]
+        self.logger.info(f"   📋 找到缓存条目: {cache_entry.get('processed_time', 'N/A')}")
+
+        # 检查本地路径是否存在
+        if not local_path.exists():
+            self.logger.info(f"   ❌ 本地路径不存在: {local_path}")
+            self.stats['invalid_cache'] += 1
+            self.stats['cache_misses'] += 1
+            return False
+
+        # 验证数据完整性
+        if not self._validate_cached_data(local_path, cache_entry):
+            self.logger.info(f"   ❌ 数据完整性验证失败")
+            self.stats['invalid_cache'] += 1
+            self.stats['cache_misses'] += 1
+            return False
+
+        self.logger.info(f"   ✅ 缓存有效，命中!")
+        self.stats['cached_urls'] += 1
+        self.stats['cache_hits'] += 1
+        return True
+
+    def _validate_cached_data(self, local_path, cache_entry):
+        """验证缓存数据的完整性"""
+        try:
+            self.logger.info(f"   🔍 验证数据完整性...")
+
+            # 检查info.json文件
+            info_file = local_path / "info.json"
+            if not info_file.exists():
+                self.logger.info(f"   ❌ info.json文件不存在")
+                return False
+
+            with open(info_file, 'r', encoding='utf-8') as f:
+                info_data = json.load(f)
+
+            structure = cache_entry.get('structure', {})
+            self.logger.info(f"   📊 预期结构: {structure}")
+
+            # 验证guides目录和文件
+            if structure.get('has_guides', False):
+                guides_dir = local_path / "guides"
+                if not guides_dir.exists():
+                    self.logger.info(f"   ❌ guides目录不存在")
+                    return False
+
+                guide_files = list(guides_dir.glob("*.json"))
+                expected_count = structure.get('guides_count', 0)
+                if len(guide_files) != expected_count:
+                    self.logger.info(f"   ❌ 指南文件数量不匹配: 期望 {expected_count}, 实际 {len(guide_files)}")
+                    return False
+                else:
+                    self.logger.info(f"   ✅ 指南文件验证通过: {len(guide_files)} 个")
+
+            # 验证troubleshooting目录和文件
+            if structure.get('has_troubleshooting', False):
+                ts_dir = local_path / "troubleshooting"
+                if not ts_dir.exists():
+                    self.logger.info(f"   ❌ troubleshooting目录不存在")
+                    return False
+
+                ts_files = list(ts_dir.glob("*.json"))
+                expected_count = structure.get('troubleshooting_count', 0)
+                if len(ts_files) != expected_count:
+                    self.logger.info(f"   ❌ 故障排除文件数量不匹配: 期望 {expected_count}, 实际 {len(ts_files)}")
+                    return False
+                else:
+                    self.logger.info(f"   ✅ 故障排除文件验证通过: {len(ts_files)} 个")
+
+            # 验证媒体文件
+            if structure.get('has_media', False):
+                media_dir = local_path / "media"
+                if media_dir.exists():
+                    media_files = list(media_dir.glob("*"))
+                    if len(media_files) == 0 and structure.get('media_count', 0) > 0:
+                        self.logger.info(f"   ❌ 媒体文件缺失")
+                        return False
+                    else:
+                        self.logger.info(f"   ✅ 媒体文件验证通过: {len(media_files)} 个")
+
+            self.logger.info(f"   ✅ 数据完整性验证通过")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"   ❌ 验证缓存数据时出错: {e}")
+            return False
+
+    def add_to_cache(self, url, local_path, guides_count=0, troubleshooting_count=0, media_count=0):
+        """添加URL到缓存索引"""
+        url_hash = self.get_url_hash(url)
+
+        # 分析本地数据结构
+        structure = self._analyze_local_structure(local_path, guides_count, troubleshooting_count, media_count)
+
+        cache_entry = {
+            'url': url,
+            'local_path': str(local_path.relative_to(self.storage_root)),
+            'processed_time': datetime.now(timezone.utc).isoformat(),
+            'content_hash': self._generate_content_hash(local_path),
+            'structure': structure,
+            'status': 'complete'
+        }
+
+        self.cache_index[url_hash] = cache_entry
+        self.logger.info(f"已添加到缓存: {url}")
+
+    def _analyze_local_structure(self, local_path, guides_count=0, troubleshooting_count=0, media_count=0):
+        """分析本地数据结构"""
+        structure = {
+            'has_guides': False,
+            'guides_count': 0,
+            'has_troubleshooting': False,
+            'troubleshooting_count': 0,
+            'has_media': False,
+            'media_count': 0
+        }
+
+        try:
+            # 检查guides目录
+            guides_dir = local_path / "guides"
+            if guides_dir.exists():
+                guide_files = list(guides_dir.glob("*.json"))
+                structure['has_guides'] = len(guide_files) > 0
+                structure['guides_count'] = len(guide_files)
+            elif guides_count > 0:
+                structure['has_guides'] = True
+                structure['guides_count'] = guides_count
+
+            # 检查troubleshooting目录
+            ts_dir = local_path / "troubleshooting"
+            if ts_dir.exists():
+                ts_files = list(ts_dir.glob("*.json"))
+                structure['has_troubleshooting'] = len(ts_files) > 0
+                structure['troubleshooting_count'] = len(ts_files)
+            elif troubleshooting_count > 0:
+                structure['has_troubleshooting'] = True
+                structure['troubleshooting_count'] = troubleshooting_count
+
+            # 检查media目录
+            media_dir = local_path / "media"
+            if media_dir.exists():
+                media_files = list(media_dir.glob("*"))
+                structure['has_media'] = len(media_files) > 0
+                structure['media_count'] = len(media_files)
+            elif media_count > 0:
+                structure['has_media'] = True
+                structure['media_count'] = media_count
+
+        except Exception as e:
+            self.logger.error(f"分析本地结构时出错: {e}")
+
+        return structure
+
+    def _generate_content_hash(self, local_path):
+        """生成内容哈希值"""
+        try:
+            info_file = local_path / "info.json"
+            if info_file.exists():
+                with open(info_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                return hashlib.md5(content.encode('utf-8')).hexdigest()[:16]
+        except Exception as e:
+            self.logger.error(f"生成内容哈希时出错: {e}")
+        return ""
+
+    def get_cache_stats(self):
+        """获取缓存统计信息"""
+        return self.stats.copy()
+
+    def display_cache_report(self):
+        """显示缓存报告"""
+        print("\n" + "="*60)
+        print("📊 智能缓存报告")
+        print("="*60)
+        print(f"总URL数量: {self.stats['total_urls']}")
+        print(f"缓存命中: {self.stats['cached_urls']} (跳过处理)")
+        print(f"需要处理: {self.stats['new_urls']} (新增或更新)")
+        print(f"无效缓存: {self.stats['invalid_cache']} (需要重新处理)")
+
+        if self.stats['total_urls'] > 0:
+            hit_rate = (self.stats['cached_urls'] / self.stats['total_urls']) * 100
+            print(f"缓存命中率: {hit_rate:.1f}%")
+
+        print("="*60)
+
+    def clean_invalid_cache(self):
+        """清理无效的缓存条目"""
+        invalid_keys = []
+
+        for url_hash, cache_entry in self.cache_index.items():
+            local_path = self.storage_root / cache_entry['local_path']
+            if not local_path.exists() or not self._validate_cached_data(local_path, cache_entry):
+                invalid_keys.append(url_hash)
+
+        for key in invalid_keys:
+            del self.cache_index[key]
+
+        if invalid_keys:
+            self.logger.info(f"已清理 {len(invalid_keys)} 个无效缓存条目")
+            self.save_cache_index()
+
+        return len(invalid_keys)
+
+
 class CombinedIFixitCrawler(EnhancedIFixitCrawler):
     def __init__(self, base_url="https://www.ifixit.com", verbose=False, use_proxy=True,
                  use_cache=True, force_refresh=False, max_workers=4, max_retries=3,
@@ -219,6 +492,15 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         self.tree_crawler = TreeCrawler(base_url)
         self.processed_nodes = set()
         self.target_url = None
+
+        # 本地存储配置（需要在缓存管理器之前设置）
+        self.storage_root = "ifixit_data"
+        self.media_folder = "media"
+
+        # 缓存配置
+        self.use_cache = use_cache
+        self.force_refresh = force_refresh
+        self.cache_manager = CacheManager(self.storage_root, self.logger) if use_cache else None
 
         # 代理池配置
         self.use_proxy = use_proxy
@@ -243,14 +525,6 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             "videos_skipped": 0,
             "videos_downloaded": 0
         }
-
-        # 本地存储配置
-        self.storage_root = "ifixit_data"
-        self.media_folder = "media"
-
-        # 缓存配置
-        self.use_cache = use_cache
-        self.force_refresh = force_refresh
 
         # 并发配置
         self.max_workers = max_workers
@@ -310,10 +584,19 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         self.logger = logging.getLogger(__name__)
 
     def _check_cache_validity(self, url, local_path):
-        """检查本地缓存是否有效"""
+        """检查本地缓存是否有效 - 使用智能缓存管理器"""
         if not self.use_cache or self.force_refresh:
             return False
 
+        # 使用CacheManager进行智能缓存检查
+        if self.cache_manager:
+            return self.cache_manager.is_url_cached_and_valid(url, local_path)
+
+        # 后备方案：使用原有的简单缓存检查
+        return self._legacy_cache_check(url, local_path)
+
+    def _legacy_cache_check(self, url, local_path):
+        """原有的缓存检查逻辑（后备方案）"""
         if not local_path.exists():
             return False
 
@@ -2207,6 +2490,12 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         # 设置目标URL
         self.target_url = start_url
 
+        # 智能缓存预检查
+        if self.cache_manager and self.use_cache and not self.force_refresh:
+            print("🔍 执行智能缓存预检查...")
+            self._perform_cache_precheck(start_url, category_name)
+            self.cache_manager.display_cache_report()
+
         # 第一步：使用 tree_crawler 逻辑构建基础树结构
         print("📊 阶段 1/3: 构建基础树形结构...")
         print("   正在分析页面结构和分类层次...")
@@ -2230,7 +2519,89 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         final_tree = self.deep_crawl_product_content(enriched_tree)
 
         return final_tree
-        
+
+    def _perform_cache_precheck(self, start_url, category_name=None):
+        """执行缓存预检查，分析哪些内容需要重新处理"""
+        try:
+            # 清理无效缓存
+            cleaned_count = self.cache_manager.clean_invalid_cache()
+            if cleaned_count > 0:
+                print(f"   已清理 {cleaned_count} 个无效缓存条目")
+
+            # 这里可以添加更多的预检查逻辑
+            # 比如检查目标URL的整体缓存状态
+            print("   缓存预检查完成")
+
+        except Exception as e:
+            self.logger.error(f"缓存预检查失败: {e}")
+
+    def _get_node_cache_path(self, url, node_name):
+        """获取节点的缓存路径，确保与保存时的路径一致"""
+        # 首先检查缓存索引中是否有这个URL的记录
+        if self.cache_manager:
+            url_hash = self.cache_manager.get_url_hash(url)
+            if url_hash in self.cache_manager.cache_index:
+                cache_entry = self.cache_manager.cache_index[url_hash]
+                cached_path = cache_entry.get('local_path', '')
+                if cached_path:
+                    return Path(self.storage_root) / cached_path
+
+        # 如果缓存中没有记录，使用标准路径构建逻辑
+        if '/Device/' in url:
+            # 使用与_get_target_root_dir相同的逻辑
+            device_path = url.split('/Device/')[-1]
+            if '?' in device_path:
+                device_path = device_path.split('?')[0]
+            device_path = device_path.rstrip('/')
+
+            if device_path:
+                import urllib.parse
+                device_path = urllib.parse.unquote(device_path)
+                return Path(self.storage_root) / "Device" / device_path
+            else:
+                return Path(self.storage_root) / "Device"
+        else:
+            # 后备方案：使用节点名称
+            safe_name = node_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+            return Path(self.storage_root) / safe_name
+
+    def _load_cached_node_data(self, local_path):
+        """从缓存加载节点数据"""
+        try:
+            # 加载基本信息
+            info_file = local_path / "info.json"
+            if not info_file.exists():
+                return None
+
+            with open(info_file, 'r', encoding='utf-8') as f:
+                node_data = json.load(f)
+
+            # 加载guides数据
+            guides_dir = local_path / "guides"
+            if guides_dir.exists():
+                guides = []
+                for guide_file in sorted(guides_dir.glob("guide_*.json")):
+                    with open(guide_file, 'r', encoding='utf-8') as f:
+                        guides.append(json.load(f))
+                if guides:
+                    node_data['guides'] = guides
+
+            # 加载troubleshooting数据
+            ts_dir = local_path / "troubleshooting"
+            if ts_dir.exists():
+                troubleshooting = []
+                for ts_file in sorted(ts_dir.glob("troubleshooting_*.json")):
+                    with open(ts_file, 'r', encoding='utf-8') as f:
+                        troubleshooting.append(json.load(f))
+                if troubleshooting:
+                    node_data['troubleshooting'] = troubleshooting
+
+            return node_data
+
+        except Exception as e:
+            self.logger.error(f"加载缓存数据失败: {e}")
+            return None
+
     def enrich_tree_with_detailed_content(self, node):
         """修复节点的基本数据，确保所有节点都有正确的字段"""
         if not node or not isinstance(node, dict):
@@ -2240,13 +2611,19 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if not url or url in self.processed_nodes:
             return node
 
-        # 检查缓存
-        node_name = node.get('name', 'unknown')
-        safe_name = node_name.replace("/", "_").replace("\\", "_").replace(":", "_")
-        local_path = Path(self.storage_root) / safe_name
+        # 检查缓存 - 使用与保存时一致的路径构建逻辑
+        local_path = self._get_node_cache_path(url, node.get('name', 'unknown'))
+
+        if self.verbose:
+            print(f"🔍 检查缓存: {url}")
+            print(f"   缓存路径: {local_path}")
 
         if self._check_cache_validity(url, local_path):
             self.stats["cache_hits"] += 1
+            if self.verbose:
+                print(f"✅ 缓存命中，跳过处理: {node.get('name', '')}")
+            else:
+                print(f"   ✅ 跳过已缓存: {node.get('name', '')}")
             return node
 
         self.processed_nodes.add(url)
@@ -2772,6 +3149,30 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         )
 
         if is_target_page:
+            # 检查深度内容的缓存
+            local_path = self._get_node_cache_path(url, node.get('name', 'unknown'))
+
+            if self.verbose:
+                print(f"🔍 检查深度内容缓存: {url}")
+                print(f"   缓存路径: {local_path}")
+
+            if self._check_cache_validity(url, local_path):
+                if self.verbose:
+                    print(f"✅ 深度内容缓存命中，跳过处理: {node.get('name', '')}")
+                else:
+                    print(f"   ✅ 跳过已缓存的深度内容: {node.get('name', '')}")
+
+                # 从缓存加载数据
+                try:
+                    cached_node = self._load_cached_node_data(local_path)
+                    if cached_node:
+                        return cached_node
+                except Exception as e:
+                    if self.verbose:
+                        print(f"   ⚠️ 缓存加载失败，重新处理: {e}")
+
+            if self.verbose:
+                print(f"🔄 缓存未命中，开始深度处理: {node.get('name', '')}")
             print(f"🎯 深入爬取目标产品页面: {node.get('name', '')}")
             print(f"   📍 URL: {url}")
 
@@ -3015,6 +3416,40 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 ts_file = ts_dir / f"troubleshooting_{i+1}.json"
                 with open(ts_file, 'w', encoding='utf-8') as f:
                     json.dump(ts_data, f, ensure_ascii=False, indent=2)
+
+        # 更新缓存索引
+        self._update_cache_for_node(node_data, node_dir)
+
+    def _update_cache_for_node(self, node_data, node_dir):
+        """为节点更新缓存索引"""
+        if not self.cache_manager or not node_data:
+            return
+
+        url = node_data.get('url', '')
+        if not url:
+            return
+
+        try:
+            # 统计内容数量
+            guides_count = len(node_data.get('guides', []))
+            troubleshooting_count = len(node_data.get('troubleshooting', []))
+
+            # 统计媒体文件数量
+            media_count = 0
+            media_dir = node_dir / "media"
+            if media_dir.exists():
+                media_count = len(list(media_dir.glob("*")))
+
+            # 添加到缓存
+            self.cache_manager.add_to_cache(
+                url, node_dir,
+                guides_count=guides_count,
+                troubleshooting_count=troubleshooting_count,
+                media_count=media_count
+            )
+
+        except Exception as e:
+            self.logger.error(f"更新缓存索引失败: {e}")
 
     def _save_target_content_to_root(self, tree_data, root_dir):
         """将目标产品内容直接保存到根目录，优化目录结构"""
@@ -3682,6 +4117,18 @@ def main():
                 # 显示性能统计
                 crawler._print_performance_stats()
 
+                # 保存缓存索引
+                if crawler.cache_manager:
+                    crawler.cache_manager.save_cache_index()
+                    cache_stats = crawler.cache_manager.get_cache_stats()
+                    print(f"\n📊 缓存统计:")
+                    print(f"- 总处理URL: {cache_stats['total_urls']}")
+                    print(f"- 缓存命中: {cache_stats['cached_urls']}")
+                    print(f"- 新增处理: {cache_stats['new_urls']}")
+                    if cache_stats['total_urls'] > 0:
+                        hit_rate = (cache_stats['cached_urls'] / cache_stats['total_urls']) * 100
+                        print(f"- 缓存命中率: {hit_rate:.1f}%")
+
                 # 提供使用建议
                 print(f"\n💡 使用建议:")
                 print(f"- 查看文件夹结构了解完整的数据层级")
@@ -3694,11 +4141,21 @@ def main():
 
         except KeyboardInterrupt:
             print("\n\n用户中断爬取")
+            # 即使中断也保存缓存索引
+            if crawler.cache_manager:
+                crawler.cache_manager.save_cache_index()
         except Exception as e:
             print(f"\n✗ 爬取过程中发生错误: {str(e)}")
+            # 即使出错也保存缓存索引
+            if crawler.cache_manager:
+                crawler.cache_manager.save_cache_index()
             if verbose:
                 import traceback
                 traceback.print_exc()
+        finally:
+            # 确保缓存索引被保存
+            if 'crawler' in locals() and crawler.cache_manager:
+                crawler.cache_manager.save_cache_index()
     else:
         print_usage()
 

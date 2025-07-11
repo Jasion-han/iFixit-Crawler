@@ -12,6 +12,8 @@
 - **💾 智能缓存机制**：自动跳过已爬取内容，支持强制刷新
 - **🔁 错误重试机制**：网络错误自动重试，指数退避策略
 - **📊 详细性能统计**：实时显示爬取进度和性能指标
+- **🖼️ 智能图片去重**：跨页面图片去重，避免重复下载，节省存储空间
+- **🎯 精准内容过滤**：只保留guide-images.cdn.ifixit.com的相关图片，过滤商业宣传内容
 
 ## 📁 项目结构
 
@@ -25,8 +27,15 @@ iFixit爬虫/
 ├── requirements.txt         # 依赖包列表
 ├── robots.txt              # 爬虫规则
 └── ifixit_data/            # 爬取结果目录
-    ├── media/              # 媒体文件存储
-    └── [产品名]/           # 按产品分类的数据文件
+    └── Device/             # 按设备层级结构存储
+        └── [产品路径]/     # 完整的产品分类路径
+            ├── info.json   # 产品基本信息
+            ├── guides/     # 指南目录
+            │   ├── guide_*.json  # 指南详细内容
+            │   └── media/        # 指南相关媒体文件
+            └── troubleshooting/  # 故障排除目录
+                ├── troubleshooting_*.json  # 故障排除内容
+                └── media/                  # 故障排除相关媒体文件
 ```
 
 ## 🛠️ 快速开始
@@ -49,7 +58,10 @@ proxy2.example.com:8080
 
 ```bash
 # 最简单的使用方式
-python auto_crawler.py iMac_M_Series
+python auto_crawler.py 'MacBook_Pro_17%22'
+
+# 不使用代理（推荐）
+python auto_crawler.py 'MacBook_Pro_17%22' --no-proxy
 
 # 查看帮助信息
 python auto_crawler.py --help
@@ -74,15 +86,15 @@ python auto_crawler.py [目标] [选项...]
 支持多种输入格式：
 
 ```bash
-# 产品名称
-python auto_crawler.py iMac_M_Series
-python auto_crawler.py Television
+# 产品名称（URL编码格式）
+python auto_crawler.py 'MacBook_Pro_17%22'
+python auto_crawler.py 'iMac_M_Series'
 
 # 完整URL
-python auto_crawler.py https://www.ifixit.com/Device/iPhone
+python auto_crawler.py 'https://www.ifixit.com/Device/MacBook_Pro_17%22'
 
 # 部分URL
-python auto_crawler.py /Device/MacBook_Pro
+python auto_crawler.py '/Device/MacBook_Pro_17%22'
 ```
 
 ### ⚙️ 常用选项
@@ -108,37 +120,37 @@ python auto_crawler.py /Device/MacBook_Pro
 #### 基本爬取（推荐）
 ```bash
 # 快速爬取，不下载视频
-python auto_crawler.py iMac_M_Series
+python auto_crawler.py 'MacBook_Pro_17%22' --no-proxy
 
 # 禁用代理，启用详细输出
-python auto_crawler.py Television --no-proxy --verbose
+python auto_crawler.py 'iMac_M_Series' --no-proxy --verbose
 ```
 
 #### 完整内容爬取
 ```bash
 # 启用视频下载，限制10MB
-python auto_crawler.py iPhone --download-videos --max-video-size 10
+python auto_crawler.py 'iPhone' --download-videos --max-video-size 10
 
 # 强制刷新，获取最新数据
-python auto_crawler.py MacBook --force-refresh
+python auto_crawler.py 'MacBook_Pro_17%22' --force-refresh
 ```
 
 #### 性能调优
 ```bash
 # 增加并发数，适合网络良好的环境
-python auto_crawler.py iPad --workers 8
+python auto_crawler.py 'iPad' --workers 8
 
 # 减少重试次数，快速失败
-python auto_crawler.py Television --max-retries 2
+python auto_crawler.py 'Television' --max-retries 2
 
 # 禁用缓存，确保数据最新
-python auto_crawler.py iPhone --no-cache
+python auto_crawler.py 'iPhone' --no-cache
 ```
 
 #### 调试模式
 ```bash
 # 详细输出，便于调试
-python auto_crawler.py iMac_M_Series --verbose --no-proxy
+python auto_crawler.py 'MacBook_Pro_17%22' --verbose --no-proxy
 
 # 查看帮助信息
 python auto_crawler.py --help
@@ -152,20 +164,36 @@ python auto_crawler.py --help
 
 ```
 ifixit_data/
-├── media/                          # 媒体文件存储
-│   ├── images/                     # 图片文件
-│   └── videos/                     # 视频文件（如果启用下载）
-└── auto_[产品名]_[时间戳].json      # 爬取数据文件
+└── Device/                                    # 设备根目录
+    └── [产品路径]/                            # 完整的产品分类路径
+        ├── info.json                          # 产品基本信息和树形结构
+        ├── guides/                            # 指南目录
+        │   ├── guide_1.json                   # 指南详细内容
+        │   ├── guide_2.json
+        │   └── media/                         # 指南相关媒体文件
+        │       ├── 7bfd7f8b.jpg              # 图片文件（MD5命名）
+        │       └── 861cb4de.jpg
+        └── troubleshooting/                   # 故障排除目录
+            ├── troubleshooting_1.json         # 故障排除内容
+            ├── troubleshooting_2.json
+            └── media/                         # 故障排除相关媒体文件
+                ├── cfda85ed.jpg
+                └── e26cd639.jpg
 ```
 
 ### 📄 JSON数据结构
 
+#### info.json（产品基本信息）
 ```json
 {
-  "name": "iMac_M_Series",
-  "url": "https://www.ifixit.com/Device/iMac_M_Series",
-  "title": "iMac (Apple silicon) Repair",
-  "instruction_url": "",
+  "name": "MacBook_Pro_17\"",
+  "url": "https://www.ifixit.com/Device/MacBook_Pro_17%22",
+  "title": "MacBook Pro 17英寸 Repair",
+  "introduction": {
+    "text": "The MacBook Pro 17-inch was a laptop computer...",
+    "videos": [],
+    "documents": []
+  },
   "view_statistics": {
     "past_24_hours": "20",
     "past_7_days": "182",
@@ -176,44 +204,84 @@ ifixit_data/
   "favorites": "567",
   "guides": [
     {
-      "title": "iMac M1 24\" Teardown",
+      "title": "MacBook Pro 17\" Models A1151 A1212 A1229 and A1261 Battery Replacement",
       "url": "https://www.ifixit.com/Guide/...",
       "difficulty": "Moderate",
-      "time_required": "45 minutes - 1 hour",
-      "introduction": {
-        "text": "This guide will show you...",
-        "tools": ["Spudger", "Suction Handle"],
-        "parts": ["Display Assembly"]
-      },
-      "steps": [
-        {
-          "title": "Remove the Stand",
-          "content": "Step instructions...",
-          "images": ["./media/images/step1_image1.jpg"],
-          "videos": ["./media/videos/step1_video.mp4"]
-        }
-      ]
+      "time_required": "45 minutes - 1 hour"
     }
   ],
   "troubleshooting": [
     {
-      "title": "iMac Won't Turn On",
-      "url": "https://www.ifixit.com/Answers/...",
-      "causes": [
-        {
-          "title": "Power Supply Issue",
-          "content": "Check the power connection...",
-          "images": ["./media/images/power_check.jpg"]
-        }
-      ]
+      "title": "MacBook Won't Turn On",
+      "url": "https://www.ifixit.com/Troubleshooting/...",
+      "causes_count": 8
     }
   ],
   "children": [
     {
-      "name": "iMac_M1_24\"",
-      "url": "https://www.ifixit.com/Device/iMac_M1_24%22",
-      "guides": [...],
-      "troubleshooting": [...]
+      "name": "MacBook_Pro_17\"_Models_A1151_A1212_A1229_and_A1261",
+      "url": "https://www.ifixit.com/Device/MacBook_Pro_17%22_Models_A1151_A1212_A1229_and_A1261",
+      "title": "MacBook Pro 17英寸 Models A1151 A1212 A1229 and A1261 Repair"
+    }
+  ]
+}
+```
+
+#### guide_*.json（指南详细内容）
+```json
+{
+  "title": "MacBook Pro 17\" Models A1151 A1212 A1229 and A1261 Battery Replacement",
+  "url": "https://www.ifixit.com/Guide/...",
+  "difficulty": "Moderate",
+  "time_required": "45 minutes - 1 hour",
+  "introduction": {
+    "text": "This guide will show you how to replace...",
+    "Tools": ["Spudger", "Suction Handle"],
+    "Parts": ["MacBook Pro 17\" Battery"]
+  },
+  "view_statistics": {
+    "past_24_hours": "5",
+    "past_7_days": "42",
+    "past_30_days": "156",
+    "all_time": "12,345"
+  },
+  "completed": "234",
+  "favorites": "89",
+  "steps": [
+    {
+      "title": "Remove the Battery",
+      "content": "Use the spudger to carefully disconnect...",
+      "images": ["Device/MacBook_Pro_17\"/Mac/Mac_Laptop/MacBook_Pro/MacBook_Pro_17\"/MacBook_Pro_17\"_Models_A1151_A1212_A1229_and_A1261/guides/media/7bfd7f8b.jpg"]
+    }
+  ]
+}
+```
+
+#### troubleshooting_*.json（故障排除内容）
+```json
+{
+  "title": "MacBook Won't Turn On",
+  "url": "https://www.ifixit.com/Troubleshooting/...",
+  "introduction": "If your MacBook won't turn on, try these solutions...",
+  "first_steps": "Before diving into complex repairs...",
+  "view_statistics": {
+    "past_24_hours": "15",
+    "past_7_days": "89",
+    "past_30_days": "345",
+    "all_time": "8,765"
+  },
+  "completed": "456",
+  "favorites": "123",
+  "causes": [
+    {
+      "title": "Power Supply Issue",
+      "content": "Check the power connection and adapter...",
+      "images": [
+        {
+          "url": "Device/MacBook_Pro_17\"/Mac/Mac_Laptop/MacBook_Pro/MacBook_Pro_17\"/troubleshooting/media/cfda85ed.jpg",
+          "description": "Power adapter connection"
+        }
+      ]
     }
   ]
 }
@@ -249,6 +317,14 @@ ifixit_data/
 - **格式支持**：支持 .mp4, .mov, .avi, .webm, .mkv, .flv 等格式
 - **智能跳过**：超过大小限制的视频自动跳过，保留原始URL
 
+### 🖼️ 智能图片处理
+
+- **跨页面去重**：基于URL的MD5哈希，避免重复下载相同图片
+- **精准过滤**：只保留guide-images.cdn.ifixit.com的相关图片
+- **商业内容过滤**：自动过滤掉商业、宣传、装饰性图片
+- **本地存储优化**：图片文件使用MD5哈希命名，便于管理
+- **格式统一**：确保所有图片URL使用.medium格式，保证质量一致性
+
 ### 💾 智能缓存机制
 
 - **文件缓存**：基于文件修改时间的缓存检查
@@ -269,16 +345,21 @@ ifixit_data/
 ```
 📊 性能统计报告
 ============================================================
-🌐 总请求数: 16
+🌐 总请求数: 90
 💾 缓存命中: 0 (0.0%)
-🔄 缓存未命中: 8
-📁 媒体下载成功: 73/73 (100.0%)
-📁 媒体下载失败: 0
+🔄 缓存未命中: 7
+🔁 重试成功: 0/26 (0.0%)
+❌ 重试失败: 26
+📁 媒体下载成功: 2367/2393 (98.9%)
+📁 媒体下载失败: 26
 🎥 视频文件处理:
    ✅ 已下载: 0
    ⏭️ 已跳过: 5
    💡 提示: 视频下载已禁用，如需下载请设置 download_videos=True
-🔄 代理切换次数: 3
+🖼️ 图片处理统计:
+   ✅ 跨页面去重: 649张图片避免重复下载
+   🎯 精准过滤: 只保留guide-images.cdn.ifixit.com相关图片
+   ❌ 403错误: 26个thumbnail图片访问受限（正常现象）
 ============================================================
 ```
 
@@ -354,35 +435,39 @@ python auto_crawler.py iMac_M_Series --workers 1
 
 #### 快速爬取（日常使用）
 ```bash
-python auto_crawler.py [目标] --no-proxy
+python auto_crawler.py 'MacBook_Pro_17%22' --no-proxy
 ```
 - 禁用代理，提升速度
 - 不下载视频，节省空间
 - 使用缓存，避免重复爬取
+- 智能图片去重，节省存储空间
 
 #### 完整内容爬取（研究用途）
 ```bash
-python auto_crawler.py [目标] --download-videos --max-video-size 50
+python auto_crawler.py 'MacBook_Pro_17%22' --download-videos --max-video-size 50
 ```
 - 下载视频文件，获取完整内容
 - 限制视频大小，避免过大文件
 - 适合深度研究和分析
+- 包含完整的媒体资源
 
 #### 大规模爬取（批量处理）
 ```bash
-python auto_crawler.py [目标] --workers 8 --max-retries 3
+python auto_crawler.py 'MacBook_Pro_17%22' --workers 8 --max-retries 3
 ```
 - 增加并发数，提升效率
 - 适当减少重试次数，快速失败
 - 适合处理大量数据
+- 跨页面图片去重，避免重复下载
 
 #### 调试模式（开发测试）
 ```bash
-python auto_crawler.py [目标] --verbose --no-proxy --force-refresh
+python auto_crawler.py 'MacBook_Pro_17%22' --verbose --no-proxy --force-refresh
 ```
 - 详细输出，便于调试
 - 禁用代理，避免网络问题
 - 强制刷新，确保数据最新
+- 显示详细的图片处理过程
 
 ### 性能优化建议
 
@@ -393,7 +478,8 @@ python auto_crawler.py [目标] --verbose --no-proxy --force-refresh
 
 2. **存储优化**：
    - 大规模爬取时禁用视频下载
-   - 定期清理 `ifixit_data/media/` 目录
+   - 智能图片去重自动节省存储空间
+   - 定期清理不需要的媒体文件
    - 使用SSD存储提升I/O性能
 
 3. **内存优化**：
@@ -417,7 +503,16 @@ python auto_crawler.py [目标] --verbose --no-proxy --force-refresh
 - **🌳 完整结构**：树形层级 + 详细内容，数据完整性最佳
 - **🚀 高性能**：多线程并发，智能缓存，错误重试
 - **🎥 智能媒体**：可选视频下载，大小限制，本地存储
+- **🖼️ 图片优化**：跨页面去重，精准过滤，避免重复下载
 - **🔄 企业级**：代理池，性能统计，错误处理
 - **💡 易用性**：丰富的命令行选项，详细的帮助信息
+- **📁 结构化存储**：层级目录结构，便于管理和查找
 
 **立即开始使用 `auto_crawler.py` 体验强大的iFixit数据爬取功能！**
+
+### 🆕 最新更新
+
+- **✨ 智能图片去重**：基于MD5哈希的跨页面图片去重机制，显著减少存储空间占用
+- **🎯 精准内容过滤**：只保留guide-images.cdn.ifixit.com的相关图片，过滤商业宣传内容
+- **📊 增强统计报告**：新增图片处理统计，包括去重效果和过滤结果
+- **🗂️ 优化文件结构**：采用层级目录结构，每个产品独立存储，便于管理

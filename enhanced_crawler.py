@@ -656,24 +656,6 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             # 提取productData
             product_data = props_data.get('productData', {})
 
-            # 提取Fix Kits/Parts
-            kits = product_data.get('kits', [])
-            if kits:
-                fix_kits = []
-                parts = []
-                for kit in kits:
-                    name = kit.get('name', '').strip()
-                    if name:
-                        if 'kit' in name.lower() or 'fix kit' in name.lower():
-                            fix_kits.append(name)
-                        else:
-                            parts.append(name)
-
-                if fix_kits:
-                    what_you_need['Fix Kits'] = fix_kits
-                if parts:
-                    what_you_need['Parts'] = parts
-
             # 提取Tools
             tools = product_data.get('tools', [])
             if tools:
@@ -686,8 +668,47 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                 if tool_names:
                     what_you_need['Tools'] = tool_names
 
-            if self.verbose:
+            # 提取Parts（独立的parts字段）
+            parts = product_data.get('parts', [])
+            if parts:
+                part_names = []
+                for part in parts:
+                    name = part.get('name', '').strip()
+                    if name:
+                        part_names.append(name)
+
+                if part_names:
+                    what_you_need['Parts'] = part_names
+
+            # 提取Fix Kits（从kits字段中筛选）
+            kits = product_data.get('kits', [])
+            if kits:
+                fix_kits = []
+                for kit in kits:
+                    name = kit.get('name', '').strip()
+                    if name:
+                        # 只有明确包含kit字样的才归类为Fix Kits
+                        if 'kit' in name.lower() or 'fix kit' in name.lower():
+                            fix_kits.append(name)
+
+                if fix_kits:
+                    what_you_need['Fix Kits'] = fix_kits
+
+            # 验证提取的数据是否合理（可选的质量检查）
+            if what_you_need and self.verbose:
                 print(f"从React props提取到数据: {what_you_need}")
+
+                # 检查是否有明显不匹配的部件名称
+                guide_title = soup.find('h1')
+                if guide_title:
+                    title_text = guide_title.get_text().lower()
+                    for category, items in what_you_need.items():
+                        for item in items:
+                            item_lower = item.lower()
+                            # 如果部件名称与指南标题完全不匹配，给出警告
+                            if ('macbook' in title_text and 'psp' in item_lower) or \
+                               ('iphone' in title_text and 'macbook' in item_lower):
+                                print(f"⚠️ 警告: 部件 '{item}' 可能与指南 '{title_text}' 不匹配")
 
             return what_you_need
 
