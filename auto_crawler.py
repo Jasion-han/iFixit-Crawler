@@ -37,7 +37,7 @@ from tree_crawler import TreeCrawler
 class ProxyManager:
     """代理管理器 - 从本地proxy.txt文件管理代理池"""
 
-    def __init__(self, proxy_file="proxy.txt", username="yjnvjx", password="gkmb3obc"):
+    def __init__(self, proxy_file="proxy.txt", username=None, password=None, max_reset_cycles=3):
         self.proxy_file = proxy_file
         self.username = username
         self.password = password
@@ -47,6 +47,10 @@ class ProxyManager:
         self.failed_proxies = []
         self.proxy_switch_count = 0
         self.proxy_lock = threading.Lock()
+
+        # 添加重置循环限制
+        self.max_reset_cycles = max_reset_cycles
+        self.reset_cycle_count = 0
 
         # 加载代理
         self._load_proxies()
@@ -67,11 +71,33 @@ class ProxyManager:
                 line = line.strip()
                 if line and ':' in line and not line.startswith('#'):
                     try:
-                        host, port = line.split(':', 1)
-                        proxy_config = {
-                            'http': f"http://{self.username}:{self.password}@{host.strip()}:{port.strip()}",
-                            'https': f"http://{self.username}:{self.password}@{host.strip()}:{port.strip()}"
-                        }
+                        # 支持两种格式：
+                        # 1. username:password@host:port (带认证)
+                        # 2. host:port (无认证)
+                        if '@' in line:
+                            # 带认证的代理格式
+                            auth_part, host_port = line.split('@', 1)
+                            username, password = auth_part.split(':', 1)
+                            host, port = host_port.split(':', 1)
+                            proxy_config = {
+                                'http': f"http://{username}:{password}@{host.strip()}:{port.strip()}",
+                                'https': f"http://{username}:{password}@{host.strip()}:{port.strip()}"
+                            }
+                        else:
+                            # 无认证的代理格式
+                            host, port = line.split(':', 1)
+                            if self.username and self.password:
+                                # 如果设置了默认认证信息，使用默认认证
+                                proxy_config = {
+                                    'http': f"http://{self.username}:{self.password}@{host.strip()}:{port.strip()}",
+                                    'https': f"http://{self.username}:{self.password}@{host.strip()}:{port.strip()}"
+                                }
+                            else:
+                                # 无认证代理
+                                proxy_config = {
+                                    'http': f"http://{host.strip()}:{port.strip()}",
+                                    'https': f"http://{host.strip()}:{port.strip()}"
+                                }
                         proxy_list.append(proxy_config)
                     except ValueError:
                         print(f"⚠️  跳过格式错误的代理: {line}")
@@ -101,8 +127,14 @@ class ProxyManager:
                     available_proxies.append(p)
 
             if not available_proxies:
+                # 检查是否已达到最大重置次数
+                if self.reset_cycle_count >= self.max_reset_cycles:
+                    print(f"❌ 已达到最大重置次数({self.max_reset_cycles})，所有代理均不可用")
+                    return None
+
                 # 如果所有代理都失效了，重置失效列表，重新开始
-                print("⚠️  所有代理都已失效，重置代理池...")
+                self.reset_cycle_count += 1
+                print(f"⚠️  所有代理都已失效，重置代理池... (第{self.reset_cycle_count}/{self.max_reset_cycles}次)")
                 self.failed_proxies.clear()
                 available_proxies = self.proxy_pool
 
@@ -121,8 +153,7 @@ class ProxyManager:
                 else:
                     display_ip, display_port = "Unknown", "Unknown"
 
-                current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-                print(f"🔄 切换代理 (第{self.proxy_switch_count}次): {display_ip}:{display_port}")
+                print(f"🔄 切换代理 (第{self.proxy_switch_count}次): {display_ip}:{display_port} [重置周期: {self.reset_cycle_count}/{self.max_reset_cycles}]")
 
                 return self.current_proxy
             else:
@@ -165,12 +196,20 @@ class ProxyManager:
             'total_proxies': len(self.proxy_pool),
             'failed_proxies': len(self.failed_proxies),
             'available_proxies': len(self.proxy_pool) - len(self.failed_proxies),
-            'switch_count': self.proxy_switch_count
+            'switch_count': self.proxy_switch_count,
+            'reset_cycles': self.reset_cycle_count,
+            'max_reset_cycles': self.max_reset_cycles
         }
+
+    def reset_stats(self):
+        """重置统计信息"""
+        self.proxy_switch_count = 0
+        self.reset_cycle_count = 0
+        self.failed_proxies.clear()
 
 class CombinedIFixitCrawler(EnhancedIFixitCrawler):
     def __init__(self, base_url="https://www.ifixit.com", verbose=False, use_proxy=True,
-                 use_cache=True, force_refresh=False, max_workers=4, max_retries=5,
+                 use_cache=True, force_refresh=False, max_workers=4, max_retries=3,
                  download_videos=False, max_video_size_mb=50):
         super().__init__(base_url, verbose)
 
@@ -198,6 +237,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             "cache_misses": 0,
             "retry_success": 0,
             "retry_failed": 0,
+            "total_retries": 0,  # 添加缺失的total_retries键
             "media_downloaded": 0,
             "media_failed": 0,
             "videos_skipped": 0,
@@ -346,6 +386,16 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 f.write(log_entry)
         except Exception as e:
             self.logger.error(f"无法写入失败日志: {e}")
+
+    def _log_failed_media(self, url, error_msg):
+        """记录失败的媒体文件到专门的日志"""
+        try:
+            failed_media_log = "failed_media.log"
+            with open(failed_media_log, 'a', encoding='utf-8') as f:
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                f.write(f"[{timestamp}] {url} - {error_msg}\n")
+        except Exception as e:
+            self.logger.error(f"无法写入媒体失败日志: {e}")
 
     def _exponential_backoff(self, attempt):
         """指数退避延迟"""
@@ -573,9 +623,10 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         """使用requests获取页面内容，支持智能代理切换"""
         session = requests.Session()
         retry_strategy = Retry(
-            total=2,
-            backoff_factor=1,
+            total=1,  # 减少重试次数，避免与上层重试机制冲突
+            backoff_factor=1,  # 减少退避因子
             status_forcelist=[429, 500, 502, 503, 504],
+            raise_on_status=False  # 不在状态码错误时立即抛出异常
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session.mount("http://", adapter)
@@ -657,8 +708,27 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
     def _get_file_size_from_url(self, url):
         """获取URL文件的大小（MB）"""
         try:
+            # 修复URL格式：将.thumbnail.medium替换为.medium，解决403 Forbidden问题
+            if '.thumbnail.medium' in url:
+                url = url.replace('.thumbnail.medium', '.medium')
+
+            # 使用与下载相同的请求头
+            media_headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Referer": "https://www.ifixit.com/",
+                "Origin": "https://www.ifixit.com",
+                "Sec-Fetch-Dest": "image",
+                "Sec-Fetch-Mode": "no-cors",
+                "Sec-Fetch-Site": "same-site",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache"
+            }
+
             proxies = self._get_next_proxy() if self.use_proxy else None
-            response = requests.head(url, headers=self.headers, timeout=10, proxies=proxies)
+            response = requests.head(url, headers=media_headers, timeout=10, proxies=proxies)
             if response.status_code == 200:
                 content_length = response.headers.get('content-length')
                 if content_length:
@@ -677,9 +747,55 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         return any(url_path.endswith(ext) for ext in self.video_extensions)
 
     def _download_media_file(self, url, local_dir, filename=None):
-        """下载媒体文件到本地（带重试机制和视频处理策略）"""
+        """下载媒体文件到本地（带重试机制和视频处理策略，支持跨页面去重）"""
         if not url or not url.startswith('http'):
             return None
+
+        # 先计算文件名和本地路径，用于检查文件是否已存在
+        if not filename:
+            url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+            url_path = url.split('?')[0]
+            if '.' in url_path:
+                ext = '.' + url_path.split('.')[-1].lower()
+                if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.avi']:
+                    ext = '.jpg'
+            else:
+                ext = '.jpg'
+            filename = f"{url_hash}{ext}"
+
+        local_path = local_dir / self.media_folder / filename
+
+        # 检查是否是troubleshooting目录，如果是则不使用跨页面去重
+        is_troubleshooting = "troubleshooting" in str(local_dir)
+
+        if not is_troubleshooting:
+            # 检查文件是否已存在（支持跨页面去重）
+            existing_file_path = self._find_existing_media_file(url, filename)
+            if existing_file_path:
+                # 文件已存在于其他位置，返回相对于当前目录的路径
+                if self.verbose:
+                    self.logger.info(f"媒体文件已存在，跳过下载: {filename}")
+                else:
+                    # 静默跳过，不显示消息避免日志过多
+                    pass
+                self.stats["media_downloaded"] += 1
+                return existing_file_path
+
+        # 如果文件在当前目录已存在，直接返回路径
+        if local_path.exists():
+            if self.verbose:
+                self.logger.info(f"媒体文件已存在于当前目录: {filename}")
+            self.stats["media_downloaded"] += 1
+            # 对于troubleshooting目录，返回相对于troubleshooting目录的路径
+            if is_troubleshooting:
+                return str(local_path.relative_to(local_dir))
+            else:
+                # 计算相对路径，如果local_dir不是storage_root的子目录，则使用local_dir作为基准
+                try:
+                    return str(local_path.relative_to(Path(self.storage_root)))
+                except ValueError:
+                    # 如果不在storage_root下，返回相对于local_dir的路径
+                    return str(local_path.relative_to(local_dir))
 
         # 检查是否为视频文件
         if self._is_video_file(url):
@@ -706,38 +822,89 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             self.logger.error(f"媒体文件下载最终失败 {url}: {e}")
             self.stats["media_failed"] += 1
             self._log_failed_url(url, f"媒体下载失败: {str(e)}")
+            # 记录失败的媒体文件到专门的日志
+            self._log_failed_media(url, str(e))
             return url
 
-    def _download_media_file_impl(self, url, local_dir, filename=None):
-        """媒体文件下载的具体实现"""
-        if not filename:
+    def _find_existing_media_file(self, url, filename):
+        """查找是否已存在相同的媒体文件（跨页面去重）"""
+        try:
+            # 基于URL的MD5哈希来查找文件
             url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
-            url_path = url.split('?')[0]
-            if '.' in url_path:
-                ext = '.' + url_path.split('.')[-1].lower()
-                if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.avi']:
-                    ext = '.jpg'
-            else:
-                ext = '.jpg'
-            filename = f"{url_hash}{ext}"
 
+            # 在整个storage_root目录下搜索具有相同哈希的文件
+            storage_path = Path(self.storage_root)
+            if not storage_path.exists():
+                return None
+
+            # 搜索所有media目录下的文件
+            for media_dir in storage_path.rglob("media"):
+                if media_dir.is_dir():
+                    # 查找具有相同哈希前缀的文件
+                    for existing_file in media_dir.glob(f"{url_hash}.*"):
+                        if existing_file.is_file():
+                            # 返回相对于storage_root的路径
+                            return str(existing_file.relative_to(storage_path))
+
+            return None
+
+        except Exception as e:
+            if self.verbose:
+                self.logger.warning(f"查找已存在媒体文件时出错: {e}")
+            return None
+
+    def _download_media_file_impl(self, url, local_dir, filename):
+        """媒体文件下载的具体实现"""
         local_path = local_dir / self.media_folder / filename
         local_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if local_path.exists():
-            self.stats["media_downloaded"] += 1
-            return str(local_path.relative_to(Path(self.storage_root)))
+        # 修复URL格式：将.thumbnail.medium替换为.medium，解决403 Forbidden问题
+        if '.thumbnail.medium' in url:
+            url = url.replace('.thumbnail.medium', '.medium')
+            if self.verbose:
+                self.logger.info(f"URL格式修复: .thumbnail.medium -> .medium")
+
+        # 为媒体文件下载创建专门的请求头
+        media_headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://www.ifixit.com/",
+            "Origin": "https://www.ifixit.com",
+            "Sec-Fetch-Dest": "image",
+            "Sec-Fetch-Mode": "no-cors",
+            "Sec-Fetch-Site": "same-site",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+        }
 
         proxies = self._get_next_proxy() if self.use_proxy else None
-        response = requests.get(url, headers=self.headers, timeout=30, proxies=proxies)
+        response = requests.get(url, headers=media_headers, timeout=30, proxies=proxies)
         response.raise_for_status()
 
         with open(local_path, 'wb') as f:
             f.write(response.content)
 
         self.stats["media_downloaded"] += 1
-        self.logger.info(f"媒体文件下载成功: {filename}")
-        return str(local_path.relative_to(Path(self.storage_root)))
+        if self.verbose:
+            self.logger.info(f"媒体文件下载成功: {filename}")
+        else:
+            # 简化的进度提示
+            if self.stats["media_downloaded"] % 10 == 0:
+                print(f"      📥 已下载 {self.stats['media_downloaded']} 个媒体文件...")
+
+        # 检查是否是troubleshooting目录，如果是则返回相对于troubleshooting目录的路径
+        is_troubleshooting = "troubleshooting" in str(local_dir)
+        if is_troubleshooting:
+            return str(local_path.relative_to(local_dir))
+        else:
+            # 计算相对路径，如果local_dir不是storage_root的子目录，则使用local_dir作为基准
+            try:
+                return str(local_path.relative_to(Path(self.storage_root)))
+            except ValueError:
+                # 如果不在storage_root下，返回相对于local_dir的路径
+                return str(local_path.relative_to(local_dir))
 
     def _process_media_urls(self, data, local_dir):
         """递归处理数据中的媒体URL，下载并替换为本地路径"""
@@ -746,9 +913,27 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 if key in ['image', 'video', 'thumbnail', 'photo'] and isinstance(value, str) and value.startswith('http'):
                     data[key] = self._download_media_file(value, local_dir)
                 elif key == 'images' and isinstance(value, list):
-                    for i, img_url in enumerate(value):
-                        if isinstance(img_url, str) and img_url.startswith('http'):
-                            value[i] = self._download_media_file(img_url, local_dir)
+                    for i, img_item in enumerate(value):
+                        if isinstance(img_item, str) and img_item.startswith('http'):
+                            # 直接是URL字符串
+                            value[i] = self._download_media_file(img_item, local_dir)
+                        elif isinstance(img_item, dict) and 'url' in img_item:
+                            # 是包含url字段的字典
+                            img_url = img_item['url']
+                            if isinstance(img_url, str) and img_url.startswith('http'):
+                                img_item['url'] = self._download_media_file(img_url, local_dir)
+                elif key == 'videos' and isinstance(value, list):
+                    for i, video_item in enumerate(value):
+                        if isinstance(video_item, str) and video_item.startswith('http'):
+                            # 直接是URL字符串
+                            if self.download_videos:
+                                value[i] = self._download_media_file(video_item, local_dir)
+                        elif isinstance(video_item, dict) and 'url' in video_item:
+                            # 是包含url字段的字典
+                            video_url = video_item['url']
+                            if isinstance(video_url, str) and video_url.startswith('http'):
+                                if self.download_videos:
+                                    video_item['url'] = self._download_media_file(video_url, local_dir)
                 elif isinstance(value, (dict, list)):
                     self._process_media_urls(value, local_dir)
         elif isinstance(data, list):
@@ -1050,34 +1235,998 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         # 这些字段将在deep_crawl_product_content方法中添加
 
         return node
-        
+
+    def extract_what_you_need_enhanced(self, guide_url):
+        """
+        增强版"What You Need"部分提取方法，确保真实页面访问和数据完整性
+        """
+        if not guide_url:
+            return {}
+
+        print(f"    增强提取What You Need: {guide_url}")
+
+        try:
+            # 使用Playwright获取完整渲染的页面
+            from playwright.sync_api import sync_playwright
+
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+
+                # 设置请求头确保英文内容
+                page.set_extra_http_headers({
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                })
+
+                # 导航到页面并等待完全加载
+                page.goto(guide_url, wait_until='networkidle')
+                page.wait_for_timeout(5000)  # 增加等待时间确保完全加载
+
+                # 获取页面HTML
+                html_content = page.content()
+                browser.close()
+
+                # 解析HTML
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(html_content, 'html.parser')
+
+                # 尝试多种方法提取"What You Need"数据
+                what_you_need = {}
+
+                # 方法1：从React组件的data-props中提取（最准确）
+                what_you_need = self._extract_from_react_props_enhanced(soup)
+
+                # 方法2：如果React方法失败，尝试从页面的What You Need区域提取
+                if not what_you_need:
+                    what_you_need = self._extract_from_what_you_need_section(soup)
+
+                # 方法3：如果仍然失败，尝试从页面的产品链接提取
+                if not what_you_need:
+                    what_you_need = self._extract_from_product_links(soup)
+
+                # 方法4：最后尝试从页面文本中提取
+                if not what_you_need:
+                    what_you_need = self._extract_from_page_text(soup)
+
+                if what_you_need:
+                    print(f"    成功提取到: {list(what_you_need.keys())}")
+                    # 验证数据完整性
+                    total_items = sum(len(items) if isinstance(items, list) else 1
+                                    for items in what_you_need.values())
+                    print(f"    总计项目数: {total_items}")
+                else:
+                    print(f"    未找到What You Need数据")
+
+                return what_you_need
+
+        except Exception as e:
+            print(f"    增强提取失败: {str(e)}")
+            return {}
+
+    def _extract_from_react_props_enhanced(self, soup):
+        """从React组件的data-props中提取What you need数据（增强版）"""
+        what_you_need = {}
+
+        try:
+            # 查找多种可能的React组件
+            component_selectors = [
+                'div[data-name="GuideTopComponent"]',
+                'div[data-name="GuideComponent"]',
+                'div[data-name="WhatYouNeedComponent"]',
+                'div[data-props*="tools"]',
+                'div[data-props*="parts"]',
+                'div[data-props*="kits"]',
+                'div[data-props*="materials"]'
+            ]
+
+            for selector in component_selectors:
+                component = soup.select_one(selector)
+                if component:
+                    data_props = component.get('data-props')
+                    if data_props:
+                        try:
+                            import json
+                            import html
+
+                            # HTML解码并解析JSON
+                            decoded_props = html.unescape(data_props)
+                            props_data = json.loads(decoded_props)
+
+                            # 提取productData
+                            product_data = props_data.get('productData', {})
+
+                            # 提取Fix Kits/Parts
+                            kits = product_data.get('kits', [])
+                            if kits:
+                                fix_kits = []
+                                parts = []
+                                materials = []
+                                for kit in kits:
+                                    name = kit.get('name', '').strip()
+                                    if name:
+                                        name = self.clean_product_name(name)
+                                        if name:
+                                            if 'kit' in name.lower() or 'fix kit' in name.lower():
+                                                fix_kits.append(name)
+                                            elif 'material' in name.lower():
+                                                materials.append(name)
+                                            else:
+                                                parts.append(name)
+
+                                if fix_kits:
+                                    what_you_need['Fix Kits'] = fix_kits
+                                if parts:
+                                    what_you_need['Parts'] = parts
+                                if materials:
+                                    what_you_need['Materials'] = materials
+
+                            # 提取Tools
+                            tools = product_data.get('tools', [])
+                            if tools:
+                                tool_names = []
+                                for tool in tools:
+                                    name = tool.get('name', '').strip()
+                                    if name:
+                                        name = self.clean_product_name(name)
+                                        if name:
+                                            tool_names.append(name)
+
+                                if tool_names:
+                                    what_you_need['Tools'] = tool_names
+
+                            # 提取其他可能的类别
+                            for category_key in ['supplies', 'components', 'accessories']:
+                                category_items = product_data.get(category_key, [])
+                                if category_items:
+                                    category_names = []
+                                    for item in category_items:
+                                        name = item.get('name', '').strip()
+                                        if name:
+                                            name = self.clean_product_name(name)
+                                            if name:
+                                                category_names.append(name)
+
+                                    if category_names:
+                                        category_title = category_key.title()
+                                        what_you_need[category_title] = category_names
+
+                            if what_you_need:
+                                break
+
+                        except Exception as e:
+                            continue
+
+            return what_you_need
+
+        except Exception as e:
+            return what_you_need
+
+    def _extract_from_what_you_need_section(self, soup):
+        """从页面的What You Need专门区域提取数据"""
+        what_you_need = {}
+
+        try:
+            # 查找What You Need标题
+            what_you_need_headers = soup.find_all(string=lambda text: text and
+                'what you need' in text.lower())
+
+            for header in what_you_need_headers:
+                parent = header.parent
+                if parent:
+                    # 查找父级容器
+                    container = parent.find_parent(['div', 'section'])
+                    if container:
+                        # 查找工具和零件列表
+                        lists = container.find_all(['ul', 'ol'])
+                        for list_elem in lists:
+                            items = list_elem.find_all('li')
+                            if items:
+                                category_items = []
+                                for item in items:
+                                    text = item.get_text().strip()
+                                    if text and len(text) > 2:
+                                        cleaned_text = self.clean_product_name(text)
+                                        if cleaned_text:
+                                            category_items.append(cleaned_text)
+
+                                if category_items:
+                                    # 根据上下文判断类别
+                                    context = container.get_text().lower()
+                                    if 'tool' in context:
+                                        what_you_need['Tools'] = category_items
+                                    elif 'part' in context:
+                                        what_you_need['Parts'] = category_items
+                                    elif 'kit' in context:
+                                        what_you_need['Fix Kits'] = category_items
+                                    else:
+                                        what_you_need['Items'] = category_items
+                                    break
+
+                        if what_you_need:
+                            break
+
+            return what_you_need
+
+        except Exception:
+            return what_you_need
+
+    def _extract_from_product_links(self, soup):
+        """从页面的产品链接中提取What You Need数据"""
+        what_you_need = {}
+
+        try:
+            # 查找产品链接
+            product_links = soup.find_all('a', href=lambda x: x and
+                any(domain in x for domain in ['ifixit.com/products', 'ifixit.com/store']))
+
+            tools = []
+            parts = []
+            fix_kits = []
+
+            for link in product_links:
+                text = link.get_text().strip()
+                if text and len(text) > 2:
+                    cleaned_text = self.clean_product_name(text)
+                    if cleaned_text:
+                        text_lower = cleaned_text.lower()
+                        if any(tool_word in text_lower for tool_word in
+                               ['screwdriver', 'spudger', 'pick', 'driver', 'tool']):
+                            tools.append(cleaned_text)
+                        elif any(kit_word in text_lower for kit_word in
+                                ['kit', 'set']):
+                            fix_kits.append(cleaned_text)
+                        else:
+                            parts.append(cleaned_text)
+
+            if tools:
+                what_you_need['Tools'] = list(dict.fromkeys(tools))  # 去重
+            if parts:
+                what_you_need['Parts'] = list(dict.fromkeys(parts))
+            if fix_kits:
+                what_you_need['Fix Kits'] = list(dict.fromkeys(fix_kits))
+
+            return what_you_need
+
+        except Exception:
+            return what_you_need
+
+    def _extract_from_html_structure(self, soup):
+        """从HTML结构中直接提取What You Need数据"""
+        what_you_need = {}
+
+        try:
+            # 查找"What You Need"标题
+            what_you_need_headers = soup.find_all(string=lambda text: text and
+                any(phrase in text.lower() for phrase in ['what you need', 'tools', 'parts', 'materials']))
+
+            for header in what_you_need_headers:
+                parent = header.parent
+                if parent:
+                    # 查找后续的列表或内容
+                    next_elements = parent.find_next_siblings(['ul', 'ol', 'div', 'section'])
+                    for elem in next_elements:
+                        # 提取列表项
+                        items = elem.find_all(['li', 'a'])
+                        if items:
+                            category_items = []
+                            for item in items:
+                                text = item.get_text().strip()
+                                if text and len(text) > 2:
+                                    text = self.clean_product_name(text)
+                                    if text:
+                                        category_items.append(text)
+
+                            if category_items:
+                                # 根据内容判断类别
+                                header_text = header.lower()
+                                if 'tool' in header_text:
+                                    what_you_need['Tools'] = category_items
+                                elif 'part' in header_text:
+                                    what_you_need['Parts'] = category_items
+                                elif 'kit' in header_text:
+                                    what_you_need['Fix Kits'] = category_items
+                                else:
+                                    what_you_need['Items'] = category_items
+                                break
+
+            return what_you_need
+
+        except Exception:
+            return what_you_need
+
+    def _extract_from_page_text(self, soup):
+        """从页面文本中提取What You Need数据"""
+        what_you_need = {}
+
+        try:
+            # 查找包含工具和零件信息的文本
+            text_content = soup.get_text()
+            lines = text_content.split('\n')
+
+            current_category = None
+            items = []
+
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+
+                # 检查是否是类别标题
+                line_lower = line.lower()
+                if any(keyword in line_lower for keyword in ['tools:', 'parts:', 'materials:', 'what you need:']):
+                    if current_category and items:
+                        what_you_need[current_category] = items
+
+                    if 'tool' in line_lower:
+                        current_category = 'Tools'
+                    elif 'part' in line_lower:
+                        current_category = 'Parts'
+                    elif 'material' in line_lower:
+                        current_category = 'Materials'
+                    else:
+                        current_category = 'Items'
+
+                    items = []
+
+                # 检查是否是项目
+                elif current_category and len(line) > 2 and len(line) < 100:
+                    cleaned_item = self.clean_product_name(line)
+                    if cleaned_item:
+                        items.append(cleaned_item)
+
+            # 添加最后一个类别
+            if current_category and items:
+                what_you_need[current_category] = items
+
+            return what_you_need
+
+        except Exception:
+            return what_you_need
+
+    def _extract_troubleshooting_images_from_section(self, section):
+        """从troubleshooting section中提取图片，使用enhanced_crawler的过滤逻辑并下载到本地"""
+        images = []
+        seen_urls = set()
+
+        try:
+            if not section:
+                if self.verbose:
+                    print("❌ Section为空")
+                return images
+
+            # 查找该section内的所有图片
+            img_elements = section.find_all('img')
+            if self.verbose:
+                print(f"📷 找到 {len(img_elements)} 个图片元素")
+
+            for img in img_elements:
+                try:
+                    # 检查是否在商业推广区域内
+                    if self._is_element_in_promotional_area(img):
+                        if self.verbose:
+                            print(f"⏭️ 跳过推广区域图片")
+                        continue
+
+                    # 额外检查：检查图片的alt文本是否包含推荐内容特征
+                    alt_text = img.get('alt', '').strip().lower()
+                    if self._is_recommendation_image_alt(alt_text):
+                        if self.verbose:
+                            print(f"⏭️ 跳过推荐内容图片: {alt_text}")
+                        continue
+
+                    img_src = img.get('src') or img.get('data-src')
+                    if img_src and isinstance(img_src, str):
+                        # 构建完整URL
+                        if img_src.startswith("//"):
+                            img_src = "https:" + img_src
+                        elif img_src.startswith("/"):
+                            img_src = self.base_url + img_src
+
+                        # 使用enhanced_crawler的过滤逻辑
+                        if self._is_valid_troubleshooting_image_enhanced(img_src, img):
+                            # 确保使用medium尺寸
+                            if 'guide-images.cdn.ifixit.com' in img_src and not img_src.endswith('.medium'):
+                                # 移除现有的尺寸后缀并添加.medium
+                                if '.standard' in img_src or '.large' in img_src or '.small' in img_src:
+                                    img_src = img_src.replace('.standard', '.medium').replace('.large', '.medium').replace('.small', '.medium')
+                                elif not any(suffix in img_src for suffix in ['.medium', '.jpg', '.png', '.gif']):
+                                    img_src += '.medium'
+
+                            # 去重并添加
+                            if img_src not in seen_urls:
+                                seen_urls.add(img_src)
+
+                                # 获取图片描述（使用原始alt文本，不是小写版本）
+                                alt_text = img.get('alt', '').strip()
+                                title_text = img.get('title', '').strip()
+                                description = alt_text or title_text or "Block Image"
+
+                                # 检查描述是否是商业内容
+                                if not self._is_commercial_text(description):
+                                    # 在troubleshooting提取阶段，先保存原始URL
+                                    # 图片下载将在保存阶段进行，确保下载到正确的目录
+                                    images.append({
+                                        "url": img_src,  # 保存原始URL，稍后在保存时下载
+                                        "description": description
+                                    })
+
+                                    if self.verbose:
+                                        print(f"✅ 添加图片: {description}")
+                                else:
+                                    if self.verbose:
+                                        print(f"⏭️ 跳过商业描述: {description}")
+                            else:
+                                if self.verbose:
+                                    print(f"⏭️ 跳过重复URL: {img_src}")
+                        else:
+                            if self.verbose:
+                                print(f"⏭️ 跳过无效URL: {img_src}")
+                    else:
+                        if self.verbose:
+                            print(f"⏭️ 跳过无效src")
+                except Exception as e:
+                    if self.verbose:
+                        print(f"❌ 处理图片时出错: {e}")
+                    continue
+
+            if self.verbose:
+                print(f"📷 最终提取到 {len(images)} 个图片")
+            return images
+
+        except Exception as e:
+            if self.verbose:
+                print(f"❌ 提取图片时出错: {e}")
+            return images
+
+    def _remove_promotional_content_from_section(self, section):
+        """移除section中的推广内容"""
+        try:
+            # 移除推广相关的元素
+            promotional_selectors = [
+                '.promo', '.promotion', '.ad', '.advertisement',
+                '.product-card', '.shop-card', '.buy-now',
+                '[class*="promo"]', '[class*="shop"]', '[class*="buy"]'
+            ]
+
+            for selector in promotional_selectors:
+                elements = section.select(selector)
+                for elem in elements:
+                    elem.decompose()
+
+        except Exception:
+            pass
+
+    def _is_valid_troubleshooting_image_enhanced(self, img_src, img_elem=None):
+        """判断是否是有效的troubleshooting图片 - 使用enhanced_crawler的逻辑"""
+        try:
+            if not img_src:
+                return False
+
+            img_src_lower = img_src.lower()
+
+            # 过滤掉小图标、logo和商业图片
+            skip_keywords = [
+                'icon', 'logo', 'flag', 'avatar', 'ad', 'banner',
+                'promo', 'cart', 'buy', 'purchase', 'shop', 'header',
+                'footer', 'nav', 'menu', 'sidebar'
+            ]
+            if any(keyword in img_src_lower for keyword in skip_keywords):
+                return False
+
+            # 如果有img_elem，检查alt属性
+            if img_elem:
+                alt_text = img_elem.get('alt', '').lower()
+                title_text = img_elem.get('title', '').lower()
+
+                # 排除商业描述
+                commercial_keywords = [
+                    'buy', 'purchase', 'cart', 'shop', 'price', 'review',
+                    'advertisement', 'sponsor'
+                ]
+                if any(keyword in alt_text or keyword in title_text for keyword in commercial_keywords):
+                    return False
+
+                # 过滤装饰性图片
+                decorative_alt_keywords = [
+                    'decoration', 'ornament', 'divider', 'spacer',
+                    'bullet', 'arrow', 'pointer', 'separator'
+                ]
+                if any(keyword in alt_text for keyword in decorative_alt_keywords):
+                    return False
+
+            return True
+
+        except Exception:
+            return False
+
+
+
+    def _is_valid_troubleshooting_image(self, img_src, img_elem=None):
+        """判断是否是有效的troubleshooting图片 - 简化版本，只保留guide-images.cdn.ifixit.com的图片"""
+        try:
+            if not img_src:
+                return False
+
+            img_src_lower = img_src.lower()
+
+            # 只允许来自guide-images.cdn.ifixit.com的图片
+            if 'guide-images.cdn.ifixit.com' not in img_src_lower:
+                return False
+
+            # 过滤掉明显的装饰性图片和图标
+            skip_keywords = [
+                'icon', 'logo', 'avatar', 'badge', 'star', 'rating',
+                'promo', 'ad', 'banner', 'shop', 'buy', 'cart'
+            ]
+            if any(keyword in img_src_lower for keyword in skip_keywords):
+                return False
+
+            # 如果有img_elem，检查alt属性
+            if img_elem:
+                alt_text = img_elem.get('alt', '').lower()
+                if alt_text:
+                    decorative_alt_keywords = [
+                        'decoration', 'ornament', 'divider', 'spacer',
+                        'bullet', 'arrow', 'pointer', 'separator'
+                    ]
+                    if any(keyword in alt_text for keyword in decorative_alt_keywords):
+                        return False
+
+            return True
+
+        except Exception:
+            return False
+
+        except Exception:
+            return False
+
+    def _is_element_in_promotional_area(self, element):
+        """检查元素是否在推广区域内 - 改进版本，更精确地识别推广容器"""
+        try:
+            # 向上遍历DOM树检查是否在推广容器中
+            current = element
+            level = 0
+            while current and current.name and level < 5:  # 限制遍历层数
+                # 优先通过class名称识别推广容器
+                classes = current.get('class', [])
+                if isinstance(classes, list):
+                    class_str = ' '.join(classes).lower()
+                else:
+                    class_str = str(classes).lower()
+
+                # 明确的推广容器class名称
+                promo_class_keywords = [
+                    'guide-recommendation', 'guide-promo', 'view-guide',
+                    'product-box', 'product-purchase', 'buy-box', 'purchase-box',
+                    'product-card', 'shop-card', 'buy-now',
+                    'parts-finder', 'find-parts'
+                ]
+
+                # 如果有明确的推广class，直接返回True
+                if any(keyword in class_str for keyword in promo_class_keywords):
+                    return True
+
+                # 对于没有明确class的元素，使用更严格的文本检测
+                # 只有当元素相对较小且明确包含推广内容时才认为是推广容器
+                if (level <= 2 and  # 只检查前3层
+                    self._is_specific_promotional_container(current)):
+                    return True
+
+                current = current.parent
+                level += 1
+            return False
+        except Exception:
+            return False
+
+    def _is_specific_promotional_container(self, element):
+        """检查是否是特定的推广容器（更严格的检测）"""
+        try:
+            text = element.get_text().lower()
+
+            # 文本太长的不太可能是推广容器
+            if len(text) > 300:
+                return False
+
+            # 检查是否包含"View Guide"按钮
+            has_view_guide = 'view guide' in text
+
+            # 检查时间格式模式
+            import re
+            time_pattern = r'\d+\s*(minute|hour)s?(\s*-\s*\d+\s*(minute|hour)s?)?'
+            has_time_pattern = bool(re.search(time_pattern, text))
+
+            # 检查难度等级
+            difficulty_levels = ['very easy', 'easy', 'moderate', 'difficult', 'very difficult']
+            has_difficulty = any(level in text for level in difficulty_levels)
+
+            # 检查指南相关特征
+            guide_features = ['how to', 'guide', 'tutorial', 'install', 'replace', 'repair', 'fix']
+            has_guide_features = any(feature in text for feature in guide_features)
+
+            # 检查购买相关特征
+            purchase_features = ['buy', 'purchase', '$', '€', '£', '¥', 'add to cart', 'shop']
+            has_purchase = any(feature in text for feature in purchase_features)
+
+            # 推广容器的判断条件：
+            # 1. 包含购买相关内容 OR
+            # 2. 包含"View Guide"按钮 OR
+            # 3. 同时包含时间模式和难度等级 OR
+            # 4. 同时包含时间模式和指南特征
+            return (
+                has_purchase or
+                has_view_guide or
+                (has_time_pattern and has_difficulty) or
+                (has_time_pattern and has_guide_features)
+            )
+        except Exception:
+            return False
+
+    def _is_recommendation_image_alt(self, alt_text):
+        """检查图片的alt文本是否包含推荐内容特征"""
+        try:
+            if not alt_text:
+                return False
+
+            alt_text_lower = alt_text.lower()
+
+            # 精确的推荐指南标题模式 - 更全面的模式匹配
+            guide_title_patterns = [
+                # 特定模式
+                r'how to boot.*into safe mode',
+                r'how to use internet recovery',
+                r'how to recover data from',
+                r'how to install.*to.*ssd',
+                r'how to replace.*battery',
+                r'how to repair.*screen',
+                r'how to fix.*display',
+                r'how to troubleshoot',
+                r'how to run.*with disk utility',
+                r'how to start up.*in.*recovery mode',
+                r'how to create a bootable',
+                # 通用模式
+                r'how to .*removal',
+                r'how to .*replace',
+                r'how to .*install',
+                r'how to .*repair',
+                r'how to .*upgrade',
+                r'how to .*fix',
+                r'replacement.*guide',
+                r'repair.*guide',
+                r'installation.*guide',
+                r'removal.*guide',
+                # 特定设备模式
+                r'macbook pro.*unibody.*removal',
+                r'macbook pro.*key.*removal',
+                r'macbook air.*display',
+                r'macbook.*retina.*replacement'
+            ]
+
+            # 检查精确的推荐指南标题模式
+            import re
+            for pattern in guide_title_patterns:
+                if re.search(pattern, alt_text_lower):
+                    return True
+
+            # 检查是否包含指南推荐的关键特征
+            recommendation_keywords = [
+                'how to use', 'how to install', 'how to replace', 'how to repair',
+                'guide', 'tutorial', 'installation', 'replacement', 'repair guide'
+            ]
+
+            # 检查是否包含推荐相关的词汇
+            has_recommendation_keywords = any(keyword in alt_text_lower for keyword in recommendation_keywords)
+
+            # 检查是否包含设备/产品名称（通常推荐内容会包含具体的设备名）
+            device_keywords = ['macbook', 'iphone', 'ipad', 'ssd', 'battery', 'screen', 'display']
+            has_device_keywords = any(keyword in alt_text_lower for keyword in device_keywords)
+
+            # 如果同时包含推荐关键词和设备关键词，很可能是推荐内容
+            return has_recommendation_keywords and has_device_keywords
+
+        except Exception:
+            return False
+
+    def _is_guide_recommendation_container(self, element):
+        """检查是否是指南推荐容器 - 改进版本，更精确地识别推荐框"""
+        try:
+            # 只检查当前元素的直接文本内容，不包括深层子元素
+            # 这样可以避免整个文档被误判为推广容器
+            if element.name in ['html', '[document]', 'body']:
+                return False
+
+            # 检查class属性，优先通过class识别
+            classes = element.get('class', [])
+            if isinstance(classes, list):
+                class_str = ' '.join(classes).lower()
+            else:
+                class_str = str(classes).lower()
+
+            # 通过class名称快速识别
+            guide_class_keywords = [
+                'guide-recommendation', 'guide-promo', 'view-guide',
+                'recommendation', 'promo-guide', 'guide-card', 'related-guide'
+            ]
+            if any(keyword in class_str for keyword in guide_class_keywords):
+                return True
+
+            text = element.get_text().lower()
+
+            # 如果文本太长，很可能不是推荐框（除非有明确的class标识）
+            if len(text) > 500:
+                return False
+
+            # 检查是否包含"View Guide"按钮文本
+            has_view_guide = 'view guide' in text
+
+            # 检查时间格式模式 (如 "30 minutes - 1 hour", "5 minutes", "2 hours")
+            import re
+            time_pattern = r'\d+\s*(minute|hour)s?(\s*-\s*\d+\s*(minute|hour)s?)?'
+            has_time_pattern = bool(re.search(time_pattern, text))
+
+            # 检查难度等级
+            difficulty_levels = ['very easy', 'easy', 'moderate', 'difficult', 'very difficult']
+            has_difficulty = any(level in text for level in difficulty_levels)
+
+            # 检查是否包含指南相关的关键词
+            guide_keywords = ['how to', 'guide', 'tutorial', 'install', 'replace', 'repair', 'fix']
+            has_guide_keywords = any(keyword in text for keyword in guide_keywords)
+
+            # 推荐框的特征：
+            # 1. 包含"View Guide"按钮 OR
+            # 2. 同时包含时间信息和难度等级 OR
+            # 3. 同时包含时间模式和指南关键词
+            is_recommendation = (
+                has_view_guide or
+                (has_time_pattern and has_difficulty) or
+                (has_time_pattern and has_guide_keywords)
+            )
+
+            # 文本长度限制：推荐框通常比较简洁
+            return is_recommendation and len(text) < 400
+
+        except Exception:
+            return False
+
+    def _is_product_purchase_container(self, element):
+        """检查是否是产品购买容器 - 从enhanced_crawler移植，改进版本"""
+        try:
+            # 跳过文档级别的元素
+            if element.name in ['html', '[document]', 'body']:
+                return False
+
+            # 检查class属性，优先通过class识别
+            classes = element.get('class', [])
+            if isinstance(classes, list):
+                class_str = ' '.join(classes).lower()
+            else:
+                class_str = str(classes).lower()
+
+            # 通过class名称快速识别
+            product_class_keywords = [
+                'product-box', 'product-purchase', 'buy-box', 'purchase-box',
+                'product-card', 'shop-card', 'buy-now'
+            ]
+            if any(keyword in class_str for keyword in product_class_keywords):
+                return True
+
+            text = element.get_text().lower()
+
+            # 如果文本太长，很可能不是购买框
+            if len(text) > 400:
+                return False
+
+            import re
+            has_price = bool(re.search(r'[\$€£¥]\s*\d+\.?\d*', text))
+            has_buy = 'buy' in text
+            has_reviews = bool(re.search(r'\d+\.?\d*\s*(reviews?|stars?)', text))
+            # 购买框通常包含价格、购买按钮或评价信息
+            return (has_price or has_buy or has_reviews) and len(text) < 200
+        except Exception:
+            return False
+
+    def _is_parts_finder_container(self, element):
+        """检查是否是配件查找容器 - 从enhanced_crawler移植，改进版本"""
+        try:
+            # 跳过文档级别的元素
+            if element.name in ['html', '[document]', 'body']:
+                return False
+
+            text = element.get_text().lower()
+
+            # 如果文本太长，很可能不是配件查找框
+            if len(text) > 500:
+                return False
+
+            has_parts_text = any(keyword in text for keyword in [
+                'find your parts', 'select my model', 'compatible replacement'
+            ])
+            return has_parts_text and len(text) < 300
+        except Exception:
+            return False
+
+    def _is_commercial_text(self, text):
+        """检查文本是否是商业内容 - 从enhanced_crawler移植"""
+        try:
+            text_lower = text.lower()
+            # 商业内容关键词
+            commercial_keywords = [
+                'buy', 'purchase', 'view guide', 'find your parts', 'select my model',
+                'add to cart', 'quality guarantee', 'compatible replacement'
+            ]
+
+            # 检查价格模式
+            import re
+            if re.search(r'[\$€£¥]\s*\d+\.?\d*', text):
+                return True
+
+            # 检查评分模式
+            if re.search(r'\d+\.?\d*\s*(reviews?|stars?)', text_lower):
+                return True
+
+            # 检查商业关键词
+            keyword_count = sum(1 for keyword in commercial_keywords if keyword in text_lower)
+            return keyword_count >= 1
+
+        except Exception:
+            return False
+
+    def _is_image_in_commercial_area(self, img_elem):
+        """检查图片是否在商业区域内"""
+        try:
+            # 向上查找父元素，检查是否在商业相关的容器中
+            current = img_elem
+            for _ in range(5):  # 最多向上查找5层
+                if not current or not hasattr(current, 'parent'):
+                    break
+
+                current = current.parent
+                if not current:
+                    break
+
+                # 检查class属性
+                class_attr = current.get('class', [])
+                if isinstance(class_attr, list):
+                    class_str = ' '.join(class_attr).lower()
+                else:
+                    class_str = str(class_attr).lower()
+
+                # 商业区域的class关键词
+                commercial_keywords = [
+                    'shop', 'store', 'buy', 'purchase', 'cart', 'checkout',
+                    'product', 'price', 'sale', 'offer', 'deal', 'promo',
+                    'advertisement', 'ad-', 'banner', 'sponsor'
+                ]
+
+                if any(keyword in class_str for keyword in commercial_keywords):
+                    return True
+
+                # 检查id属性
+                id_attr = current.get('id', '')
+                if id_attr and any(keyword in id_attr.lower() for keyword in commercial_keywords):
+                    return True
+
+            return False
+        except Exception:
+            return False
+
+    def _is_valid_guide_image(self, img_src, img_elem=None):
+        """判断是否是有效的guide图片 - 简化版本，只保留guide-images.cdn.ifixit.com的图片"""
+        try:
+            if not img_src:
+                return False
+
+            img_src_lower = img_src.lower()
+
+            # 只允许来自guide-images.cdn.ifixit.com的图片
+            if 'guide-images.cdn.ifixit.com' not in img_src_lower:
+                return False
+
+            # 过滤掉明显的装饰性图片
+            skip_keywords = ['icon', 'logo', 'avatar', 'badge', 'star', 'rating']
+            if any(keyword in img_src_lower for keyword in skip_keywords):
+                return False
+
+            return True
+
+        except Exception:
+            return False
+
+    def extract_guide_content(self, guide_url):
+        """重写父类方法，使用简化的图片过滤逻辑"""
+        # 调用父类方法获取基本内容
+        guide_data = super().extract_guide_content(guide_url)
+
+        if not guide_data:
+            return None
+
+        # 简化图片处理：只确保使用正确的URL格式，不重新提取
+        if 'steps' in guide_data and guide_data['steps']:
+            for step in guide_data['steps']:
+                if 'images' in step and step['images']:
+                    filtered_images = []
+                    seen_urls = set()
+
+                    for img_src in step['images']:
+                        if isinstance(img_src, str) and img_src:
+                            # 确保使用完整URL
+                            if img_src.startswith("//"):
+                                img_src = "https:" + img_src
+                            elif img_src.startswith("/"):
+                                img_src = self.base_url + img_src
+
+                            # 简单过滤：只保留guide-images.cdn.ifixit.com的图片
+                            if self._is_valid_guide_image(img_src):
+                                # 确保使用medium尺寸
+                                if 'guide-images.cdn.ifixit.com' in img_src and not img_src.endswith('.medium'):
+                                    # 移除现有的尺寸后缀并添加.medium
+                                    if '.standard' in img_src or '.large' in img_src or '.small' in img_src:
+                                        img_src = img_src.replace('.standard', '.medium').replace('.large', '.medium').replace('.small', '.medium')
+                                    elif not any(suffix in img_src for suffix in ['.medium', '.jpg', '.png', '.gif']):
+                                        img_src += '.medium'
+
+                                # 去重
+                                if img_src not in seen_urls:
+                                    seen_urls.add(img_src)
+                                    filtered_images.append(img_src)
+
+                    step['images'] = filtered_images
+
+        return guide_data
+
+    def clean_product_name(self, text):
+        """清理产品名称，移除价格、评分等无关信息"""
+        if not text:
+            return ""
+
+        # 移除价格信息
+        text = re.sub(r'\$[\d.,]+.*$', '', text).strip()
+        # 移除评分信息
+        text = re.sub(r'[\d.]+\s*out of.*$', '', text).strip()
+        text = re.sub(r'Sale price.*$', '', text).strip()
+        text = re.sub(r'Rated [\d.]+.*$', '', text).strip()
+        # 移除常见的无关词汇
+        unwanted_words = ['View', 'view', '查看', 'Add to cart', '添加到购物车', 'Buy', 'Sale', 'Available']
+        for word in unwanted_words:
+            if text.strip() == word:
+                return ""
+
+        # 移除描述性文本
+        text = re.sub(r'This kit contains.*$', '', text).strip()
+        text = re.sub(r'Available for sale.*$', '', text).strip()
+
+        return text.strip()
+
     def crawl_combined_tree(self, start_url, category_name=None):
         """
         整合爬取：构建树形结构并为每个节点提取详细内容
         """
-        print(f"开始整合爬取: {start_url}")
+        print(f"🚀 开始整合爬取: {start_url}")
         print("=" * 60)
 
         # 设置目标URL
         self.target_url = start_url
 
         # 第一步：使用 tree_crawler 逻辑构建基础树结构
-        print("1. 构建基础树形结构...")
+        print("📊 阶段 1/3: 构建基础树形结构...")
+        print("   正在分析页面结构和分类层次...")
         base_tree = self.tree_crawler.crawl_tree(start_url, category_name)
 
         if not base_tree:
-            print("无法构建基础树结构")
+            print("❌ 无法构建基础树结构")
             return None
 
-        print(f"基础树结构构建完成，开始提取详细内容...")
+        print(f"✅ 基础树结构构建完成")
         print("=" * 60)
 
         # 第二步：为树中的每个节点提取详细内容
-        print("2. 为每个节点提取详细内容...")
+        print("📝 阶段 2/3: 为每个节点提取详细内容...")
+        print("   正在处理节点基本信息和元数据...")
         enriched_tree = self.enrich_tree_with_detailed_content(base_tree)
 
         # 第三步：对于产品页面，深入爬取其指南和故障排除内容
-        print("3. 深入爬取产品页面的子内容...")
+        print("🔍 阶段 3/3: 深入爬取产品页面的子内容...")
+        print("   正在提取指南和故障排除详细信息...")
         final_tree = self.deep_crawl_product_content(enriched_tree)
 
         return final_tree
@@ -1112,12 +2261,17 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if self.verbose:
             self.logger.info(f"处理节点: {node.get('name', '')} - {url}")
         else:
-            print(f"处理: {node.get('name', '')}")
+            print(f"   📄 处理节点: {node.get('name', '')}")
 
         # 递归处理子节点
         if 'children' in node and node['children']:
+            children_count = len(node['children'])
+            if children_count > 0:
+                print(f"   🌳 处理 {children_count} 个子节点...")
             enriched_children = []
-            for child in node['children']:
+            for i, child in enumerate(node['children'], 1):
+                if children_count > 1:
+                    print(f"      └─ [{i}/{children_count}] {child.get('name', 'Unknown')}")
                 enriched_child = self.enrich_tree_with_detailed_content(child)
                 if enriched_child:
                     enriched_children.append(enriched_child)
@@ -1139,8 +2293,9 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         # 添加troubleshooting任务
         if not skip_troubleshooting:
+            print(f"    🔧 正在搜索故障排除页面...")
             troubleshooting_links = self.extract_troubleshooting_from_device_page(soup, device_url)
-            print(f"  找到 {len(troubleshooting_links)} 个故障排除页面")
+            print(f"    🔧 找到 {len(troubleshooting_links)} 个故障排除页面")
 
             for ts_link in troubleshooting_links:
                 if isinstance(ts_link, dict):
@@ -1152,8 +2307,11 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         # 使用线程池并发处理
         if self.max_workers > 1 and len(tasks) > 1:
+            print(f"    🔄 启动并发处理 ({self.max_workers} 线程处理 {len(tasks)} 个任务)...")
             with ThreadPoolExecutor(max_workers=min(self.max_workers, len(tasks))) as executor:
                 future_to_task = {}
+                completed_count = 0
+                total_tasks = len(tasks)
 
                 for task_type, url in tasks:
                     if task_type == 'guide':
@@ -1165,31 +2323,41 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 # 收集结果
                 for future in as_completed(future_to_task):
                     task_type, url = future_to_task[future]
+                    completed_count += 1
                     try:
                         result = future.result()
                         if result:
                             if task_type == 'guide':
                                 guides_data.append(result)
-                                print(f"    ✓ 指南: {result.get('title', '')}")
+                                print(f"    ✅ [{completed_count}/{total_tasks}] 指南: {result.get('title', '')}")
                             else:
                                 troubleshooting_data.append(result)
-                                print(f"    ✓ 故障排除: {result.get('title', '')}")
+                                print(f"    ✅ [{completed_count}/{total_tasks}] 故障排除: {result.get('title', '')}")
+                        else:
+                            print(f"    ⚠️  [{completed_count}/{total_tasks}] {task_type} 处理失败")
                     except Exception as e:
+                        print(f"    ❌ [{completed_count}/{total_tasks}] {task_type} 任务失败: {str(e)[:50]}...")
                         self.logger.error(f"并发任务失败 {task_type} {url}: {e}")
         else:
             # 单线程处理
-            for task_type, url in tasks:
+            print(f"    🔄 顺序处理 {len(tasks)} 个任务...")
+            for i, (task_type, url) in enumerate(tasks, 1):
                 try:
+                    print(f"    ⏳ [{i}/{len(tasks)}] 正在处理 {task_type}...")
                     if task_type == 'guide':
                         result = self._process_guide_task(url)
                         if result:
                             guides_data.append(result)
-                            print(f"    ✓ 指南: {result.get('title', '')}")
+                            print(f"    ✅ [{i}/{len(tasks)}] 指南: {result.get('title', '')}")
+                        else:
+                            print(f"    ⚠️  [{i}/{len(tasks)}] 指南处理失败")
                     else:
                         result = self._process_troubleshooting_task(url)
                         if result:
                             troubleshooting_data.append(result)
-                            print(f"    ✓ 故障排除: {result.get('title', '')}")
+                            print(f"    ✅ [{i}/{len(tasks)}] 故障排除: {result.get('title', '')}")
+                        else:
+                            print(f"    ⚠️  [{i}/{len(tasks)}] 故障排除处理失败")
                 except Exception as e:
                     self.logger.error(f"任务失败 {task_type} {url}: {e}")
 
@@ -1201,6 +2369,15 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             guide_content = self.extract_guide_content(guide_url)
             if guide_content:
                 guide_content['url'] = guide_url
+
+                # 确保"What You Need"部分被正确提取
+                if 'what_you_need' not in guide_content or not guide_content['what_you_need']:
+                    print(f"  重新尝试提取What You Need部分: {guide_url}")
+                    what_you_need = self.extract_what_you_need_enhanced(guide_url)
+                    if what_you_need:
+                        guide_content['what_you_need'] = what_you_need
+                        print(f"  成功提取What You Need: {list(what_you_need.keys())}")
+
                 return guide_content
         except Exception as e:
             self.logger.error(f"处理guide失败 {guide_url}: {e}")
@@ -1416,7 +2593,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
     def extract_troubleshooting_content(self, troubleshooting_url):
         """
-        重写troubleshooting内容提取方法，修复causes提取问题
+        提取故障排除页面的详细内容 - 完全按照combined_crawler.py的逻辑
         """
         if not troubleshooting_url:
             return None
@@ -1449,77 +2626,136 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         try:
             # 提取标题
-            title_elem = soup.select_one("h1, h2[data-testid='troubleshooting-title']")
+            title_elem = soup.select_one("h1")
             if title_elem:
                 title_text = title_elem.get_text().strip()
                 title_text = re.sub(r'\s+', ' ', title_text)
                 troubleshooting_data["title"] = title_text
                 print(f"提取标题: {title_text}")
 
-            # 提取causes - 查找所有Section_开头的div
-            causes = []
-            section_divs = soup.find_all('div', id=re.compile(r'^Section_'))
+            # 动态提取页面上的真实字段内容（如first_steps等）
+            dynamic_sections = self.extract_dynamic_sections(soup)
+            troubleshooting_data.update(dynamic_sections)
 
-            for i, section_div in enumerate(section_divs, 1):
-                from bs4 import Tag
-                if not isinstance(section_div, Tag):
-                    continue
+            # 提取causes并为每个cause提取对应的图片和视频
+            troubleshooting_data["causes"] = self.extract_causes_sections_with_media(soup)
 
-                cause_data = {
-                    "number": str(i),
-                    "title": "",
-                    "content": ""
-                }
-
-                # 提取标题
-                title_elem = section_div.find('h2')
-                if title_elem:
-                    title_text = title_elem.get_text().strip()
-                    cause_data["title"] = title_text
-
-                # 提取内容 - 查找所有p元素
-                content_parts = []
-                p_elements = section_div.find_all('p')
-                for p in p_elements:
-                    p_text = p.get_text().strip()
-                    if self.is_commercial_text(p_text):
-                        continue
-
-                    if p_text and len(p_text) > 10:
-                        content_parts.append(p_text)
-
-                if content_parts:
-                    cause_data["content"] = '\n\n'.join(content_parts)
-
-                # 只添加有内容的cause
-                if cause_data["title"] or cause_data["content"]:
-                    causes.append(cause_data)
-                    print(f"  提取Cause {i}: {cause_data['title']}")
-
-            troubleshooting_data["causes"] = causes
+            # 验证是否为有效的故障排除页面
+            if not self._is_valid_troubleshooting_page(troubleshooting_data):
+                print(f"跳过通用或无效的故障排除页面: {troubleshooting_data.get('title', '')}")
+                return None
 
             # 提取统计数据
             statistics = self.extract_page_statistics(soup)
+
+            # 重构统计数据结构 - 将view_statistics移动到title下面
+            # 重新构建troubleshooting_data，确保字段顺序正确
+            ordered_ts_data = {}
+            ordered_ts_data["url"] = troubleshooting_data["url"]
+            ordered_ts_data["title"] = troubleshooting_data["title"]
+
+            # 将统计数据紧跟在title后面（如果有的话）
             if statistics:
-                # 创建view_statistics对象
+                # 创建view_statistics对象，只包含时间相关的统计
                 view_stats = {}
-                for key in ['past_24_hours', 'past_7_days', 'past_30_days', 'all_time']:
-                    if key in statistics:
-                        view_stats[key] = statistics[key]
+                if 'past_24_hours' in statistics:
+                    view_stats['past_24_hours'] = statistics['past_24_hours']
+                if 'past_7_days' in statistics:
+                    view_stats['past_7_days'] = statistics['past_7_days']
+                if 'past_30_days' in statistics:
+                    view_stats['past_30_days'] = statistics['past_30_days']
+                if 'all_time' in statistics:
+                    view_stats['all_time'] = statistics['all_time']
 
                 if view_stats:
-                    troubleshooting_data["view_statistics"] = view_stats
+                    ordered_ts_data["view_statistics"] = view_stats
+                if 'completed' in statistics:
+                    ordered_ts_data["completed"] = statistics['completed']
+                if 'favorites' in statistics:
+                    ordered_ts_data["favorites"] = statistics['favorites']
 
-                for key in ['completed', 'favorites']:
-                    if key in statistics:
-                        troubleshooting_data[key] = statistics[key]
+            # 添加动态提取的字段（按页面实际字段名称）
+            for key, value in troubleshooting_data.items():
+                if key not in ["url", "title", "causes", "images", "videos"] and value:
+                    ordered_ts_data[key] = value
 
-            print(f"  总计提取到 {len(causes)} 个causes")
+            # 添加其他字段
+            if "causes" in troubleshooting_data and troubleshooting_data["causes"]:
+                ordered_ts_data["causes"] = troubleshooting_data["causes"]
+
+            troubleshooting_data = ordered_ts_data
+
+            # 打印提取结果统计
+            dynamic_fields = [k for k in troubleshooting_data.keys()
+                            if k not in ['url', 'title', 'causes', 'view_statistics', 'completed', 'favorites']]
+
+            print(f"提取完成:")
+            for field in dynamic_fields:
+                content = troubleshooting_data.get(field, '')
+                if content:
+                    print(f"  {field}: {len(content)} 字符")
+
+            causes = troubleshooting_data.get('causes', [])
+            print(f"  Causes: {len(causes)} 个")
+
+            # 统计每个cause中的图片和视频数量
+            total_images = sum(len(cause.get('images', [])) for cause in causes)
+            total_videos = sum(len(cause.get('videos', [])) for cause in causes)
+            print(f"  Images (in causes): {total_images} 个")
+            print(f"  Videos (in causes): {total_videos} 个")
+
+            if statistics:
+                print(f"  Statistics: {len(statistics)} 项")
+
             return troubleshooting_data
 
         except Exception as e:
             print(f"提取故障排除内容时发生错误: {str(e)}")
             return None
+
+    def _is_valid_troubleshooting_page(self, troubleshooting_data):
+        """验证是否为有效的具体故障排除页面，而不是通用页面"""
+        if not troubleshooting_data:
+            return False
+
+        title = troubleshooting_data.get('title', '').lower()
+        causes = troubleshooting_data.get('causes', [])
+
+        # 检查是否为通用页面的标题
+        generic_keywords = [
+            'common problems', 'fix common', 'general troubleshooting',
+            'troubleshooting guide', 'basic troubleshooting', 'general issues',
+            'common issues', 'general problems'
+        ]
+
+        for keyword in generic_keywords:
+            if keyword in title:
+                print(f"检测到通用页面标题关键词: {keyword}")
+                return False
+
+        # 检查是否有具体的故障原因
+        if not causes or len(causes) == 0:
+            print("没有找到具体的故障原因")
+            return False
+
+        # 检查causes内容是否足够具体
+        if len(causes) < 2:  # 至少要有2个具体的故障原因
+            print(f"故障原因太少: {len(causes)} 个")
+            return False
+
+        # 检查causes是否有实际内容
+        valid_causes = 0
+        for cause in causes:
+            content = cause.get('content', '')
+            if content and len(content.strip()) > 50:  # 内容要足够详细
+                valid_causes += 1
+
+        if valid_causes < 2:
+            print(f"有效的故障原因太少: {valid_causes} 个")
+            return False
+
+        print(f"验证通过: {len(causes)} 个故障原因, {valid_causes} 个有效")
+        return True
 
     def deep_crawl_product_content(self, node, skip_troubleshooting=False):
         """深入爬取产品页面的指南和故障排除内容，并正确构建数据结构"""
@@ -1536,9 +2772,11 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         )
 
         if is_target_page:
-            print(f"深入爬取目标产品页面: {node.get('name', '')}")
+            print(f"🎯 深入爬取目标产品页面: {node.get('name', '')}")
+            print(f"   📍 URL: {url}")
 
             try:
+                print(f"   🌐 正在获取页面内容...")
                 soup = self.get_soup(url)
                 if soup:
                     # 基本数据修复
@@ -1560,11 +2798,13 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                         if real_stats:
                             node['view_statistics'] = real_stats
 
+                    print(f"   🔍 正在搜索指南和故障排除内容...")
                     guides = self.extract_guides_from_device_page(soup, url)
                     guide_links = [guide["url"] for guide in guides]
-                    print(f"  找到 {len(guide_links)} 个指南")
+                    print(f"   📖 找到 {len(guide_links)} 个指南")
 
                     # 使用并发处理guides和troubleshooting
+                    print(f"   ⚙️  开始处理详细内容...")
                     guides_data, troubleshooting_data = self._process_content_concurrently(
                         guide_links, url, skip_troubleshooting, soup
                     )
@@ -1607,29 +2847,284 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 print(f"  ✗ 深入爬取时出错: {str(e)}")
 
         elif 'children' in node and node['children']:
+            children_count = len(node['children'])
+            if children_count > 0:
+                print(f"🔄 递归处理 {children_count} 个子节点...")
             for i, child in enumerate(node['children']):
+                if children_count > 1:
+                    print(f"   └─ [{i+1}/{children_count}] 处理子节点: {child.get('name', 'Unknown')}")
                 node['children'][i] = self.deep_crawl_product_content(child, skip_troubleshooting)
 
         return node
         
+    def _check_target_completeness(self, target_name):
+        """检查目标产品目录是否已存在完整的文件结构"""
+        if not target_name:
+            return False, None
+
+        safe_name = target_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+        target_dir = Path(self.storage_root) / f"auto_{safe_name}"
+
+        if not target_dir.exists():
+            return False, target_dir
+
+        # 检查基本文件结构
+        info_file = target_dir / "info.json"
+        if not info_file.exists():
+            return False, target_dir
+
+        # 检查是否有guides或troubleshooting目录
+        guides_dir = target_dir / "guides"
+        troubleshooting_dir = target_dir / "troubleshooting"
+
+        has_content = False
+        if guides_dir.exists() and list(guides_dir.glob("*.json")):
+            has_content = True
+        if troubleshooting_dir.exists() and list(troubleshooting_dir.glob("*.json")):
+            has_content = True
+
+        return has_content, target_dir
+
+    def _get_target_root_dir(self, target_url):
+        """从目标URL获取真实的设备路径"""
+        if not target_url:
+            return None
+
+        # 从URL中提取Device后的路径
+        if '/Device/' in target_url:
+            # 提取Device后面的路径部分
+            device_path = target_url.split('/Device/')[-1]
+            # 移除查询参数
+            if '?' in device_path:
+                device_path = device_path.split('?')[0]
+            # 移除末尾的斜杠
+            device_path = device_path.rstrip('/')
+
+            if device_path:
+                # URL解码
+                import urllib.parse
+                device_path = urllib.parse.unquote(device_path)
+                # 构建完整路径：ifixit_data/Device/...
+                return Path(self.storage_root) / "Device" / device_path
+            else:
+                # 如果是根Device页面
+                return Path(self.storage_root) / "Device"
+
+        # 如果不是Device URL，使用原来的逻辑作为后备
+        safe_name = target_url.replace("/", "_").replace("\\", "_").replace(":", "_")
+        return Path(self.storage_root) / "Device" / safe_name
+
     def save_combined_result(self, tree_data, target_name=None):
-        """保存整合结果到本地文件夹结构"""
-        # 创建根目录
-        if target_name:
-            safe_name = target_name.replace("/", "_").replace("\\", "_").replace(":", "_")
-            root_dir = self._create_local_directory(f"auto_{safe_name}")
+        """保存整合结果到真实的设备路径结构"""
+        print("   📁 创建目录结构...")
+
+        # 使用目标URL来构建真实路径
+        target_url = getattr(self, 'target_url', None)
+        if target_url:
+            root_dir = self._get_target_root_dir(target_url)
+        elif target_name:
+            # 如果没有URL，尝试从target_name构建
+            if target_name.startswith('http'):
+                root_dir = self._get_target_root_dir(target_name)
+            else:
+                # 假设是设备名称，构建Device路径
+                safe_name = target_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+                root_dir = Path(self.storage_root) / "Device" / safe_name
         else:
-            root_name = tree_data.get("name", "auto")
+            # 从树数据中提取路径信息
+            root_name = tree_data.get("name", "Unknown")
             if " > " in root_name:
                 root_name = root_name.split(" > ")[-1]
-            root_name = root_name.replace("/", "_").replace("\\", "_").replace(":", "_")
-            root_dir = self._create_local_directory(f"auto_{root_name}")
+            safe_name = root_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+            root_dir = Path(self.storage_root) / "Device" / safe_name
 
-        # 处理媒体文件并保存数据结构
-        self._save_node_to_filesystem(tree_data, root_dir, "")
+        if root_dir:
+            root_dir.mkdir(parents=True, exist_ok=True)
+            print(f"   📂 目标路径: {root_dir}")
 
-        print(f"\n整合结果已保存到本地文件夹: {root_dir}")
+            # 保存整个树结构，而不是只保存根节点
+            print("   💾 保存内容和下载媒体文件...")
+            self._save_tree_structure(tree_data, root_dir)
+
+        print(f"\n📁 整合结果已保存到本地文件夹: {root_dir}")
         return str(root_dir)
+
+    def _save_tree_structure(self, tree_data, base_dir):
+        """保存整个树结构到真实的设备路径"""
+        if not tree_data or not isinstance(tree_data, dict):
+            return
+
+        # 如果是目标节点（有guides或troubleshooting），直接保存
+        if tree_data.get('guides') or tree_data.get('troubleshooting'):
+            self._save_node_content(tree_data, base_dir)
+
+        # 递归处理子节点
+        if 'children' in tree_data and tree_data['children']:
+            for child in tree_data['children']:
+                # 为子节点创建目录
+                child_name = child.get('name', 'Unknown')
+                safe_name = child_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+                child_dir = base_dir / safe_name
+
+                # 递归保存子节点
+                self._save_tree_structure(child, child_dir)
+
+    def _save_node_content(self, node_data, node_dir):
+        """保存单个节点的内容（guides和troubleshooting）"""
+        if not node_data or not isinstance(node_data, dict):
+            return
+
+        # 创建节点目录
+        node_dir.mkdir(parents=True, exist_ok=True)
+
+        # 保存节点基本信息
+        info_data = {k: v for k, v in node_data.items()
+                    if k not in ['children', 'guides', 'troubleshooting']}
+
+        if info_data:
+            info_file = node_dir / "info.json"
+            with open(info_file, 'w', encoding='utf-8') as f:
+                json.dump(info_data, f, ensure_ascii=False, indent=2)
+
+        # 处理guides
+        if 'guides' in node_data and node_data['guides']:
+            guides_dir = node_dir / "guides"
+            guides_dir.mkdir(exist_ok=True)
+            # 确保media文件夹存在
+            guides_media_dir = guides_dir / "media"
+            guides_media_dir.mkdir(exist_ok=True)
+
+            for i, guide in enumerate(node_data['guides']):
+                guide_data = guide.copy()
+                self._process_media_urls(guide_data, guides_dir)  # 使用guides目录的media文件夹
+                guide_file = guides_dir / f"guide_{i+1}.json"
+                with open(guide_file, 'w', encoding='utf-8') as f:
+                    json.dump(guide_data, f, ensure_ascii=False, indent=2)
+
+        # 处理troubleshooting
+        if 'troubleshooting' in node_data and node_data['troubleshooting']:
+            ts_dir = node_dir / "troubleshooting"
+            ts_dir.mkdir(exist_ok=True)
+            # 确保media文件夹存在
+            ts_media_dir = ts_dir / "media"
+            ts_media_dir.mkdir(exist_ok=True)
+
+            for i, ts in enumerate(node_data['troubleshooting']):
+                ts_data = ts.copy()
+                self._process_media_urls(ts_data, ts_dir)  # 使用troubleshooting目录的media文件夹
+                ts_file = ts_dir / f"troubleshooting_{i+1}.json"
+                with open(ts_file, 'w', encoding='utf-8') as f:
+                    json.dump(ts_data, f, ensure_ascii=False, indent=2)
+
+    def _save_target_content_to_root(self, tree_data, root_dir):
+        """将目标产品内容直接保存到根目录，优化目录结构"""
+        if not tree_data or not isinstance(tree_data, dict):
+            return
+
+        # 复制数据并处理媒体URL
+        node_data = tree_data.copy()
+        self._process_media_urls(node_data, root_dir)
+
+        # 保存主要信息到根目录的info.json
+        info_data = {k: v for k, v in node_data.items()
+                    if k not in ['children', 'guides', 'troubleshooting']}
+
+        info_file = root_dir / "info.json"
+        with open(info_file, 'w', encoding='utf-8') as f:
+            json.dump(info_data, f, ensure_ascii=False, indent=2)
+
+        # 处理guides - 直接保存到根目录的guides文件夹
+        if 'guides' in node_data and node_data['guides']:
+            guides_dir = root_dir / "guides"
+            guides_dir.mkdir(exist_ok=True)
+            # 确保media文件夹存在
+            guides_media_dir = guides_dir / "media"
+            guides_media_dir.mkdir(exist_ok=True)
+
+            for i, guide in enumerate(node_data['guides']):
+                guide_data = guide.copy()
+                self._process_media_urls(guide_data, guides_dir)  # 使用guides目录的media文件夹
+                guide_file = guides_dir / f"guide_{i+1}.json"
+                with open(guide_file, 'w', encoding='utf-8') as f:
+                    json.dump(guide_data, f, ensure_ascii=False, indent=2)
+
+        # 处理troubleshooting - 直接保存到根目录的troubleshooting文件夹
+        if 'troubleshooting' in node_data and node_data['troubleshooting']:
+            ts_dir = root_dir / "troubleshooting"
+            ts_dir.mkdir(exist_ok=True)
+            # 确保media文件夹存在
+            ts_media_dir = ts_dir / "media"
+            ts_media_dir.mkdir(exist_ok=True)
+
+            for i, ts in enumerate(node_data['troubleshooting']):
+                ts_data = ts.copy()
+                self._process_media_urls(ts_data, ts_dir)  # 使用troubleshooting目录的media文件夹
+                ts_file = ts_dir / f"troubleshooting_{i+1}.json"
+                with open(ts_file, 'w', encoding='utf-8') as f:
+                    json.dump(ts_data, f, ensure_ascii=False, indent=2)
+
+        # 处理子类别 - 保存到subcategories文件夹
+        if 'children' in node_data and node_data['children']:
+            subcategories_dir = root_dir / "subcategories"
+            subcategories_dir.mkdir(exist_ok=True)
+            for child in node_data['children']:
+                self._save_subcategory_to_filesystem(child, subcategories_dir)
+
+    def _save_subcategory_to_filesystem(self, node, subcategories_dir):
+        """保存子类别到subcategories目录"""
+        if not node or not isinstance(node, dict):
+            return
+
+        node_name = node.get('name', 'unknown')
+        safe_name = node_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+
+        # 创建子类别目录
+        subcat_dir = subcategories_dir / safe_name
+        subcat_dir.mkdir(parents=True, exist_ok=True)
+
+        # 复制节点数据并处理媒体URL
+        node_data = node.copy()
+        self._process_media_urls(node_data, subcat_dir)
+
+        # 保存子类别信息
+        info_file = subcat_dir / "info.json"
+        node_info = {k: v for k, v in node_data.items() if k not in ['children', 'guides', 'troubleshooting']}
+        with open(info_file, 'w', encoding='utf-8') as f:
+            json.dump(node_info, f, ensure_ascii=False, indent=2)
+
+        # 处理子类别的guides和troubleshooting
+        if 'guides' in node_data and node_data['guides']:
+            guides_dir = subcat_dir / "guides"
+            guides_dir.mkdir(exist_ok=True)
+            # 确保media文件夹存在
+            guides_media_dir = guides_dir / "media"
+            guides_media_dir.mkdir(exist_ok=True)
+
+            for i, guide in enumerate(node_data['guides']):
+                guide_data = guide.copy()
+                self._process_media_urls(guide_data, guides_dir)  # 使用guides目录的media文件夹
+                guide_file = guides_dir / f"guide_{i+1}.json"
+                with open(guide_file, 'w', encoding='utf-8') as f:
+                    json.dump(guide_data, f, ensure_ascii=False, indent=2)
+
+        if 'troubleshooting' in node_data and node_data['troubleshooting']:
+            ts_dir = subcat_dir / "troubleshooting"
+            ts_dir.mkdir(exist_ok=True)
+            # 确保media文件夹存在
+            ts_media_dir = ts_dir / "media"
+            ts_media_dir.mkdir(exist_ok=True)
+
+            for i, ts in enumerate(node_data['troubleshooting']):
+                ts_data = ts.copy()
+                self._process_media_urls(ts_data, ts_dir)  # 使用troubleshooting目录的media文件夹
+                ts_file = ts_dir / f"troubleshooting_{i+1}.json"
+                with open(ts_file, 'w', encoding='utf-8') as f:
+                    json.dump(ts_data, f, ensure_ascii=False, indent=2)
+
+        # 递归处理更深层的子类别
+        if 'children' in node_data and node_data['children']:
+            for child in node_data['children']:
+                self._save_subcategory_to_filesystem(child, subcat_dir)
 
     def _save_node_to_filesystem(self, node, base_dir, path_prefix):
         """递归保存节点到文件系统"""
@@ -1658,6 +3153,10 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if 'guides' in node_data and node_data['guides']:
             guides_dir = node_dir / "guides"
             guides_dir.mkdir(exist_ok=True)
+            # 确保media文件夹存在
+            guides_media_dir = guides_dir / "media"
+            guides_media_dir.mkdir(exist_ok=True)
+
             for i, guide in enumerate(node_data['guides']):
                 guide_data = guide.copy()
                 self._process_media_urls(guide_data, guides_dir)
@@ -1669,6 +3168,10 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if 'troubleshooting' in node_data and node_data['troubleshooting']:
             ts_dir = node_dir / "troubleshooting"
             ts_dir.mkdir(exist_ok=True)
+            # 确保media文件夹存在
+            ts_media_dir = ts_dir / "media"
+            ts_media_dir.mkdir(exist_ok=True)
+
             for i, ts in enumerate(node_data['troubleshooting']):
                 ts_data = ts.copy()
                 self._process_media_urls(ts_data, ts_dir)
@@ -1751,6 +3254,199 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if children_count > 0:
             for child in node['children']:
                 self.print_combined_tree_structure(child, level + 1)
+
+    def extract_dynamic_sections(self, soup):
+        """动态提取页面上的真实字段名称和内容，基于实际页面结构，确保字段分离和无重复"""
+        sections = {}
+        seen_content = set()  # 用于去重
+        processed_elements = set()  # 记录已处理的元素，避免重复处理
+
+        try:
+            # 查找主要内容区域，避免导航和页脚
+            main_content = soup.find('main') or soup.find('article') or soup.find('div', class_=lambda x: x and 'content' in str(x).lower())
+            if not main_content:
+                main_content = soup
+
+            # 首先通过ID和标题文本精确定位各个独立部分
+            section_mappings = [
+                ('introduction', ['#introduction']),
+                ('first_steps', ['#Section_First_Steps']),
+                ('triage', ['#Section_Triage'])
+            ]
+
+            for field_name, selectors in section_mappings:
+                found = False
+                for selector in selectors:
+                    section_element = main_content.select_one(selector)
+                    if section_element and id(section_element) not in processed_elements:
+                        content = self.extract_section_content_precisely(section_element, main_content, field_name)
+                        if content and content.strip():
+                            # 检查内容是否与已有内容重复
+                            if not self.is_content_duplicate(content, seen_content):
+                                sections[field_name] = content.strip()
+                                seen_content.add(content.strip())
+                                processed_elements.add(id(section_element))
+                                print(f"精确提取字段: {field_name} ({len(content)} 字符)")
+                                found = True
+                                break
+
+                # 如果通过ID没找到，尝试通过标题文本查找
+                if not found:
+                    target_texts = {
+                        'introduction': ['introduction'],
+                        'first_steps': ['first steps', 'before undertaking'],
+                        'triage': ['triage']
+                    }
+
+                    if field_name in target_texts:
+                        for heading in main_content.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+                            heading_text = heading.get_text().strip().lower()
+                            if any(target in heading_text for target in target_texts[field_name]):
+                                if id(heading) not in processed_elements:
+                                    content = self.extract_section_content_precisely(heading, main_content, field_name)
+                                    if content and content.strip():
+                                        if not self.is_content_duplicate(content, seen_content):
+                                            sections[field_name] = content.strip()
+                                            seen_content.add(content.strip())
+                                            processed_elements.add(id(heading))
+                                            print(f"通过标题提取字段: {field_name} ({len(content)} 字符)")
+                                            found = True
+                                            break
+
+        except Exception as e:
+            print(f"动态提取sections时发生错误: {str(e)}")
+
+        return sections
+
+    def extract_section_content_precisely(self, element, main_content, field_name):
+        """精确提取section内容"""
+        try:
+            content_parts = []
+
+            # 从元素后面开始提取内容
+            next_elem = element.find_next_sibling()
+            while next_elem and next_elem.name not in ['h1', 'h2', 'h3']:
+                if next_elem.name in ['p', 'div', 'ul', 'ol']:
+                    text = next_elem.get_text().strip()
+                    if text and len(text) > 10 and not self.is_commercial_text(text):
+                        content_parts.append(text)
+                next_elem = next_elem.find_next_sibling()
+
+            return '\n\n'.join(content_parts) if content_parts else ""
+        except Exception:
+            return ""
+
+    def is_content_duplicate(self, content, seen_content):
+        """检查内容是否重复"""
+        content_clean = content.strip()
+        return content_clean in seen_content
+
+    def extract_causes_sections_with_media(self, soup):
+        """提取Causes部分内容，并为每个cause提取对应的图片和视频"""
+        causes = []
+        seen_numbers = set()  # 防止重复
+
+        try:
+            # 查找所有带编号的链接，这些通常是causes
+            cause_links = soup.find_all('a', href=lambda x: x and '#Section_' in x)
+
+            for link in cause_links:
+                href = link.get('href', '')
+                if '#Section_' in href:
+                    # 提取编号和标题
+                    link_text = link.get_text().strip()
+
+                    # 跳过非编号的链接
+                    if not any(char.isdigit() for char in link_text):
+                        continue
+
+                    # 提取编号
+                    number_match = re.search(r'^(\d+)', link_text)
+                    if number_match:
+                        number = number_match.group(1)
+
+                        # 防止重复
+                        if number in seen_numbers:
+                            continue
+                        seen_numbers.add(number)
+
+                        title = re.sub(r'^\d+\s*', '', link_text).strip()
+
+                        # 查找对应的内容部分
+                        section_id = href.split('#')[-1]
+                        content_section = soup.find(id=section_id)
+
+                        content = ""
+                        images = []
+                        videos = []
+
+                        if content_section:
+                            content = self.extract_section_content(content_section)
+                            # 从该section中提取图片和视频
+                            images = self._extract_troubleshooting_images_from_section(content_section)
+                            videos = self.extract_videos_from_section(content_section)
+
+                        cause_data = {
+                            "number": number,
+                            "title": title,
+                            "content": content
+                        }
+
+                        # 只有当有图片时才添加images字段
+                        if images:
+                            cause_data["images"] = images
+
+                        # 只有当有视频时才添加videos字段
+                        if videos:
+                            cause_data["videos"] = videos
+
+                        causes.append(cause_data)
+
+                        if self.verbose:
+                            print(f"提取Cause {number}: {title} ({len(content)} 字符, {len(images)} 图片, {len(videos)} 视频)")
+
+            return causes
+        except Exception as e:
+            print(f"提取Causes时发生错误: {str(e)}")
+            return []
+
+    def extract_section_content(self, section):
+        """从section中提取文本内容"""
+        try:
+            content_parts = []
+            p_elements = section.find_all('p')
+            for p in p_elements:
+                p_text = p.get_text().strip()
+                if self.is_commercial_text(p_text):
+                    continue
+                if p_text and len(p_text) > 10:
+                    content_parts.append(p_text)
+            return '\n\n'.join(content_parts)
+        except Exception:
+            return ""
+
+    def extract_videos_from_section(self, section):
+        """从section中提取视频"""
+        videos = []
+        try:
+            video_elements = section.find_all(['video', 'iframe'])
+            for video in video_elements:
+                try:
+                    from bs4 import Tag
+                    if isinstance(video, Tag):
+                        video_src = video.get('src') or video.get('data-src')
+                        if video_src and isinstance(video_src, str):
+                            if 'youtube.com' in video_src or 'youtu.be' in video_src:
+                                video_data = {
+                                    "url": video_src,
+                                    "title": video.get('title', 'Video')
+                                }
+                                videos.append(video_data)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        return videos
 
 def process_input(input_text):
     """处理输入，支持URL或设备名"""
@@ -1842,14 +3538,14 @@ def main():
             print("警告: workers参数无效，使用默认值4")
 
     # 解析max-retries参数
-    max_retries = 5
+    max_retries = 3  # 减少默认重试次数
     if '--max-retries' in args:
         try:
             retries_idx = args.index('--max-retries')
             if retries_idx + 1 < len(args):
                 max_retries = int(args[retries_idx + 1])
         except (ValueError, IndexError):
-            print("警告: max-retries参数无效，使用默认值5")
+            print("警告: max-retries参数无效，使用默认值3")
 
     # 解析视频下载参数
     download_videos = '--download-videos' in args
@@ -1870,6 +3566,54 @@ def main():
     url, name = process_input(input_text)
 
     if url:
+        # 创建整合爬虫实例（用于检测）
+        temp_crawler = CombinedIFixitCrawler(verbose=False, use_proxy=False)
+
+        # 检查目标是否已经完整爬取
+        is_complete, target_dir = temp_crawler._check_target_completeness(input_text)
+
+        if is_complete and not force_refresh and target_dir:
+            print("\n" + "=" * 60)
+            print(f"🎯 检测到目标已完成爬取: {name}")
+            print(f"📁 目录位置: {target_dir}")
+            print("=" * 60)
+
+            # 检查目录内容
+            info_file = target_dir / "info.json"
+            guides_dir = target_dir / "guides"
+            troubleshooting_dir = target_dir / "troubleshooting"
+            media_dir = target_dir / "media"
+
+            guides_count = len(list(guides_dir.glob("*.json"))) if guides_dir.exists() else 0
+            ts_count = len(list(troubleshooting_dir.glob("*.json"))) if troubleshooting_dir.exists() else 0
+            media_count = len(list(media_dir.glob("*"))) if media_dir.exists() else 0
+
+            print(f"📊 已有内容统计:")
+            print(f"   基本信息: {'✅' if info_file.exists() else '❌'}")
+            print(f"   指南数量: {guides_count}")
+            print(f"   故障排除数量: {ts_count}")
+            print(f"   媒体文件数量: {media_count}")
+
+            print(f"\n💡 选项:")
+            print(f"   1. 跳过爬取，使用现有数据")
+            print(f"   2. 重新爬取（覆盖现有数据）")
+            print(f"   3. 退出程序")
+
+            while True:
+                choice = input("\n请选择 (1/2/3): ").strip()
+                if choice == "1":
+                    print(f"✅ 跳过爬取，现有数据位置: {target_dir}")
+                    return
+                elif choice == "2":
+                    print("🔄 将重新爬取并覆盖现有数据...")
+                    force_refresh = True
+                    break
+                elif choice == "3":
+                    print("👋 程序退出")
+                    return
+                else:
+                    print("❌ 无效选择，请输入 1、2 或 3")
+
         print("\n" + "=" * 60)
         print(f"开始整合爬取: {name}")
         print("阶段1: 构建完整树形结构")
@@ -1929,6 +3673,7 @@ def main():
                 print(f"- 耗时: {elapsed_time:.1f} 秒")
 
                 # 保存结果
+                print(f"\n💾 正在保存数据到本地文件夹...")
                 filename = crawler.save_combined_result(combined_data, target_name=input_text)
 
                 print(f"\n✅ 整合爬取完成!")

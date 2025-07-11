@@ -4091,17 +4091,58 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             return False
 
     def is_commercial_text(self, text):
-        """检查文本是否是商业内容"""
+        """检查文本是否是商业内容或推荐内容"""
         try:
+            if not text:
+                return False
+
             text_lower = text.lower()
+
             # 商业内容关键词
             commercial_keywords = [
                 'buy', 'purchase', 'view guide', 'find your parts', 'select my model',
                 'add to cart', 'quality guarantee', 'compatible replacement'
             ]
 
-            # 检查价格模式
+            # 推荐指南标题模式 - 更全面的模式匹配
+            guide_title_patterns = [
+                # 特定模式
+                r'how to boot.*into safe mode',
+                r'how to use internet recovery',
+                r'how to recover data from',
+                r'how to install.*to.*ssd',
+                r'how to replace.*battery',
+                r'how to repair.*screen',
+                r'how to fix.*display',
+                r'how to troubleshoot',
+                r'how to run.*with disk utility',
+                r'how to start up.*in.*recovery mode',
+                r'how to create a bootable',
+                # 通用模式
+                r'how to .*removal',
+                r'how to .*replace',
+                r'how to .*install',
+                r'how to .*repair',
+                r'how to .*upgrade',
+                r'how to .*fix',
+                r'replacement.*guide',
+                r'repair.*guide',
+                r'installation.*guide',
+                r'removal.*guide',
+                # 特定设备模式
+                r'macbook pro.*unibody.*removal',
+                r'macbook pro.*key.*removal',
+                r'macbook air.*display',
+                r'macbook.*retina.*replacement'
+            ]
+
+            # 检查推荐指南标题模式
             import re
+            for pattern in guide_title_patterns:
+                if re.search(pattern, text_lower):
+                    return True
+
+            # 检查价格模式
             if re.search(r'[\$€£¥]\s*\d+\.?\d*', text):
                 return True
 
