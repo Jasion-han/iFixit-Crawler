@@ -1,0 +1,42 @@
+#!/usr/bin/env Python
+# -*- coding: utf-8 -*-
+
+"""
+使用requests请求代理服务器
+请求http和https网页均适用
+"""
+
+import httpx
+
+# 隧道域名:端口号
+tunnel = "h532.kdltpspro.com:15818"
+
+# 用户名和密码方式
+username = "t15220208576243"
+password = "9lmw3uvb"
+
+proxy_url = "http://%(user)s:%(pwd)s@%(proxy)s/" % {"user": username, "pwd": password, "proxy": tunnel}
+
+proxies = httpx.Proxy(
+    url=proxy_url
+)
+
+with httpx.Client(proxies=proxies) as client:
+    r = client.get('https://dev.kdlapi.com/testproxy')
+    print(r.text)
+
+
+开发建议:
+控制好请求频率，用同一IP请求同一网站建议不超过1秒1次，避免IP被目标网站屏蔽。
+建议关闭HTTP协议的keep-alive功能，避免因连接复用导致隧道不能切换IP
+尽可能采用gzip压缩加速访问，在header里添加：Accept-Encoding: gzip
+关注隧道返回码可协助您排查错误。
+
+使用gzip压缩传输数据可显著提升访问速度，方法非常简单：
+只需在http请求的header里加上：
+Accept-Encoding: gzip
+收到HTTP Response后检查header里是否包含：
+Content-Encoding: gzip
+如果包含，则对body进行gzip解压，就能得到原始内容。
+
+详情可以参考开发手册：https://www.kuaidaili.com/doc/dev/tps_pro/#settingsipip

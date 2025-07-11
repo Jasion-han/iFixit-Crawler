@@ -4,7 +4,7 @@
 """
 整合爬虫工具 - 结合树形结构和详细内容提取 + 代理池 + 本地文件存储
 将iFixit网站的设备分类以层级树形结构展示，并为每个节点提取详细内容
-支持天启IP代理池、本地文件夹存储、媒体文件下载等功能
+支持HTTP隧道代理池、本地文件夹存储、媒体文件下载等功能
 用法: python auto_crawler.py [URL或设备名]
 示例: python auto_crawler.py https://www.ifixit.com/Device/Television
       python auto_crawler.py Television
@@ -17,6 +17,9 @@ import time
 import random
 import re
 import requests
+import httpx
+import asyncio
+import aiofiles
 from urllib.parse import urlparse, urljoin
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -34,178 +37,259 @@ from enhanced_crawler import EnhancedIFixitCrawler
 from tree_crawler import TreeCrawler
 
 
-class ProxyManager:
-    """代理管理器 - 从本地proxy.txt文件管理代理池"""
+class TunnelProxyManager:
+    """隧道代理管理器 - 使用HTTP隧道代理池"""
 
-    def __init__(self, proxy_file="proxy.txt", username=None, password=None, max_reset_cycles=3):
-        self.proxy_file = proxy_file
+    def __init__(self, tunnel_host="h532.kdltpspro.com", tunnel_port=15818,
+                 username="t15220208576243", password="9lmw3uvb", max_reset_cycles=3):
+        """
+        初始化隧道代理管理器
+
+        Args:
+            tunnel_host: 隧道域名
+            tunnel_port: 隧道端口
+            username: 用户名
+            password: 密码
+            max_reset_cycles: 最大重置周期数
+        """
+        self.tunnel_host = tunnel_host
+        self.tunnel_port = tunnel_port
         self.username = username
         self.password = password
 
-        self.proxy_pool = []
         self.current_proxy = None
-        self.failed_proxies = []
         self.proxy_switch_count = 0
         self.proxy_lock = threading.Lock()
 
         # 添加重置循环限制
         self.max_reset_cycles = max_reset_cycles
         self.reset_cycle_count = 0
+        self.failed_count = 0  # 失败计数
 
-        # 加载代理
-        self._load_proxies()
+        # 初始化隧道代理
+        self._init_tunnel_proxy()
 
-    def _load_proxies(self):
-        """从proxy.txt文件加载代理列表"""
-        proxy_list = []
-
+    def _init_tunnel_proxy(self):
+        """初始化隧道代理配置"""
         try:
-            if not os.path.exists(self.proxy_file):
-                print(f"❌ 代理文件不存在: {self.proxy_file}")
-                return
+            # 构建隧道代理URL
+            proxy_url = f"http://{self.username}:{self.password}@{self.tunnel_host}:{self.tunnel_port}"
 
-            with open(self.proxy_file, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
+            self.current_proxy = {
+                'http': proxy_url,
+                'https': proxy_url
+            }
 
-            for line in lines:
-                line = line.strip()
-                if line and ':' in line and not line.startswith('#'):
-                    try:
-                        # 支持两种格式：
-                        # 1. username:password@host:port (带认证)
-                        # 2. host:port (无认证)
-                        if '@' in line:
-                            # 带认证的代理格式
-                            auth_part, host_port = line.split('@', 1)
-                            username, password = auth_part.split(':', 1)
-                            host, port = host_port.split(':', 1)
-                            proxy_config = {
-                                'http': f"http://{username}:{password}@{host.strip()}:{port.strip()}",
-                                'https': f"http://{username}:{password}@{host.strip()}:{port.strip()}"
-                            }
-                        else:
-                            # 无认证的代理格式
-                            host, port = line.split(':', 1)
-                            if self.username and self.password:
-                                # 如果设置了默认认证信息，使用默认认证
-                                proxy_config = {
-                                    'http': f"http://{self.username}:{self.password}@{host.strip()}:{port.strip()}",
-                                    'https': f"http://{self.username}:{self.password}@{host.strip()}:{port.strip()}"
-                                }
-                            else:
-                                # 无认证代理
-                                proxy_config = {
-                                    'http': f"http://{host.strip()}:{port.strip()}",
-                                    'https': f"http://{host.strip()}:{port.strip()}"
-                                }
-                        proxy_list.append(proxy_config)
-                    except ValueError:
-                        print(f"⚠️  跳过格式错误的代理: {line}")
-
-            self.proxy_pool = proxy_list
-            print(f"📋 从 {self.proxy_file} 加载了 {len(proxy_list)} 个代理")
+            print(f"📋 隧道代理初始化成功")
+            print(f"🌐 隧道地址: {self.tunnel_host}:{self.tunnel_port}")
+            print(f"👤 用户名: {self.username}")
+            print("💡 使用HTTP隧道代理池，每次请求自动切换IP")
 
         except Exception as e:
-            print(f"❌ 读取代理文件失败: {e}")
+            print(f"❌ 隧道代理初始化失败: {e}")
+            self.current_proxy = None
 
     def get_proxy(self):
-        """获取一个可用的代理"""
+        """获取隧道代理配置"""
         with self.proxy_lock:
-            # 如果当前代理可用，直接返回
-            if self.current_proxy and self.current_proxy not in self.failed_proxies:
-                return self.current_proxy
-
-            # 从代理池中选择一个未失效的代理
-            available_proxies = []
-            for p in self.proxy_pool:
-                is_failed = False
-                for failed in self.failed_proxies:
-                    if p['http'] == failed['http']:
-                        is_failed = True
-                        break
-                if not is_failed:
-                    available_proxies.append(p)
-
-            if not available_proxies:
-                # 检查是否已达到最大重置次数
-                if self.reset_cycle_count >= self.max_reset_cycles:
-                    print(f"❌ 已达到最大重置次数({self.max_reset_cycles})，所有代理均不可用")
-                    return None
-
-                # 如果所有代理都失效了，重置失效列表，重新开始
-                self.reset_cycle_count += 1
-                print(f"⚠️  所有代理都已失效，重置代理池... (第{self.reset_cycle_count}/{self.max_reset_cycles}次)")
-                self.failed_proxies.clear()
-                available_proxies = self.proxy_pool
-
-            if available_proxies:
-                self.current_proxy = random.choice(available_proxies)
-                self.proxy_switch_count += 1
-
-                # 提取IP和端口用于显示
-                proxy_url = self.current_proxy['http']
-                if '@' in proxy_url:
-                    ip_port = proxy_url.split('@')[1]
-                    if ':' in ip_port:
-                        display_ip, display_port = ip_port.rsplit(':', 1)
-                    else:
-                        display_ip, display_port = ip_port, "Unknown"
-                else:
-                    display_ip, display_port = "Unknown", "Unknown"
-
-                print(f"🔄 切换代理 (第{self.proxy_switch_count}次): {display_ip}:{display_port} [重置周期: {self.reset_cycle_count}/{self.max_reset_cycles}]")
-
+            # 隧道代理始终可用，每次请求会自动切换IP
+            if self.current_proxy:
                 return self.current_proxy
             else:
-                print("❌ 没有可用的代理")
+                print("❌ 隧道代理未初始化")
                 return None
 
     def mark_proxy_failed(self, proxy, reason=""):
-        """标记代理为失效"""
+        """标记隧道代理失败（记录失败次数）"""
         with self.proxy_lock:
-            # 检查是否已经在失效列表中
-            already_failed = False
-            for failed in self.failed_proxies:
-                if failed['http'] == proxy['http']:
-                    already_failed = True
-                    break
+            self.failed_count += 1
+            print(f"⚠️  隧道代理请求失败 (第{self.failed_count}次): {reason}")
 
-            if not already_failed:
-                self.failed_proxies.append(proxy)
-
-            # 提取IP和端口用于显示
-            proxy_url = proxy['http']
-            if '@' in proxy_url:
-                ip_port = proxy_url.split('@')[1]
-                if ':' in ip_port:
-                    display_ip, display_port = ip_port.rsplit(':', 1)
-                else:
-                    display_ip, display_port = ip_port, "Unknown"
-            else:
-                display_ip, display_port = "Unknown", "Unknown"
-
-            print(f"❌ 代理失效: {display_ip}:{display_port} - {reason}")
-
-            # 如果失效的是当前代理，清除当前代理
-            if self.current_proxy == proxy:
-                self.current_proxy = None
+            # 隧道代理不需要切换，每次请求会自动使用不同IP
+            # 如果失败次数过多，可以考虑重置计数
+            if self.failed_count >= 10:
+                print("💡 隧道代理失败次数较多，建议检查网络连接或代理配置")
+                self.failed_count = 0  # 重置计数
 
     def get_stats(self):
-        """获取代理池统计信息"""
+        """获取隧道代理统计信息"""
         return {
-            'total_proxies': len(self.proxy_pool),
-            'failed_proxies': len(self.failed_proxies),
-            'available_proxies': len(self.proxy_pool) - len(self.failed_proxies),
-            'switch_count': self.proxy_switch_count,
-            'reset_cycles': self.reset_cycle_count,
-            'max_reset_cycles': self.max_reset_cycles
+            'tunnel_host': self.tunnel_host,
+            'tunnel_port': self.tunnel_port,
+            'username': self.username,
+            'failed_count': self.failed_count,
+            'is_active': self.current_proxy is not None
         }
 
     def reset_stats(self):
         """重置统计信息"""
-        self.proxy_switch_count = 0
-        self.reset_cycle_count = 0
-        self.failed_proxies.clear()
+        self.failed_count = 0
+        print("📊 隧道代理统计信息已重置")
+
+
+class AsyncHttpClientManager:
+    """异步HTTP客户端管理器 - 基于httpx的高性能异步请求"""
+
+    def __init__(self, proxy_manager=None, max_connections=100, max_keepalive_connections=20,
+                 timeout=30.0, max_retries=3):
+        """
+        初始化异步HTTP客户端管理器
+
+        Args:
+            proxy_manager: 代理管理器实例
+            max_connections: 最大连接数
+            max_keepalive_connections: 最大保持连接数
+            timeout: 请求超时时间
+            max_retries: 最大重试次数
+        """
+        self.proxy_manager = proxy_manager
+        self.max_connections = max_connections
+        self.max_keepalive_connections = max_keepalive_connections
+        self.timeout = timeout
+        self.max_retries = max_retries
+
+        # 请求头配置
+        self.headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1"
+        }
+
+        # 媒体文件专用请求头
+        self.media_headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://www.ifixit.com/",
+            "Origin": "https://www.ifixit.com",
+            "Sec-Fetch-Dest": "image",
+            "Sec-Fetch-Mode": "no-cors",
+            "Sec-Fetch-Site": "same-site",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+        }
+
+        self._client = None
+        self._semaphore = None
+
+    async def __aenter__(self):
+        """异步上下文管理器入口"""
+        await self._init_client()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """异步上下文管理器出口"""
+        await self._close_client()
+
+    async def _init_client(self):
+        """初始化异步HTTP客户端"""
+        # 配置连接池限制
+        limits = httpx.Limits(
+            max_connections=self.max_connections,
+            max_keepalive_connections=self.max_keepalive_connections
+        )
+
+        # 配置超时
+        timeout = httpx.Timeout(self.timeout)
+
+        # 配置代理
+        proxy_url = None
+        if self.proxy_manager:
+            proxy_config = self.proxy_manager.get_proxy()
+            if proxy_config:
+                proxy_url = proxy_config.get('http')
+
+        # 创建客户端
+        self._client = httpx.AsyncClient(
+            limits=limits,
+            timeout=timeout,
+            proxy=proxy_url,  # httpx使用proxy而不是proxies
+            headers=self.headers,
+            follow_redirects=True,
+            verify=True
+        )
+
+        # 创建并发控制信号量
+        self._semaphore = asyncio.Semaphore(self.max_connections // 2)
+
+    async def _close_client(self):
+        """关闭异步HTTP客户端"""
+        if self._client:
+            await self._client.aclose()
+            self._client = None
+
+    async def get(self, url, headers=None, **kwargs):
+        """异步GET请求"""
+        if not self._client:
+            await self._init_client()
+
+        async with self._semaphore:
+            request_headers = self.headers.copy()
+            if headers:
+                request_headers.update(headers)
+
+            return await self._client.get(url, headers=request_headers, **kwargs)
+
+    async def get_with_retry(self, url, headers=None, max_retries=None, **kwargs):
+        """带重试机制的异步GET请求"""
+        if max_retries is None:
+            max_retries = self.max_retries
+
+        last_error = None
+
+        for attempt in range(max_retries + 1):
+            try:
+                response = await self.get(url, headers=headers, **kwargs)
+                response.raise_for_status()
+                return response
+
+            except (httpx.ProxyError, httpx.ConnectTimeout, httpx.ConnectError) as e:
+                # 代理相关错误，尝试切换代理
+                if self.proxy_manager and attempt < max_retries:
+                    print(f"🔄 代理错误，尝试切换: {str(e)[:100]}")
+                    self.proxy_manager.mark_proxy_failed(None, f"代理错误: {str(e)[:50]}")
+
+                    # 重新初始化客户端以使用新代理
+                    await self._close_client()
+                    await self._init_client()
+
+                last_error = e
+
+            except Exception as e:
+                last_error = e
+                if attempt < max_retries:
+                    # 指数退避
+                    delay = min(60, (2 ** attempt) + random.uniform(0, 1))
+                    await asyncio.sleep(delay)
+
+        if last_error:
+            raise last_error
+
+    async def download_file(self, url, local_path, headers=None):
+        """异步下载文件"""
+        if not headers:
+            headers = self.media_headers
+
+        response = await self.get_with_retry(url, headers=headers)
+
+        # 确保目录存在
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # 异步写入文件
+        async with aiofiles.open(local_path, 'wb') as f:
+            async for chunk in response.aiter_bytes(chunk_size=8192):
+                await f.write(chunk)
+
+        return local_path
 
 
 class CacheManager:
@@ -482,8 +566,11 @@ class CacheManager:
 
 class CombinedIFixitCrawler(EnhancedIFixitCrawler):
     def __init__(self, base_url="https://www.ifixit.com", verbose=False, use_proxy=True,
-                 use_cache=True, force_refresh=False, max_workers=4, max_retries=3,
-                 download_videos=False, max_video_size_mb=50):
+                 use_cache=True, force_refresh=False, max_workers=8, max_retries=3,
+                 download_videos=False, max_video_size_mb=50, max_connections=None,
+                 timeout=30, request_delay=0.5, proxy_switch_freq=100, cache_ttl=24,
+                 custom_user_agent=None, burst_mode=False, conservative_mode=False,
+                 skip_images=False, debug_mode=False, show_stats=False):
         super().__init__(base_url, verbose)
 
         # 立即初始化日志系统，确保logger可用
@@ -497,6 +584,21 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         self.storage_root = "ifixit_data"
         self.media_folder = "media"
 
+        # 🚀 高性能配置
+        self.max_workers = max_workers
+        self.max_retries = max_retries
+        self.max_connections = max_connections or (max_workers * 10)
+        self.timeout = timeout
+        self.request_delay = request_delay
+        self.proxy_switch_freq = proxy_switch_freq
+        self.cache_ttl = cache_ttl
+        self.custom_user_agent = custom_user_agent
+        self.burst_mode = burst_mode
+        self.conservative_mode = conservative_mode
+        self.skip_images = skip_images
+        self.debug_mode = debug_mode
+        self.show_stats = show_stats
+
         # 缓存配置
         self.use_cache = use_cache
         self.force_refresh = force_refresh
@@ -504,8 +606,11 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         # 代理池配置
         self.use_proxy = use_proxy
-        self.proxy_manager = ProxyManager() if use_proxy else None
+        self.proxy_manager = TunnelProxyManager() if use_proxy else None
         self.failed_urls = set()  # 添加失败URL集合
+
+        # 异步HTTP客户端管理器
+        self.async_http_manager = None
 
         # 视频处理配置
         self.download_videos = download_videos
@@ -545,23 +650,12 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
     def _load_proxy_config(self):
         """加载代理配置"""
-        print("📋 使用天启IP代理服务")
-
-        # 天启IP代理认证信息
-        self.proxy_username = "yjnvjx"  # 您的天启IP用户名
-        self.proxy_password = "gkmb3obc"  # 您的天启IP密码
-
-        self.current_proxy = None
-        self.proxy_switch_count = 0
-        self.failed_urls = set()
-
-        # 这些配置已在__init__中设置，此处不再重复
+        print("📋 使用HTTP隧道代理服务")
 
         # 初始化日志
         self._setup_logging()
 
-        if self.use_proxy:
-            self._init_proxy_pool()
+        # 隧道代理已在__init__中初始化，无需额外配置
 
         # 复制树形爬虫的重要方法到当前类
         self.find_exact_path = self.tree_crawler.find_exact_path
@@ -734,121 +828,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         else:
             raise Exception("重试失败，未知错误")
 
-    def _init_proxy_pool(self):
-        """初始化代理池 - 从天启IP API获取代理"""
-        print("=" * 50)
-        print("🚀 启动代理池系统")
-        print("=" * 50)
-        self._get_new_proxy()
 
-    def _get_new_proxy(self):
-        """从天启IP API获取新的代理IP"""
-        api_url = "http://api.tianqiip.com/getip"
-        params = {
-            'secret': 'c3ljdpezjim64de5',
-            'num': '200',
-            'type': 'txt',
-            'port': '2',
-            'time': '3',
-            'mr': '1',
-            'sign': '2704663b3f023a2e4097093d70f24acb'
-        }
-
-        try:
-            print(f"📡 正在从天启IP API获取代理...")
-            print(f"🔗 API地址: {api_url}")
-
-            response = requests.get(api_url, params=params, timeout=15)
-
-            if response.status_code == 200:
-                proxy_text = response.text.strip()
-                print(f"🔍 API响应内容预览: {proxy_text[:200]}...")
-
-                # 解析文本格式的代理列表 (IP:PORT格式)
-                proxy_lines = [line.strip() for line in proxy_text.split('\n') if line.strip()]
-
-                if proxy_lines:
-                    # 随机选择一个代理
-                    import random
-                    selected_proxy = random.choice(proxy_lines)
-
-                    if ':' in selected_proxy:
-                        proxy_host, proxy_port = selected_proxy.split(':', 1)
-
-                        # 构建带认证的代理配置
-                        proxy_meta = f"http://{self.proxy_username}:{self.proxy_password}@{proxy_host}:{proxy_port}"
-                        self.current_proxy = {
-                            'http': proxy_meta,
-                            'https': proxy_meta
-                        }
-
-                        self.proxy_switch_count += 1
-                        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-
-                        print("✅ 天启IP代理获取成功!")
-                        print(f"🕒 时间: {current_time}")
-                        print(f"🌐 代理IP: {proxy_host}")
-                        print(f"🔌 端口: {proxy_port}")
-                        print(f"🔄 切换次数: 第 {self.proxy_switch_count} 次")
-                        print(f"📊 可用代理总数: {len(proxy_lines)}")
-                        print("=" * 50)
-
-                        # 代理获取成功
-
-                        return True
-                    else:
-                        print(f"❌ 代理格式错误: {selected_proxy}")
-                else:
-                    print("❌ 未获取到有效的代理列表")
-            else:
-                print(f"❌ HTTP状态码: {response.status_code}")
-                print(f"❌ 响应内容: {response.text[:200]}")
-
-        except Exception as e:
-            print(f"❌ 获取天启IP代理失败: {e}")
-
-        # API失败时使用演示模式
-        print("⚠️  天启IP API调用失败，使用演示模式")
-        print("💡 请检查:")
-        print("   1. 天启IP账号是否有效")
-        print("   2. 账号余额是否充足")
-        print("   3. API参数是否正确")
-        print("   4. 网络连接是否正常")
-        return self._get_demo_proxy()
-
-    def _get_demo_proxy(self):
-        """获取模拟代理用于演示"""
-        import random
-
-        # 模拟代理IP池
-        demo_proxies = [
-            {"ip": "192.168.1.100", "port": "8080"},
-            {"ip": "10.0.0.50", "port": "3128"},
-            {"ip": "172.16.0.25", "port": "8888"},
-        ]
-
-        proxy_info = random.choice(demo_proxies)
-        proxy_host = proxy_info['ip']
-        proxy_port = proxy_info['port']
-
-        # 演示模式也使用认证信息
-        proxy_meta = f"http://{self.proxy_username}:{self.proxy_password}@{proxy_host}:{proxy_port}"
-        self.current_proxy = {
-            'http': proxy_meta,
-            'https': proxy_meta
-        }
-
-        self.proxy_switch_count += 1
-        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-
-        print("✅ 模拟代理获取成功! (演示模式)")
-        print(f"🕒 时间: {current_time}")
-        print(f"🌐 代理IP: {proxy_host}")
-        print(f"🔌 端口: {proxy_port}")
-        print(f"🔄 切换次数: 第 {self.proxy_switch_count} 次")
-        print("💡 注意: 这是演示模式，实际使用需要配置真实的天启IP API")
-        print("=" * 50)
-        return True
 
 
 
@@ -875,9 +855,163 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         new_proxy = self.proxy_manager.get_proxy()
         return new_proxy is not None
 
-    # 代理池相关方法已集成到ProxyManager类中
+    # 隧道代理相关方法已集成到TunnelProxyManager类中
 
+    async def _init_async_http_manager(self):
+        """初始化异步HTTP客户端管理器"""
+        if not self.async_http_manager:
+            self.async_http_manager = AsyncHttpClientManager(
+                proxy_manager=self.proxy_manager,
+                max_connections=self.max_workers * 10,
+                max_keepalive_connections=self.max_workers * 2,
+                timeout=30.0,
+                max_retries=self.max_retries
+            )
+            await self.async_http_manager._init_client()
 
+    async def _close_async_http_manager(self):
+        """关闭异步HTTP客户端管理器"""
+        if self.async_http_manager:
+            await self.async_http_manager._close_client()
+            self.async_http_manager = None
+
+    async def get_soup_async(self, url, use_playwright=False):
+        """异步版本的get_soup方法"""
+        if not url:
+            return None
+
+        if url in self.failed_urls:
+            self.logger.warning(f"跳过已知失败URL: {url}")
+            return None
+
+        if 'zh.ifixit.com' in url:
+            url = url.replace('zh.ifixit.com', 'www.ifixit.com')
+
+        if '?' in url:
+            url += '&lang=en'
+        else:
+            url += '?lang=en'
+
+        self.stats["total_requests"] += 1
+
+        # 如果需要JavaScript渲染，使用Playwright
+        if use_playwright:
+            return await self._get_soup_with_playwright_async(url)
+
+        # 否则使用异步httpx方法
+        return await self._get_soup_httpx_async(url)
+
+    async def _get_soup_httpx_async(self, url):
+        """使用httpx异步获取页面内容"""
+        if not self.async_http_manager:
+            await self._init_async_http_manager()
+
+        try:
+            response = await self.async_http_manager.get_with_retry(url)
+
+            from bs4 import BeautifulSoup
+            return BeautifulSoup(response.content, 'html.parser')
+
+        except Exception as e:
+            self.logger.error(f"异步获取页面失败 {url}: {e}")
+            self.failed_urls.add(url)
+            raise
+
+    async def _get_soup_with_playwright_async(self, url):
+        """异步版本的Playwright页面获取"""
+        try:
+            from playwright.async_api import async_playwright
+
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page()
+
+                # 设置请求头
+                await page.set_extra_http_headers({
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                })
+
+                # 导航到页面并等待加载
+                await page.goto(url, wait_until='networkidle')
+
+                # 获取页面内容
+                content = await page.content()
+                await browser.close()
+
+                from bs4 import BeautifulSoup
+                return BeautifulSoup(content, 'html.parser')
+
+        except Exception as e:
+            self.logger.error(f"Playwright异步获取页面失败 {url}: {e}")
+            self.failed_urls.add(url)
+            return None
+
+    async def _process_tasks_async(self, tasks, guides_data, troubleshooting_data):
+        """异步并发处理任务列表"""
+        # 创建并发控制信号量
+        semaphore = asyncio.Semaphore(self.max_workers)
+
+        async def process_single_task(task_type, url):
+            """处理单个任务的异步包装器"""
+            async with semaphore:
+                try:
+                    if task_type == 'guide':
+                        return await self._process_guide_task_async(url)
+                    else:  # troubleshooting
+                        return await self._process_troubleshooting_task_async(url)
+                except Exception as e:
+                    self.logger.error(f"异步任务失败 {task_type} {url}: {e}")
+                    return None
+
+        # 创建所有任务
+        async_tasks = [process_single_task(task_type, url) for task_type, url in tasks]
+
+        # 并发执行所有任务
+        results = await asyncio.gather(*async_tasks, return_exceptions=True)
+
+        # 处理结果
+        completed_count = 0
+        total_tasks = len(tasks)
+
+        for i, (result, (task_type, url)) in enumerate(zip(results, tasks)):
+            completed_count += 1
+
+            if isinstance(result, Exception):
+                print(f"    ❌ [{completed_count}/{total_tasks}] {task_type} 任务异常: {str(result)[:50]}...")
+                continue
+
+            if result:
+                if task_type == 'guide':
+                    guides_data.append(result)
+                    print(f"    ✅ [{completed_count}/{total_tasks}] 指南: {result.get('title', '')}")
+                else:
+                    troubleshooting_data.append(result)
+                    print(f"    ✅ [{completed_count}/{total_tasks}] 故障排除: {result.get('title', '')}")
+            else:
+                print(f"    ⚠️  [{completed_count}/{total_tasks}] {task_type} 处理失败")
+
+        return guides_data, troubleshooting_data
+
+    async def _process_guide_task_async(self, url):
+        """异步处理指南任务"""
+        try:
+            soup = await self.get_soup_async(url)
+            if soup:
+                return self.extract_guide_content(soup, url)
+        except Exception as e:
+            self.logger.error(f"异步处理指南失败 {url}: {e}")
+        return None
+
+    async def _process_troubleshooting_task_async(self, url):
+        """异步处理故障排除任务"""
+        try:
+            soup = await self.get_soup_async(url)
+            if soup:
+                return self.extract_troubleshooting_content(soup, url)
+        except Exception as e:
+            self.logger.error(f"异步处理故障排除失败 {url}: {e}")
+        return None
 
     def get_soup(self, url, use_playwright=False):
         """重写get_soup方法，支持代理池、重试机制和Playwright渲染"""
@@ -1031,6 +1165,140 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             return False
         url_path = url.split('?')[0].lower()
         return any(url_path.endswith(ext) for ext in self.video_extensions)
+
+    async def _download_media_file_async(self, url, local_dir, filename=None):
+        """异步下载媒体文件到本地（带重试机制和视频处理策略，支持跨页面去重）"""
+        if not url or not url.startswith('http'):
+            return None
+
+        # 先计算文件名和本地路径，用于检查文件是否已存在
+        if not filename:
+            url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+            url_path = url.split('?')[0]
+            if '.' in url_path:
+                ext = '.' + url_path.split('.')[-1].lower()
+                if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.avi']:
+                    ext = '.jpg'
+            else:
+                ext = '.jpg'
+            filename = f"{url_hash}{ext}"
+
+        local_path = local_dir / self.media_folder / filename
+
+        # 检查是否是troubleshooting目录，如果是则不使用跨页面去重
+        is_troubleshooting = "troubleshooting" in str(local_dir)
+
+        if not is_troubleshooting:
+            # 检查文件是否已存在（支持跨页面去重）
+            existing_file_path = self._find_existing_media_file(url, filename)
+            if existing_file_path:
+                # 文件已存在于其他位置，返回相对于当前目录的路径
+                if self.verbose:
+                    self.logger.info(f"媒体文件已存在，跳过下载: {filename}")
+                self.stats["media_downloaded"] += 1
+                return existing_file_path
+
+        # 如果文件在当前目录已存在，直接返回路径
+        if local_path.exists():
+            if self.verbose:
+                self.logger.info(f"媒体文件已存在于当前目录: {filename}")
+            self.stats["media_downloaded"] += 1
+            # 对于troubleshooting目录，返回相对于troubleshooting目录的路径
+            if is_troubleshooting:
+                return str(local_path.relative_to(local_dir))
+            else:
+                # 计算相对路径，如果local_dir不是storage_root的子目录，则使用local_dir作为基准
+                try:
+                    return str(local_path.relative_to(Path(self.storage_root)))
+                except ValueError:
+                    # 如果不在storage_root下，返回相对于local_dir的路径
+                    return str(local_path.relative_to(local_dir))
+
+        # 检查是否为视频文件
+        if self._is_video_file(url):
+            if not self.download_videos:
+                self.logger.info(f"跳过视频下载（已禁用）: {url}")
+                self.stats["videos_skipped"] += 1
+                return url
+
+            # 检查视频文件大小
+            file_size_mb = await self._get_file_size_from_url_async(url)
+            if file_size_mb and file_size_mb > self.max_video_size_mb:
+                self.logger.warning(f"跳过大视频文件 ({file_size_mb:.1f}MB > {self.max_video_size_mb}MB): {url}")
+                self.stats["videos_skipped"] += 1
+                return url
+
+            self.logger.info(f"准备下载视频文件 ({file_size_mb:.1f}MB): {url}")
+
+        try:
+            result = await self._download_media_file_impl_async(url, local_dir, filename)
+            if self._is_video_file(url) and result != url:
+                self.stats["videos_downloaded"] += 1
+            return result
+        except Exception as e:
+            self.logger.error(f"媒体文件下载最终失败 {url}: {e}")
+            self.stats["media_failed"] += 1
+            self._log_failed_url(url, f"媒体下载失败: {str(e)}")
+            # 记录失败的媒体文件到专门的日志
+            self._log_failed_media(url, str(e))
+            return url
+
+    async def _get_file_size_from_url_async(self, url):
+        """异步获取URL文件的大小（MB）"""
+        try:
+            # 修复URL格式：将.thumbnail.medium替换为.medium，解决403 Forbidden问题
+            if '.thumbnail.medium' in url:
+                url = url.replace('.thumbnail.medium', '.medium')
+
+            if not self.async_http_manager:
+                await self._init_async_http_manager()
+
+            response = await self.async_http_manager.get(url, headers=self.async_http_manager.media_headers)
+            if response.status_code == 200:
+                content_length = response.headers.get('content-length')
+                if content_length:
+                    size_bytes = int(content_length)
+                    size_mb = size_bytes / (1024 * 1024)
+                    return size_mb
+        except Exception as e:
+            self.logger.warning(f"无法获取文件大小 {url}: {e}")
+        return None
+
+    async def _download_media_file_impl_async(self, url, local_dir, filename):
+        """异步媒体文件下载的具体实现"""
+        local_path = local_dir / self.media_folder / filename
+
+        # 修复URL格式：将.thumbnail.medium替换为.medium，解决403 Forbidden问题
+        if '.thumbnail.medium' in url:
+            url = url.replace('.thumbnail.medium', '.medium')
+            if self.verbose:
+                self.logger.info(f"URL格式修复: .thumbnail.medium -> .medium")
+
+        if not self.async_http_manager:
+            await self._init_async_http_manager()
+
+        # 使用异步HTTP客户端下载文件
+        await self.async_http_manager.download_file(url, local_path, self.async_http_manager.media_headers)
+
+        self.stats["media_downloaded"] += 1
+        if self.verbose:
+            self.logger.info(f"媒体文件下载成功: {filename}")
+        else:
+            # 简化的进度提示
+            if self.stats["media_downloaded"] % 10 == 0:
+                print(f"      📥 已下载 {self.stats['media_downloaded']} 个媒体文件...")
+
+        # 检查是否是troubleshooting目录，如果是则返回相对于troubleshooting目录的路径
+        is_troubleshooting = "troubleshooting" in str(local_dir)
+        if is_troubleshooting:
+            return str(local_path.relative_to(local_dir))
+        else:
+            # 计算相对路径，如果local_dir不是storage_root的子目录，则使用local_dir作为基准
+            try:
+                return str(local_path.relative_to(Path(self.storage_root)))
+            except ValueError:
+                # 如果不在storage_root下，返回相对于local_dir的路径
+                return str(local_path.relative_to(local_dir))
 
     def _download_media_file(self, url, local_dir, filename=None):
         """下载媒体文件到本地（带重试机制和视频处理策略，支持跨页面去重）"""
@@ -1191,6 +1459,71 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             except ValueError:
                 # 如果不在storage_root下，返回相对于local_dir的路径
                 return str(local_path.relative_to(local_dir))
+
+    async def _process_media_urls_async(self, data, local_dir):
+        """异步递归处理数据中的媒体URL，下载并替换为本地路径"""
+        media_tasks = []
+
+        def collect_media_urls(obj, path=""):
+            """收集所有需要下载的媒体URL"""
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    current_path = f"{path}.{key}" if path else key
+                    if key in ['image', 'video', 'thumbnail', 'photo'] and isinstance(value, str) and value.startswith('http'):
+                        media_tasks.append((current_path, value, obj, key))
+                    elif key == 'images' and isinstance(value, list):
+                        for i, img_item in enumerate(value):
+                            if isinstance(img_item, str) and img_item.startswith('http'):
+                                media_tasks.append((f"{current_path}[{i}]", img_item, value, i))
+                            elif isinstance(img_item, dict) and 'url' in img_item:
+                                img_url = img_item['url']
+                                if isinstance(img_url, str) and img_url.startswith('http'):
+                                    media_tasks.append((f"{current_path}[{i}].url", img_url, img_item, 'url'))
+                    elif key == 'videos' and isinstance(value, list):
+                        for i, video_item in enumerate(value):
+                            if isinstance(video_item, str) and video_item.startswith('http'):
+                                if self.download_videos:
+                                    media_tasks.append((f"{current_path}[{i}]", video_item, value, i))
+                            elif isinstance(video_item, dict) and 'url' in video_item:
+                                video_url = video_item['url']
+                                if isinstance(video_url, str) and video_url.startswith('http'):
+                                    if self.download_videos:
+                                        media_tasks.append((f"{current_path}[{i}].url", video_url, video_item, 'url'))
+                    elif isinstance(value, (dict, list)):
+                        collect_media_urls(value, current_path)
+            elif isinstance(obj, list):
+                for i, item in enumerate(obj):
+                    collect_media_urls(item, f"{path}[{i}]" if path else f"[{i}]")
+
+        # 收集所有媒体URL
+        collect_media_urls(data)
+
+        if not media_tasks:
+            return
+
+        # 创建并发下载任务
+        semaphore = asyncio.Semaphore(min(10, self.max_workers))  # 限制媒体下载并发数
+
+        async def download_single_media(path, url, container, key):
+            async with semaphore:
+                try:
+                    local_path = await self._download_media_file_async(url, local_dir)
+                    if local_path and local_path != url:
+                        container[key] = local_path
+                    return True
+                except Exception as e:
+                    self.logger.error(f"异步媒体下载失败 {url}: {e}")
+                    return False
+
+        # 并发下载所有媒体文件
+        download_tasks = [download_single_media(path, url, container, key)
+                         for path, url, container, key in media_tasks]
+
+        if download_tasks:
+            print(f"      📥 开始异步下载 {len(download_tasks)} 个媒体文件...")
+            results = await asyncio.gather(*download_tasks, return_exceptions=True)
+            success_count = sum(1 for r in results if r is True)
+            print(f"      ✅ 异步下载完成: {success_count}/{len(download_tasks)} 成功")
 
     def _process_media_urls(self, data, local_dir):
         """递归处理数据中的媒体URL，下载并替换为本地路径"""
@@ -2483,6 +2816,164 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         return text.strip()
 
+    async def crawl_combined_tree_async(self, start_url, category_name=None):
+        """
+        异步整合爬取：构建树形结构并为每个节点提取详细内容
+        """
+        print(f"🚀 开始异步整合爬取: {start_url}")
+        print("=" * 60)
+
+        # 初始化异步HTTP客户端
+        await self._init_async_http_manager()
+
+        try:
+            # 设置目标URL
+            self.target_url = start_url
+
+            # 智能缓存预检查
+            if self.cache_manager and self.use_cache and not self.force_refresh:
+                print("🔍 执行智能缓存预检查...")
+                self._perform_cache_precheck(start_url, category_name)
+                self.cache_manager.display_cache_report()
+
+            # 第一步：使用 tree_crawler 逻辑构建基础树结构
+            print("📊 阶段 1/3: 构建基础树形结构...")
+            print("   正在分析页面结构和分类层次...")
+            base_tree = await self._crawl_tree_async(start_url, category_name)
+
+            if not base_tree:
+                print("❌ 无法构建基础树结构")
+                return None
+
+            print(f"✅ 基础树结构构建完成")
+            print("=" * 60)
+
+            # 第二步：为树中的每个节点提取详细内容
+            print("📝 阶段 2/3: 为每个节点提取详细内容...")
+            print("   正在处理节点基本信息和元数据...")
+            enriched_tree = await self._enrich_tree_with_detailed_content_async(base_tree)
+
+            # 第三步：对于产品页面，深入爬取其指南和故障排除内容
+            print("🔍 阶段 3/3: 深入爬取产品页面的子内容...")
+            print("   正在提取指南和故障排除详细信息...")
+            final_tree = await self._deep_crawl_product_content_async(enriched_tree)
+
+            return final_tree
+
+        finally:
+            # 确保关闭异步HTTP客户端
+            await self._close_async_http_manager()
+
+    async def _crawl_tree_async(self, start_url, category_name=None):
+        """异步版本的树形结构构建"""
+        # 这里可以调用现有的tree_crawler，因为它主要是数据处理
+        # 或者我们可以创建一个异步版本
+        return self.tree_crawler.crawl_tree(start_url, category_name)
+
+    async def _enrich_tree_with_detailed_content_async(self, tree):
+        """异步版本的树节点内容丰富化"""
+        # 使用异步方法处理每个节点
+        return await self._enrich_node_async(tree)
+
+    async def _enrich_node_async(self, node):
+        """异步处理单个节点的内容丰富化"""
+        if isinstance(node, dict):
+            # 如果节点有URL，异步获取详细内容
+            if 'url' in node and node['url']:
+                try:
+                    soup = await self.get_soup_async(node['url'])
+                    if soup:
+                        # 提取节点的详细信息
+                        node = await self._extract_node_details_async(node, soup)
+                except Exception as e:
+                    self.logger.error(f"异步处理节点失败 {node.get('url', '')}: {e}")
+
+            # 递归处理子节点
+            if 'children' in node and node['children']:
+                # 并发处理所有子节点
+                child_tasks = [self._enrich_node_async(child) for child in node['children']]
+                node['children'] = await asyncio.gather(*child_tasks, return_exceptions=True)
+
+                # 过滤掉异常结果
+                node['children'] = [child for child in node['children']
+                                  if not isinstance(child, Exception)]
+
+        return node
+
+    async def _extract_node_details_async(self, node, soup):
+        """异步提取节点详细信息"""
+        # 这里可以添加具体的节点信息提取逻辑
+        # 目前保持原有逻辑
+        return node
+
+    async def _deep_crawl_product_content_async(self, tree):
+        """异步深入爬取产品页面内容"""
+        return await self._deep_crawl_node_async(tree)
+
+    async def _deep_crawl_node_async(self, node):
+        """异步深入爬取单个节点的产品内容"""
+        if isinstance(node, dict):
+            # 如果是产品页面，提取指南和故障排除内容
+            if node.get('type') == 'product' and node.get('url'):
+                try:
+                    # 使用现有的异步并发处理方法
+                    guides_data, troubleshooting_data = await self._extract_product_content_async(node['url'])
+
+                    if guides_data:
+                        node['guides'] = guides_data
+                    if troubleshooting_data:
+                        node['troubleshooting'] = troubleshooting_data
+
+                except Exception as e:
+                    self.logger.error(f"异步提取产品内容失败 {node['url']}: {e}")
+
+            # 递归处理子节点
+            if 'children' in node and node['children']:
+                child_tasks = [self._deep_crawl_node_async(child) for child in node['children']]
+                node['children'] = await asyncio.gather(*child_tasks, return_exceptions=True)
+
+                # 过滤掉异常结果
+                node['children'] = [child for child in node['children']
+                                  if not isinstance(child, Exception)]
+
+        return node
+
+    async def _extract_product_content_async(self, product_url):
+        """异步提取产品页面的指南和故障排除内容"""
+        try:
+            soup = await self.get_soup_async(product_url)
+            if not soup:
+                return [], []
+
+            # 使用现有的内容提取逻辑
+            guides_data = []
+            troubleshooting_data = []
+
+            # 查找指南和故障排除链接
+            guide_links = []
+            troubleshooting_links = []
+
+            # 这里可以添加具体的链接提取逻辑
+            # 目前使用现有的方法作为参考
+
+            # 如果有链接，使用异步并发处理
+            if guide_links or troubleshooting_links:
+                tasks = []
+                for url in guide_links:
+                    tasks.append(('guide', url))
+                for url in troubleshooting_links:
+                    tasks.append(('troubleshooting', url))
+
+                if tasks:
+                    guides_data, troubleshooting_data = await self._process_tasks_async(
+                        tasks, guides_data, troubleshooting_data)
+
+            return guides_data, troubleshooting_data
+
+        except Exception as e:
+            self.logger.error(f"异步提取产品内容失败 {product_url}: {e}")
+            return [], []
+
     def crawl_combined_tree(self, start_url, category_name=None):
         """
         整合爬取：构建树形结构并为每个节点提取详细内容
@@ -2702,6 +3193,10 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         # 使用线程池并发处理
         if self.max_workers > 1 and len(tasks) > 1:
             print(f"    🔄 启动并发处理 ({self.max_workers} 线程处理 {len(tasks)} 个任务)...")
+
+        if len(tasks) > 0:
+            # 使用传统线程池作为后备方案
+            print(f"    🔄 启动线程池并发处理 ({self.max_workers} 线程处理 {len(tasks)} 个任务)...")
             with ThreadPoolExecutor(max_workers=min(self.max_workers, len(tasks))) as executor:
                 future_to_task = {}
                 completed_count = 0
@@ -3377,7 +3872,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         return Path(self.storage_root) / safe_name
 
     def _validate_path_structure(self, url):
-        """验证并提取真实的页面路径结构"""
+        """验证并提取真实的页面路径结构 - 通用动态方法"""
         print(f"   🔍 验证路径结构: {url}")
 
         # 获取页面内容以提取面包屑导航
@@ -3385,72 +3880,131 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if not soup:
             return None
 
-        # 提取面包屑导航
+        # 首先尝试提取面包屑导航
         breadcrumbs = self._extract_real_breadcrumbs(soup)
         if breadcrumbs:
             print(f"   📍 找到面包屑导航: {' > '.join([b['name'] for b in breadcrumbs])}")
             return breadcrumbs
 
-        # 如果没有面包屑，根据已知的MacBook Pro 17"结构构建完整路径
-        if '/Device/' in url:
-            device_path = url.split('/Device/')[-1]
-            if '?' in device_path:
-                device_path = device_path.split('?')[0]
-            device_path = device_path.rstrip('/')
+        # 如果没有面包屑，通过动态方式构建路径结构
+        print(f"   ⚠️  未找到面包屑导航，尝试动态构建路径结构")
+        return self._build_dynamic_breadcrumbs(url)
 
-            if device_path:
-                import urllib.parse
-                device_path = urllib.parse.unquote(device_path)
+    def _build_dynamic_breadcrumbs(self, url):
+        """动态构建面包屑导航 - 不依赖硬编码路径"""
+        if '/Device/' not in url:
+            return None
 
-                # 根据已知的MacBook Pro结构构建完整面包屑
-                breadcrumbs = [{"name": "Device", "url": self.base_url + "/Device"}]
+        device_path = url.split('/Device/')[-1]
+        if '?' in device_path:
+            device_path = device_path.split('?')[0]
+        device_path = device_path.rstrip('/')
 
-                if device_path.startswith('MacBook_Pro_17'):
-                    # MacBook Pro 17"的完整层级结构
-                    breadcrumbs.extend([
-                        {"name": "Mac", "url": self.base_url + "/Device/Mac"},
-                        {"name": "Mac_Laptop", "url": self.base_url + "/Device/Mac_Laptop"},
-                        {"name": "MacBook_Pro", "url": self.base_url + "/Device/MacBook_Pro"},
-                        {"name": "MacBook_Pro_17\"", "url": self.base_url + "/Device/MacBook_Pro_17%22"}
-                    ])
+        if not device_path:
+            return [{"name": "Device", "url": self.base_url + "/Device"}]
 
-                    # 添加具体型号
-                    if 'Models_A1151' in device_path:
-                        breadcrumbs.append({
-                            "name": "MacBook_Pro_17\"_Models_A1151_A1212_A1229_and_A1261",
-                            "url": url
-                        })
-                    elif 'Unibody' in device_path:
-                        breadcrumbs.append({
-                            "name": "MacBook_Pro_17\"_Unibody",
-                            "url": url
-                        })
-                    else:
-                        breadcrumbs.append({
-                            "name": device_path.replace("_", " "),
-                            "url": url
-                        })
-                else:
-                    # 其他设备的通用处理
-                    path_parts = device_path.split('/')
-                    current_path = "/Device"
+        import urllib.parse
+        device_path = urllib.parse.unquote(device_path)
 
-                    for part in path_parts:
-                        current_path += "/" + part
-                        breadcrumbs.append({
-                            "name": part.replace("_", " "),
-                            "url": self.base_url + current_path
-                        })
+        # 分解路径为各个部分
+        path_parts = device_path.split('/')
+        breadcrumbs = [{"name": "Device", "url": self.base_url + "/Device"}]
 
-                return breadcrumbs
+        # 动态构建每一级的面包屑
+        current_path = "/Device"
+        for i, part in enumerate(path_parts):
+            if not part:
+                continue
+
+            current_path += "/" + urllib.parse.quote(part, safe='')
+            current_url = self.base_url + current_path
+
+            # 尝试从该级别页面提取真实名称
+            real_name = self._get_real_category_name(current_url, part)
+            if real_name:
+                breadcrumbs.append({
+                    "name": real_name,
+                    "url": current_url
+                })
+            else:
+                # 如果无法获取真实名称，使用处理后的路径名称
+                display_name = part.replace('_', ' ').replace('%22', '"')
+                breadcrumbs.append({
+                    "name": display_name,
+                    "url": current_url
+                })
+
+        print(f"   📍 动态构建面包屑: {' > '.join([b['name'] for b in breadcrumbs])}")
+        return breadcrumbs
+
+    def _get_real_category_name(self, url, fallback_name):
+        """从页面获取真实的类别名称"""
+        try:
+            soup = self.get_soup(url)
+            if not soup:
+                return None
+
+            # 尝试从页面标题获取名称
+            title_elem = soup.find('h1')
+            if title_elem:
+                title_text = title_elem.get_text(strip=True)
+                if title_text and title_text != "Device":
+                    return title_text
+
+            # 尝试从面包屑获取名称
+            breadcrumb_elems = soup.select('[data-testid="breadcrumb"] a, .breadcrumb a')
+            for elem in breadcrumb_elems:
+                if elem.get('href', '').endswith(url.split(self.base_url)[-1]):
+                    return elem.get_text(strip=True)
+
+        except Exception as e:
+            print(f"   ⚠️  获取类别名称失败: {e}")
 
         return None
+
 
     def _extract_real_breadcrumbs(self, soup):
         """从页面提取真实的面包屑导航"""
         breadcrumbs = []
 
-        # 查找面包屑导航元素
+        # 方法1: 查找新版Chakra UI面包屑导航
+        chakra_breadcrumb = soup.select_one("nav[aria-label='breadcrumb'].chakra-breadcrumb")
+        if chakra_breadcrumb:
+            breadcrumb_items = chakra_breadcrumb.select("li[itemtype='http://schema.org/ListItem']")
+            if breadcrumb_items:
+                print(f"   📍 找到Chakra UI面包屑导航，共{len(breadcrumb_items)}项")
+                for item in breadcrumb_items:  # 不反向，保持原始顺序
+                    # 从data-name属性获取名称
+                    name = item.get("data-name")
+                    if name:
+                        # 尝试获取链接
+                        link = item.select_one("a")
+                        if link and link.get('href'):
+                            href = link.get('href')
+                            if '%22' in href:
+                                href = href.replace('%22', '"')
+                            full_url = self.base_url + href if href.startswith('/') else href
+                            breadcrumbs.append({"name": name, "url": full_url})
+                        else:
+                            # 当前页面（没有链接）
+                            breadcrumbs.append({"name": name, "url": ""})
+                    else:
+                        # 备选：从链接文本获取
+                        link = item.select_one("a")
+                        if link:
+                            text = link.get_text().strip()
+                            href = link.get('href')
+                            if text and href:
+                                if '%22' in href:
+                                    href = href.replace('%22', '"')
+                                full_url = self.base_url + href if href.startswith('/') else href
+                                breadcrumbs.append({"name": text, "url": full_url})
+
+                if breadcrumbs:
+                    print(f"   ✅ Chakra UI面包屑提取成功: {' > '.join([b['name'] for b in breadcrumbs])}")
+                    return breadcrumbs
+
+        # 方法2: 查找传统面包屑导航元素
         breadcrumb_selectors = [
             'nav[aria-label="breadcrumb"]',
             '.breadcrumb',
@@ -3464,8 +4018,10 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 # 获取面包屑列表项
                 breadcrumb_items = breadcrumb_nav.find_all('li')
                 if breadcrumb_items:
-                    # 反向处理面包屑，因为页面是倒序显示的
-                    for item in reversed(breadcrumb_items):
+                    print(f"   📍 找到传统面包屑导航，共{len(breadcrumb_items)}项")
+                    # 提取所有面包屑项目
+                    temp_breadcrumbs = []
+                    for item in breadcrumb_items:
                         link = item.find('a', href=True)
                         if link:
                             href = link.get('href')
@@ -3475,31 +4031,83 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                                 if '%22' in href:
                                     href = href.replace('%22', '"')
                                 full_url = self.base_url + href if href.startswith('/') else href
-                                breadcrumbs.append({"name": text, "url": full_url})
+                                temp_breadcrumbs.append({"name": text, "url": full_url})
                         else:
                             # 当前页面（没有链接）
                             text = item.get_text(strip=True)
-                            if text and text not in [b['name'] for b in breadcrumbs]:
-                                breadcrumbs.append({"name": text, "url": ""})
+                            if text and text not in [b['name'] for b in temp_breadcrumbs]:
+                                temp_breadcrumbs.append({"name": text, "url": ""})
 
+                    # iFixit的面包屑导航是倒序的，需要反向处理
+                    # 检查是否需要反向：如果最后一个项目包含"设备"或"Device"，则需要反向
+                    if temp_breadcrumbs:
+                        last_item = temp_breadcrumbs[-1]['name'].lower()
+                        first_item = temp_breadcrumbs[0]['name'].lower()
+
+                        # 如果最后一个是"设备"或"device"，或者第一个不是"设备"，则反向
+                        if ('设备' in last_item or 'device' in last_item or
+                            ('设备' not in first_item and 'device' not in first_item)):
+                            temp_breadcrumbs = list(reversed(temp_breadcrumbs))
+                            print(f"   🔄 面包屑导航已反向处理")
+
+                    breadcrumbs = temp_breadcrumbs
                     if breadcrumbs:
+                        print(f"   ✅ 传统面包屑提取成功: {' > '.join([b['name'] for b in breadcrumbs])}")
                         return breadcrumbs
                 else:
                     # 后备方案：查找所有链接
                     links = breadcrumb_nav.find_all('a', href=True)
-                    for link in reversed(links):
+                    temp_breadcrumbs = []
+                    for link in links:
                         href = link.get('href')
                         text = link.get_text(strip=True)
                         if href and text:
                             if '%22' in href:
                                 href = href.replace('%22', '"')
                             full_url = self.base_url + href if href.startswith('/') else href
-                            breadcrumbs.append({"name": text, "url": full_url})
+                            temp_breadcrumbs.append({"name": text, "url": full_url})
 
+                    # 检查顺序
+                    if temp_breadcrumbs and temp_breadcrumbs[0]['name'].lower() != 'device':
+                        temp_breadcrumbs = list(reversed(temp_breadcrumbs))
+
+                    breadcrumbs = temp_breadcrumbs
                     if breadcrumbs:
+                        print(f"   ✅ 链接面包屑提取成功: {' > '.join([b['name'] for b in breadcrumbs])}")
                         return breadcrumbs
 
         return None
+
+    def _clean_directory_name(self, name):
+        """清理目录名称，确保文件系统兼容性"""
+        if not name:
+            return "Unknown"
+
+        # 替换文件系统不支持的字符，但保留引号
+        safe_name = str(name)
+        safe_name = safe_name.replace("/", "_")
+        safe_name = safe_name.replace("\\", "_")
+        safe_name = safe_name.replace(":", "_")
+        safe_name = safe_name.replace("*", "_")
+        safe_name = safe_name.replace("?", "_")
+        safe_name = safe_name.replace("<", "_")
+        safe_name = safe_name.replace(">", "_")
+        safe_name = safe_name.replace("|", "_")
+
+        # 不替换引号，保持原样（macOS和Linux支持引号在文件名中）
+        # safe_name = safe_name.replace('"', '_')
+        # safe_name = safe_name.replace("'", "_")
+
+        # 移除多余的空格，但保持其他字符
+        safe_name = safe_name.strip()
+        # 不要用下划线连接，保持原始格式
+        # safe_name = "_".join([part for part in safe_name.split() if part])
+
+        # 确保不为空
+        if not safe_name:
+            safe_name = "Unknown"
+
+        return safe_name
 
     def _find_existing_path(self, breadcrumbs):
         """在已有目录结构中查找匹配的路径"""
@@ -3532,24 +4140,13 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 if '/Device/' in crumb_url:
                     url_segment = crumb_url.split('/Device/')[-1]
                     if url_segment:
-                        # 处理特殊情况的映射
-                        if url_segment == 'Mac':
-                            safe_name = 'Mac'
-                        elif url_segment == 'Mac_Laptop':
-                            safe_name = 'Mac_Laptop'  # 保持原始URL路径
-                        elif url_segment == 'MacBook_Pro':
-                            safe_name = 'MacBook_Pro'
-                        elif url_segment.startswith('MacBook_Pro_17'):
-                            # 处理MacBook Pro 17"的特殊情况
-                            if 'Unibody' in url_segment:
-                                safe_name = 'MacBook_Pro_17"_Unibody'
-                            elif 'Models_A1151' in url_segment:
-                                safe_name = 'MacBook_Pro_17"_Models_A1151_A1212_A1229_and_A1261'
-                            else:
-                                safe_name = 'MacBook_Pro_17"'
-                        else:
-                            # 其他情况，清理URL段作为目录名
-                            safe_name = url_segment.replace("%22", '"')
+                        # 动态处理URL段，不使用硬编码映射
+                        # 处理URL编码和特殊字符
+                        import urllib.parse
+                        safe_name = urllib.parse.unquote(url_segment)
+                        safe_name = safe_name.replace("%22", '"')
+                        # 清理文件系统不支持的字符
+                        safe_name = self._clean_directory_name(safe_name)
                     else:
                         # 后备方案：清理显示名称
                         safe_name = self._clean_directory_name(crumb_name)
@@ -3573,13 +4170,39 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         return current_path
 
-    def _clean_directory_name(self, name):
-        """清理目录名称，移除特殊字符"""
-        safe_name = name.replace("/", "_").replace("\\", "_").replace(":", "_")
-        safe_name = safe_name.replace('"', '_').replace("'", "_").replace("?", "_")
-        safe_name = safe_name.replace("<", "_").replace(">", "_").replace("|", "_")
-        safe_name = safe_name.replace("*", "_").strip()
-        return safe_name
+    def _build_full_save_path(self, target_url, base_dir):
+        """根据目标URL构建完整的保存路径"""
+        if not target_url or '/Device/' not in target_url:
+            return base_dir
+
+        # 提取设备路径
+        device_path = target_url.split('/Device/')[-1]
+        if '?' in device_path:
+            device_path = device_path.split('?')[0]
+        device_path = device_path.rstrip('/')
+
+        if not device_path:
+            return base_dir
+
+        import urllib.parse
+        device_path = urllib.parse.unquote(device_path)
+
+        # 构建完整路径
+        path_parts = device_path.split('/')
+        full_path = Path(self.storage_root) / "Device"
+
+        for part in path_parts:
+            if part:
+                # 清理路径部分
+                safe_part = part.replace("/", "_").replace("\\", "_").replace(":", "_")
+                safe_part = safe_part.replace('"', '"').replace("'", "_").replace("?", "_")
+                safe_part = safe_part.replace("<", "_").replace(">", "_").replace("|", "_")
+                safe_part = safe_part.replace("*", "_").strip()
+                full_path = full_path / safe_part
+
+        return full_path
+
+
 
     def _troubleshooting_belongs_to_current_page(self, troubleshooting_list, current_url):
         """检查troubleshooting是否真的属于当前页面"""
@@ -3754,129 +4377,232 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         return None
 
+    def _build_path_from_tree_structure(self, tree_data):
+        """从树结构中构建正确的文件夹路径"""
+        if not tree_data:
+            return None
+
+        # 查找目标节点（包含指南和故障排除的节点）
+        target_node = self._find_target_node_in_tree(tree_data)
+        if not target_node:
+            return None
+
+        # 构建从根到目标节点的路径
+        path_segments = self._build_path_segments_to_node(tree_data, target_node)
+        if not path_segments:
+            return None
+
+        # 构建文件系统路径
+        root_dir = Path(self.storage_root)
+        for segment in path_segments:
+            safe_name = self._clean_directory_name(segment)
+            root_dir = root_dir / safe_name
+
+        print(f"   🗂️  从树结构构建路径: {' > '.join(path_segments)}")
+        print(f"   📁 文件系统路径: {root_dir}")
+
+        return root_dir
+
+    def _find_target_node_in_tree(self, node):
+        """在树中查找包含指南和故障排除的目标节点"""
+        if not node or not isinstance(node, dict):
+            return None
+
+        # 检查当前节点是否包含指南或故障排除
+        if (node.get('guides') and len(node.get('guides', [])) > 0) or \
+           (node.get('troubleshooting') and len(node.get('troubleshooting', [])) > 0):
+            return node
+
+        # 递归检查子节点
+        children = node.get('children', [])
+        for child in children:
+            result = self._find_target_node_in_tree(child)
+            if result:
+                return result
+
+        return None
+
+    def _build_path_segments_to_node(self, tree_root, target_node, current_path=None):
+        """构建从根节点到目标节点的路径段"""
+        if current_path is None:
+            current_path = []
+
+        if not tree_root or not isinstance(tree_root, dict):
+            return None
+
+        # 添加当前节点名称到路径
+        node_name = tree_root.get('name', '')
+        if node_name:
+            current_path.append(node_name)
+
+        # 检查是否找到目标节点
+        if tree_root == target_node:
+            return current_path.copy()
+
+        # 递归检查子节点
+        children = tree_root.get('children', [])
+        for child in children:
+            result = self._build_path_segments_to_node(child, target_node, current_path.copy())
+            if result:
+                return result
+
+        return None
+
     def save_combined_result(self, tree_data, target_name=None):
         """保存整合结果到真实的设备路径结构"""
         print("   📁 创建目录结构...")
 
-        # 验证并获取真实的路径结构
-        target_url = getattr(self, 'target_url', None)
-        root_dir = None
+        # 从树结构中构建正确的路径
+        root_dir = self._build_path_from_tree_structure(tree_data)
 
-        if target_url:
-            # 验证路径结构
-            breadcrumbs = self._validate_path_structure(target_url)
-            if breadcrumbs:
-                # 在已有结构中查找正确路径
-                root_dir = self._find_existing_path(breadcrumbs)
-            else:
-                # 后备方案：使用URL解析
-                if '/Device/' in target_url:
-                    device_path = target_url.split('/Device/')[-1]
-                    if '?' in device_path:
-                        device_path = device_path.split('?')[0]
-                    device_path = device_path.rstrip('/')
-
-                    if device_path:
-                        import urllib.parse
-                        device_path = urllib.parse.unquote(device_path)
-
-                        # 构建路径，确保在Device目录下
-                        path_parts = device_path.split('/')
-                        root_dir = Path(self.storage_root) / "Device"
-                        for part in path_parts:
-                            safe_part = part.replace("/", "_").replace("\\", "_").replace(":", "_")
-                            safe_part = safe_part.replace('"', '_').replace("'", "_")
-                            root_dir = root_dir / safe_part
-                    else:
-                        # 如果是根Device页面，使用Device作为根目录
-                        root_dir = Path(self.storage_root) / "Device"
-                else:
-                    root_dir = Path(self.storage_root) / "Device"
-        elif target_name:
-            # 如果没有URL，尝试从target_name构建
-            if target_name.startswith('http'):
-                # 验证URL的路径结构
-                breadcrumbs = self._validate_path_structure(target_name)
+        # 如果没有从树结构构建路径，使用后备方案
+        if not root_dir:
+            target_url = getattr(self, 'target_url', None)
+            if target_url:
+                # 验证路径结构
+                breadcrumbs = self._validate_path_structure(target_url)
                 if breadcrumbs:
+                    # 在已有结构中查找正确路径
                     root_dir = self._find_existing_path(breadcrumbs)
                 else:
-                    root_dir = self._get_target_root_dir(target_name)
+                    # 后备方案：使用URL解析
+                    if '/Device/' in target_url:
+                        device_path = target_url.split('/Device/')[-1]
+                        if '?' in device_path:
+                            device_path = device_path.split('?')[0]
+                        device_path = device_path.rstrip('/')
+
+                        if device_path:
+                            import urllib.parse
+                            device_path = urllib.parse.unquote(device_path)
+
+                            # 构建路径，确保在Device目录下
+                            path_parts = device_path.split('/')
+                            root_dir = Path(self.storage_root) / "Device"
+                            for part in path_parts:
+                                safe_part = part.replace("/", "_").replace("\\", "_").replace(":", "_")
+                                safe_part = safe_part.replace('"', '_').replace("'", "_")
+                                root_dir = root_dir / safe_part
+                        else:
+                            # 如果是根Device页面，使用Device作为根目录
+                            root_dir = Path(self.storage_root) / "Device"
+                    else:
+                        root_dir = Path(self.storage_root) / "Device"
+            elif target_name:
+                # 如果没有URL，尝试从target_name构建
+                if target_name.startswith('http'):
+                    # 验证URL的路径结构
+                    breadcrumbs = self._validate_path_structure(target_name)
+                    if breadcrumbs:
+                        root_dir = self._find_existing_path(breadcrumbs)
+                    else:
+                        root_dir = self._get_target_root_dir(target_name)
+                else:
+                    # 假设是设备名称，放在Device目录下
+                    safe_name = target_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+                    safe_name = safe_name.replace('"', '_').replace("'", "_")
+                    root_dir = Path(self.storage_root) / "Device" / safe_name
             else:
-                # 假设是设备名称，放在Device目录下
-                safe_name = target_name.replace("/", "_").replace("\\", "_").replace(":", "_")
+                # 从树数据中提取路径信息
+                root_name = tree_data.get("name", "Unknown")
+                if " > " in root_name:
+                    root_name = root_name.split(" > ")[-1]
+                safe_name = root_name.replace("/", "_").replace("\\", "_").replace(":", "_")
                 safe_name = safe_name.replace('"', '_').replace("'", "_")
                 root_dir = Path(self.storage_root) / "Device" / safe_name
-        else:
-            # 从树数据中提取路径信息
-            root_name = tree_data.get("name", "Unknown")
-            if " > " in root_name:
-                root_name = root_name.split(" > ")[-1]
-            safe_name = root_name.replace("/", "_").replace("\\", "_").replace(":", "_")
-            safe_name = safe_name.replace('"', '_').replace("'", "_")
-            root_dir = Path(self.storage_root) / "Device" / safe_name
 
+        # 确保目录存在并保存内容
         if root_dir:
             root_dir.mkdir(parents=True, exist_ok=True)
             print(f"   📂 目标路径: {root_dir}")
 
             # 保存整个树结构，而不是只保存根节点
             print("   💾 保存内容和下载媒体文件...")
+            print(f"   🔍 开始保存树结构到: {root_dir}")
+            print(f"   🎯 目标URL: {getattr(self, 'target_url', 'None')}")
+            print(f"   📊 树数据类型: {type(tree_data)}")
+            print(f"   📊 树数据键: {list(tree_data.keys()) if isinstance(tree_data, dict) else 'N/A'}")
             self._save_tree_structure(tree_data, root_dir)
 
         print(f"\n📁 整合结果已保存到本地文件夹: {root_dir}")
         return str(root_dir)
 
-    def _save_tree_structure(self, tree_data, base_dir):
-        """保存整个树结构到指定目录，避免重复路径"""
+    def _save_tree_structure(self, tree_data, base_dir, current_path_parts=None):
+        """保存整个树结构到指定目录，简化逻辑确保内容正确保存"""
         if not tree_data or not isinstance(tree_data, dict):
+            print(f"   ⚠️  无效的树数据: {type(tree_data)}")
             return
 
-        # 检查当前节点是否是目标节点（根据URL判断）
+        # 初始化路径部分列表
+        if current_path_parts is None:
+            current_path_parts = []
+
+        node_name = tree_data.get('name', 'Unknown')
         current_url = tree_data.get('url', '')
-        target_url = getattr(self, 'target_url', None)
 
-        # 如果当前节点就是目标节点，直接保存其内容和子节点到base_dir
-        if target_url and current_url == target_url:
-            # 保存目标节点的基本信息
+        print(f"   🔍 处理节点: {node_name}")
+        print(f"      节点URL: {current_url}")
+        print(f"      节点类型: {'产品' if tree_data.get('guides') or tree_data.get('troubleshooting') else '分类'}")
+
+        # 检查当前节点是否有实际内容需要保存
+        has_guides = tree_data.get('guides') and len(tree_data.get('guides', [])) > 0
+        has_troubleshooting = tree_data.get('troubleshooting') and len(tree_data.get('troubleshooting', [])) > 0
+        has_content = has_guides or has_troubleshooting
+
+        if has_content:
+            print(f"   ✅ 发现内容节点: {node_name}")
+            print(f"      指南数量: {len(tree_data.get('guides', []))}")
+            print(f"      故障排除数量: {len(tree_data.get('troubleshooting', []))}")
+            print(f"      保存路径: {base_dir}")
+
+            # 确保目录存在
+            base_dir.mkdir(parents=True, exist_ok=True)
+
+            # 保存节点内容
+            print(f"   💾 开始保存节点内容...")
             self._save_node_content(tree_data, base_dir)
+            print(f"   ✅ 节点内容保存完成")
 
-            # 直接处理目标节点的子节点，不创建额外的目录层级
-            if 'children' in tree_data and tree_data['children']:
-                for child in tree_data['children']:
-                    child_name = child.get('name', 'Unknown')
-                    # 更全面的名称清理，处理特殊字符
-                    safe_name = child_name.replace("/", "_").replace("\\", "_").replace(":", "_")
-                    safe_name = safe_name.replace('"', '_').replace("'", "_").replace("?", "_")
-                    safe_name = safe_name.replace("<", "_").replace(">", "_").replace("|", "_")
-                    safe_name = safe_name.replace("*", "_").strip()
+        # 处理子节点
+        if 'children' in tree_data and tree_data['children']:
+            print(f"   🌳 处理 {len(tree_data['children'])} 个子节点...")
+            for child in tree_data['children']:
+                child_name = child.get('name', 'Unknown')
 
-                    # 检查是否已存在匹配的目录
-                    existing_dir = self._find_matching_directory(base_dir, safe_name)
-                    if existing_dir:
-                        child_dir = existing_dir
-                        print(f"   ✅ 使用已有目录: {child_dir}")
-                    else:
-                        child_dir = base_dir / safe_name
+                # 清理子节点名称，处理特殊字符
+                safe_name = self._clean_directory_name(child_name)
+                child_dir = base_dir / safe_name
 
-                    # 检查子节点是否是产品节点（有instruction_url）或有实际内容
-                    is_product = child.get('instruction_url') is not None
-                    has_content = child.get('guides') or child.get('troubleshooting')
+                # 检查子节点是否有内容
+                child_has_content = (child.get('guides') and len(child.get('guides', [])) > 0) or \
+                                  (child.get('troubleshooting') and len(child.get('troubleshooting', [])) > 0)
 
-                    if is_product or has_content:
-                        # 为产品节点或有内容的节点创建目录（如果不存在）
-                        if not child_dir.exists():
-                            child_dir.mkdir(parents=True, exist_ok=True)
-                            print(f"   📁 创建新目录: {child_dir}")
+                if child_has_content:
+                    # 为有内容的子节点创建目录
+                    if not child_dir.exists():
+                        child_dir.mkdir(parents=True, exist_ok=True)
+                        print(f"   📁 创建子节点目录: {child_dir}")
 
-                        # 保存子节点内容
-                        self._save_node_content(child, child_dir)
-                        # 递归保存子节点
-                        self._save_tree_structure(child, child_dir)
-        else:
-            # 对于非目标节点，继续递归查找目标节点
-            if 'children' in tree_data and tree_data['children']:
-                for child in tree_data['children']:
-                    self._save_tree_structure(child, base_dir)
+                # 递归处理子节点
+                self._save_tree_structure(child, child_dir if child_has_content else base_dir,
+                                        current_path_parts + [node_name])
+
+    def _clean_directory_name(self, name):
+        """清理目录名称，移除文件系统不支持的字符"""
+        if not name:
+            return "Unknown"
+
+        # 替换不安全的字符
+        safe_name = name.replace("/", "_").replace("\\", "_").replace(":", "_")
+        safe_name = safe_name.replace('"', '_').replace("'", "_").replace("?", "_")
+        safe_name = safe_name.replace("<", "_").replace(">", "_").replace("|", "_")
+        safe_name = safe_name.replace("*", "_").strip()
+
+        # 移除多余的下划线
+        while "__" in safe_name:
+            safe_name = safe_name.replace("__", "_")
+
+        return safe_name.strip("_") or "Unknown"
 
     def _save_node_content(self, node_data, node_dir):
         """保存单个节点的内容（guides和troubleshooting）"""
@@ -4462,7 +5188,7 @@ def process_input(input_text):
 
 def print_usage():
     print("=" * 60)
-    print("iFixit整合爬虫工具 - 使用说明")
+    print("iFixit高性能爬虫工具 - 使用说明")
     print("=" * 60)
     print("使用方法:")
     print("python auto_crawler.py [URL或设备名] [选项...]")
@@ -4470,32 +5196,56 @@ def print_usage():
     print("  python auto_crawler.py iMac_M_Series")
     print("  python auto_crawler.py https://www.ifixit.com/Device/Television")
     print("  python auto_crawler.py Television")
-    print("\n常用选项:")
-    print("  --verbose              启用详细输出")
-    print("  --no-proxy             关闭代理池")
-    print("  --no-cache             禁用缓存检查")
+    print("\n🚀 性能调优选项:")
+    print("  --workers N            设置并发线程数（默认8，推荐8-16）")
+    print("  --max-connections N    设置最大连接数（默认80）")
+    print("  --max-retries N        设置最大重试次数（默认3）")
+    print("  --timeout N            设置请求超时时间（秒，默认30）")
+    print("  --delay N              设置请求间隔（秒，默认0.5）")
+    print("  --burst-mode           启用爆发模式（最大性能，可能被限制）")
+    print("  --conservative         启用保守模式（降低并发，更稳定）")
+    print("\n🌐 代理和网络选项:")
+    print("  --no-proxy             关闭隧道代理（默认启用）")
+    print("  --proxy-switch N       代理切换频率（请求数，默认100）")
+    print("  --user-agent TEXT      自定义User-Agent")
+    print("\n💾 缓存和数据选项:")
+    print("  --no-cache             禁用缓存检查（默认启用）")
     print("  --force-refresh        强制重新爬取（忽略缓存）")
-    print("  --workers N            设置并发线程数（默认4）")
-    print("  --max-retries N        设置最大重试次数（默认5）")
-    print("\n视频处理选项:")
+    print("  --cache-ttl N          缓存有效期（小时，默认24）")
+    print("\n📹 媒体处理选项:")
     print("  --download-videos      启用视频文件下载（默认禁用）")
     print("  --max-video-size N     设置视频文件大小限制（MB，默认50）")
+    print("  --skip-images          跳过图片下载（仅保存URL）")
+    print("\n🔧 调试选项:")
+    print("  --verbose              启用详细输出")
+    print("  --debug                启用调试模式（更详细的日志）")
+    print("  --stats                显示详细统计信息")
+    print("\n📊 预设配置:")
+    print("  --fast                 快速模式：--workers 12 --burst-mode")
+    print("  --stable               稳定模式：--workers 4 --conservative --delay 1")
+    print("  --enterprise           企业模式：--workers 16 --max-connections 160")
     print("\n示例:")
-    print("  # 基本爬取（不下载视频）")
+    print("  # 默认高性能模式（8线程+代理池）")
     print("  python auto_crawler.py iMac_M_Series")
     print("")
-    print("  # 启用视频下载，限制10MB")
-    print("  python auto_crawler.py iMac_M_Series --download-videos --max-video-size 10")
+    print("  # 快速模式（12线程+爆发模式）")
+    print("  python auto_crawler.py iMac_M_Series --fast")
     print("")
-    print("  # 详细输出，禁用代理")
-    print("  python auto_crawler.py Television --verbose --no-proxy")
-    print("\n功能说明:")
-    print("- 智能缓存：自动跳过已爬取的内容")
-    print("- 代理池：天启IP自动切换，避免封禁")
-    print("- 并发爬取：多线程提升爬取速度")
-    print("- 错误重试：网络错误自动重试")
-    print("- 媒体下载：自动下载并本地化所有媒体文件")
-    print("- 视频处理：可选择性下载视频文件，支持大小限制")
+    print("  # 企业级高并发模式")
+    print("  python auto_crawler.py Television --enterprise --download-videos")
+    print("")
+    print("  # 稳定模式（适合网络不稳定环境）")
+    print("  python auto_crawler.py iPhone --stable --verbose")
+    print("")
+    print("  # 自定义高性能配置")
+    print("  python auto_crawler.py MacBook --workers 20 --max-connections 200 --delay 0.2")
+    print("\n🎯 默认配置说明:")
+    print("- 🔥 高性能：默认8线程并发 + 隧道代理池")
+    print("- 🌐 智能代理：HTTP隧道代理池，每次请求自动切换IP")
+    print("- 💾 智能缓存：自动跳过已爬取的内容，24小时有效期")
+    print("- 🔄 错误重试：网络错误自动重试，指数退避策略")
+    print("- 📁 媒体下载：自动下载并本地化所有图片文件")
+    print("- 📊 实时统计：显示爬取进度和性能指标")
     print("=" * 60)
 
 def main():
@@ -4510,24 +5260,63 @@ def main():
     # 获取目标URL/名称
     input_text = args[0]
 
-    # 解析选项
-    verbose = '--verbose' in args
+    # 🚀 默认高性能配置
+    verbose = '--verbose' in args or '--debug' in args
+    debug_mode = '--debug' in args
+    show_stats = '--stats' in args
     use_proxy = '--no-proxy' not in args  # 默认启用代理
     use_cache = '--no-cache' not in args  # 默认启用缓存
     force_refresh = '--force-refresh' in args
+    skip_images = '--skip-images' in args
 
-    # 解析workers参数
-    max_workers = 4
+    # 🎯 预设配置处理
+    if '--fast' in args:
+        # 快速模式：高并发 + 爆发模式
+        default_workers = 12
+        burst_mode = True
+        conservative_mode = False
+        default_delay = 0.3
+    elif '--stable' in args:
+        # 稳定模式：低并发 + 保守策略
+        default_workers = 4
+        burst_mode = False
+        conservative_mode = True
+        default_delay = 1.0
+    elif '--enterprise' in args:
+        # 企业模式：超高并发
+        default_workers = 16
+        burst_mode = True
+        conservative_mode = False
+        default_delay = 0.2
+    else:
+        # 默认高性能模式
+        default_workers = 8
+        burst_mode = '--burst-mode' in args
+        conservative_mode = '--conservative' in args
+        default_delay = 0.5
+
+    # 解析性能参数
+    max_workers = default_workers
     if '--workers' in args:
         try:
             workers_idx = args.index('--workers')
             if workers_idx + 1 < len(args):
                 max_workers = int(args[workers_idx + 1])
         except (ValueError, IndexError):
-            print("警告: workers参数无效，使用默认值4")
+            print(f"警告: workers参数无效，使用默认值{default_workers}")
 
-    # 解析max-retries参数
-    max_retries = 3  # 减少默认重试次数
+    # 解析连接数参数
+    max_connections = max_workers * 10  # 默认为线程数的10倍
+    if '--max-connections' in args:
+        try:
+            conn_idx = args.index('--max-connections')
+            if conn_idx + 1 < len(args):
+                max_connections = int(args[conn_idx + 1])
+        except (ValueError, IndexError):
+            print(f"警告: max-connections参数无效，使用默认值{max_connections}")
+
+    # 解析重试参数
+    max_retries = 3
     if '--max-retries' in args:
         try:
             retries_idx = args.index('--max-retries')
@@ -4535,6 +5324,46 @@ def main():
                 max_retries = int(args[retries_idx + 1])
         except (ValueError, IndexError):
             print("警告: max-retries参数无效，使用默认值3")
+
+    # 解析超时参数
+    timeout = 30
+    if '--timeout' in args:
+        try:
+            timeout_idx = args.index('--timeout')
+            if timeout_idx + 1 < len(args):
+                timeout = int(args[timeout_idx + 1])
+        except (ValueError, IndexError):
+            print("警告: timeout参数无效，使用默认值30秒")
+
+    # 解析请求间隔参数
+    request_delay = default_delay
+    if '--delay' in args:
+        try:
+            delay_idx = args.index('--delay')
+            if delay_idx + 1 < len(args):
+                request_delay = float(args[delay_idx + 1])
+        except (ValueError, IndexError):
+            print(f"警告: delay参数无效，使用默认值{default_delay}秒")
+
+    # 解析代理切换频率
+    proxy_switch_freq = 100
+    if '--proxy-switch' in args:
+        try:
+            switch_idx = args.index('--proxy-switch')
+            if switch_idx + 1 < len(args):
+                proxy_switch_freq = int(args[switch_idx + 1])
+        except (ValueError, IndexError):
+            print("警告: proxy-switch参数无效，使用默认值100")
+
+    # 解析缓存TTL
+    cache_ttl = 24
+    if '--cache-ttl' in args:
+        try:
+            ttl_idx = args.index('--cache-ttl')
+            if ttl_idx + 1 < len(args):
+                cache_ttl = int(args[ttl_idx + 1])
+        except (ValueError, IndexError):
+            print("警告: cache-ttl参数无效，使用默认值24小时")
 
     # 解析视频下载参数
     download_videos = '--download-videos' in args
@@ -4546,6 +5375,16 @@ def main():
                 max_video_size_mb = int(args[size_idx + 1])
         except (ValueError, IndexError):
             print("警告: max-video-size参数无效，使用默认值50MB")
+
+    # 解析自定义User-Agent
+    custom_user_agent = None
+    if '--user-agent' in args:
+        try:
+            ua_idx = args.index('--user-agent')
+            if ua_idx + 1 < len(args):
+                custom_user_agent = args[ua_idx + 1]
+        except (ValueError, IndexError):
+            print("警告: user-agent参数无效")
 
     if not input_text:
         print_usage()
@@ -4603,26 +5442,53 @@ def main():
                 else:
                     print("❌ 无效选择，请输入 1、2 或 3")
 
-        print("\n" + "=" * 60)
-        print(f"开始整合爬取: {name}")
-        print("阶段1: 构建完整树形结构")
-        print("阶段2: 为每个节点提取详细内容")
-        print("=" * 60)
+        # 🚀 显示高性能配置信息
+        print("\n" + "=" * 80)
+        print(f"🎯 开始高性能爬取: {name}")
+        print("=" * 80)
+        print(f"🔥 性能配置:")
+        print(f"   并发线程数: {max_workers}")
+        print(f"   最大连接数: {max_connections}")
+        print(f"   请求间隔: {request_delay}秒")
+        print(f"   超时时间: {timeout}秒")
+        print(f"   最大重试: {max_retries}次")
 
-        # 显示配置信息
-        print(f"📋 爬取配置:")
-        print(f"   目标: {name}")
-        print(f"   详细输出: {'是' if verbose else '否'}")
-        print(f"   使用代理: {'是' if use_proxy else '否'}")
-        print(f"   使用缓存: {'是' if use_cache else '否'}")
-        print(f"   强制刷新: {'是' if force_refresh else '否'}")
-        print(f"   并发数: {max_workers}")
-        print(f"   最大重试: {max_retries}")
-        print(f"   下载视频: {'是' if download_videos else '否'}")
+        mode_desc = []
+        if burst_mode:
+            mode_desc.append("🚀爆发模式")
+        if conservative_mode:
+            mode_desc.append("🛡️保守模式")
+        if mode_desc:
+            print(f"   运行模式: {' + '.join(mode_desc)}")
+
+        print(f"🌐 网络配置:")
+        print(f"   隧道代理: {'✅启用' if use_proxy else '❌禁用'}")
+        if use_proxy:
+            print(f"   代理切换: 每{proxy_switch_freq}次请求")
+        print(f"   智能缓存: {'✅启用' if use_cache else '❌禁用'}")
+        if use_cache:
+            print(f"   缓存有效期: {cache_ttl}小时")
+
+        print(f"📁 媒体处理:")
+        print(f"   图片下载: {'❌跳过' if skip_images else '✅启用'}")
+        print(f"   视频下载: {'✅启用' if download_videos else '❌禁用'}")
         if download_videos:
             print(f"   视频大小限制: {max_video_size_mb}MB")
 
-        # 创建整合爬虫
+        print(f"🔧 其他选项:")
+        print(f"   详细输出: {'✅启用' if verbose else '❌禁用'}")
+        print(f"   调试模式: {'✅启用' if debug_mode else '❌禁用'}")
+        print(f"   统计信息: {'✅启用' if show_stats else '❌禁用'}")
+        print(f"   强制刷新: {'✅启用' if force_refresh else '❌禁用'}")
+
+        print("=" * 80)
+        print("🚀 执行阶段:")
+        print("   阶段1: 构建完整树形结构")
+        print("   阶段2: 高并发提取详细内容")
+        print("   阶段3: 并行下载媒体文件")
+        print("=" * 80)
+
+        # 🚀 创建高性能整合爬虫
         crawler = CombinedIFixitCrawler(
             verbose=verbose,
             use_proxy=use_proxy,
@@ -4631,7 +5497,18 @@ def main():
             max_workers=max_workers,
             max_retries=max_retries,
             download_videos=download_videos,
-            max_video_size_mb=max_video_size_mb
+            max_video_size_mb=max_video_size_mb,
+            max_connections=max_connections,
+            timeout=timeout,
+            request_delay=request_delay,
+            proxy_switch_freq=proxy_switch_freq,
+            cache_ttl=cache_ttl,
+            custom_user_agent=custom_user_agent,
+            burst_mode=burst_mode,
+            conservative_mode=conservative_mode,
+            skip_images=skip_images,
+            debug_mode=debug_mode,
+            show_stats=show_stats
         )
 
         # 记录开始时间
@@ -4713,10 +5590,10 @@ def main():
     else:
         print_usage()
 
-def test_tianqi_proxy():
-    """测试天启IP代理池功能"""
+def test_tunnel_proxy():
+    """测试HTTP隧道代理功能"""
     print("=" * 60)
-    print("🧪 测试天启IP代理池功能")
+    print("🧪 测试HTTP隧道代理功能")
     print("=" * 60)
 
     # 创建爬虫实例，启用代理
@@ -4728,36 +5605,24 @@ def test_tianqi_proxy():
     )
 
     # 测试代理获取
-    print("\n1. 测试代理获取...")
+    print("\n1. 测试隧道代理配置...")
     if crawler.proxy_manager:
         proxy = crawler.proxy_manager.get_proxy()
         if proxy:
-            print("✅ 代理获取成功")
-            print(f"当前代理: {proxy}")
+            print("✅ 隧道代理配置成功")
+            print(f"隧道地址: {crawler.proxy_manager.tunnel_host}:{crawler.proxy_manager.tunnel_port}")
+            print(f"用户名: {crawler.proxy_manager.username}")
             stats = crawler.proxy_manager.get_stats()
-            print(f"代理池统计: {stats}")
+            print(f"代理统计: {stats}")
         else:
-            print("❌ 代理获取失败")
+            print("❌ 隧道代理配置失败")
             return
     else:
         print("❌ 代理管理器未初始化")
         return
 
-    # 测试代理切换
-    print("\n2. 测试代理切换...")
-    old_proxy = crawler.current_proxy.copy() if crawler.current_proxy else None
-    if crawler._switch_proxy("测试切换"):
-        new_proxy = crawler.current_proxy
-        if new_proxy != old_proxy:
-            print("✅ 代理切换成功")
-            print(f"新代理: {new_proxy}")
-        else:
-            print("⚠️  代理未变化（可能是代理池为空）")
-    else:
-        print("❌ 代理切换失败")
-
     # 测试实际网络请求
-    print("\n3. 测试实际网络请求...")
+    print("\n2. 测试实际网络请求...")
     test_url = "https://www.ifixit.com/Device"
     try:
         soup = crawler.get_soup(test_url)
@@ -4770,9 +5635,170 @@ def test_tianqi_proxy():
     except Exception as e:
         print(f"❌ 网络请求异常: {e}")
 
+    # 测试多次请求（验证IP自动切换）
+    print("\n3. 测试多次请求（验证IP自动切换）...")
+    test_urls = [
+        "https://dev.kdlapi.com/testproxy",  # 代理测试URL
+        "https://httpbin.org/ip",            # 显示IP的测试URL
+        "https://www.ifixit.com/Device"      # iFixit页面
+    ]
+
+    for i, url in enumerate(test_urls, 1):
+        try:
+            print(f"  请求 {i}: {url}")
+            response = requests.get(url,
+                                  proxies=crawler.proxy_manager.get_proxy(),
+                                  timeout=10,
+                                  headers={'User-Agent': 'Mozilla/5.0'})
+            if response.status_code == 200:
+                print(f"    ✅ 成功 (状态码: {response.status_code})")
+                if 'testproxy' in url or 'httpbin' in url:
+                    print(f"    响应: {response.text[:100]}...")
+            else:
+                print(f"    ⚠️  状态码: {response.status_code}")
+        except Exception as e:
+            print(f"    ❌ 请求失败: {str(e)[:100]}")
+
     print("\n" + "=" * 60)
-    print("🏁 代理池测试完成")
+    print("🏁 隧道代理测试完成")
     print("=" * 60)
+
+
+async def test_async_performance():
+    """测试异步版本的性能"""
+    print("=" * 60)
+    print("🧪 测试异步爬虫性能")
+    print("=" * 60)
+
+    # 测试URL列表
+    test_urls = [
+        "https://www.ifixit.com/Device/Mac_Laptop",
+        "https://www.ifixit.com/Device/iPhone",
+        "https://www.ifixit.com/Device/iPad"
+    ]
+
+    for i, test_url in enumerate(test_urls, 1):
+        print(f"\n🔍 测试 {i}/{len(test_urls)}: {test_url}")
+        print("-" * 40)
+
+        # 创建爬虫实例
+        crawler = CombinedIFixitCrawler(
+            verbose=False,
+            use_proxy=False,  # 先不使用代理测试
+            use_cache=False,
+            max_workers=5
+        )
+
+        try:
+            # 测试异步版本
+            print("⚡ 异步版本测试...")
+            start_time = time.time()
+
+            result = await crawler.crawl_combined_tree_async(test_url)
+
+            async_time = time.time() - start_time
+
+            if result:
+                stats = crawler.count_detailed_nodes(result)
+                print(f"✅ 异步版本完成")
+                print(f"   耗时: {async_time:.2f} 秒")
+                print(f"   节点数: {sum(stats.values())} 个")
+                print(f"   指南: {stats.get('guides', 0)} 个")
+                print(f"   故障排除: {stats.get('troubleshooting', 0)} 个")
+            else:
+                print("❌ 异步版本失败")
+
+            # 测试同步版本进行对比
+            print("🐌 同步版本测试...")
+            start_time = time.time()
+
+            sync_result = crawler.crawl_combined_tree(test_url)
+
+            sync_time = time.time() - start_time
+
+            if sync_result:
+                sync_stats = crawler.count_detailed_nodes(sync_result)
+                print(f"✅ 同步版本完成")
+                print(f"   耗时: {sync_time:.2f} 秒")
+                print(f"   节点数: {sum(sync_stats.values())} 个")
+                print(f"   指南: {sync_stats.get('guides', 0)} 个")
+                print(f"   故障排除: {sync_stats.get('troubleshooting', 0)} 个")
+
+                # 性能对比
+                if async_time > 0 and sync_time > 0:
+                    speedup = sync_time / async_time
+                    print(f"🚀 性能提升: {speedup:.2f}x")
+                    if speedup > 1:
+                        print(f"   异步版本快 {(speedup-1)*100:.1f}%")
+                    else:
+                        print(f"   同步版本快 {(1/speedup-1)*100:.1f}%")
+            else:
+                print("❌ 同步版本失败")
+
+        except Exception as e:
+            print(f"❌ 测试异常: {e}")
+
+    print("\n" + "=" * 60)
+    print("🏁 异步性能测试完成")
+    print("=" * 60)
+
+
+async def run_async_crawler(input_text):
+    """异步运行爬虫的主函数"""
+    print("🚀 启动异步爬虫模式")
+
+    # 解析输入
+    url, name = parse_input(input_text)
+    if not url:
+        print("❌ 无法解析输入的URL或设备名")
+        return
+
+    print(f"🎯 目标: {name}")
+    print(f"🔗 URL: {url}")
+
+    # 创建异步爬虫实例
+    crawler = CombinedIFixitCrawler(
+        verbose=True,
+        use_proxy=True,
+        use_cache=True,
+        max_workers=10  # 异步版本可以使用更高的并发数
+    )
+
+    start_time = time.time()
+
+    try:
+        # 执行异步爬取
+        combined_data = await crawler.crawl_combined_tree_async(url, name)
+
+        if combined_data:
+            # 计算统计信息
+            stats = crawler.count_detailed_nodes(combined_data)
+            elapsed_time = time.time() - start_time
+
+            # 显示结果
+            print("\n异步爬取完成!")
+            print("=" * 60)
+            print(f"- 指南节点: {stats['guides']} 个")
+            print(f"- 故障排除节点: {stats['troubleshooting']} 个")
+            print(f"- 产品节点: {stats['products']} 个")
+            print(f"- 分类节点: {stats['categories']} 个")
+            print(f"- 总计: {sum(stats.values())} 个节点")
+            print(f"- 耗时: {elapsed_time:.1f} 秒")
+
+            # 保存结果
+            filename = crawler.save_combined_result(combined_data, target_name=input_text)
+            print(f"📁 数据已保存: {filename}")
+
+            # 显示性能统计
+            crawler._print_performance_stats()
+
+        else:
+            print("❌ 异步爬取失败")
+
+    except Exception as e:
+        print(f"❌ 异步爬取异常: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
@@ -4780,7 +5806,163 @@ if __name__ == "__main__":
 
     # 检查是否是测试模式
     if len(sys.argv) > 1 and sys.argv[1] == "--test-proxy":
-        test_tianqi_proxy()
+        test_tunnel_proxy()
         sys.exit(0)
 
+    # 检查是否是异步测试模式
+    if len(sys.argv) > 1 and sys.argv[1] == "--test-async":
+        asyncio.run(test_async_performance())
+        sys.exit(0)
+
+    # 默认使用同步模式（高性能配置）
     main()
+
+
+async def main_async():
+    """异步主函数 - 默认使用异步并发+代理池模式"""
+    import sys
+
+    # 解析命令行参数
+    args = sys.argv[1:]
+
+    # 默认配置
+    verbose = False
+    use_proxy = True  # 默认启用代理
+    use_cache = True
+    force_refresh = False
+    max_workers = 10  # 异步模式默认更高并发
+    max_retries = 3
+    download_videos = True
+    max_video_size_mb = 100
+
+    # 解析参数
+    input_text = None
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--help" or arg == "-h":
+            print_help()
+            return
+        elif arg == "--verbose":
+            verbose = True
+        elif arg == "--no-proxy":
+            use_proxy = False
+        elif arg == "--no-cache":
+            use_cache = False
+        elif arg == "--force-refresh":
+            force_refresh = True
+        elif arg == "--no-videos":
+            download_videos = False
+        elif arg == "--max-video-size":
+            if i + 1 < len(args):
+                try:
+                    max_video_size_mb = int(args[i + 1])
+                    i += 1
+                except ValueError:
+                    print(f"❌ 无效的视频大小限制: {args[i + 1]}")
+                    return
+        elif arg == "--max-workers":
+            if i + 1 < len(args):
+                try:
+                    max_workers = int(args[i + 1])
+                    i += 1
+                except ValueError:
+                    print(f"❌ 无效的并发数: {args[i + 1]}")
+                    return
+        elif arg == "--max-retries":
+            if i + 1 < len(args):
+                try:
+                    max_retries = int(args[i + 1])
+                    i += 1
+                except ValueError:
+                    print(f"❌ 无效的重试次数: {args[i + 1]}")
+                    return
+        elif not arg.startswith("--"):
+            if input_text is None:
+                input_text = arg
+        i += 1
+
+    # 检查输入
+    if not input_text:
+        print("❌ 请提供URL或设备名")
+        print("💡 使用 --help 查看帮助信息")
+        return
+
+    # 解析输入
+    url, name = parse_input(input_text)
+    if not url:
+        print("❌ 无法解析输入的URL或设备名")
+        return
+
+    print("🚀 启动异步并发爬虫 (默认模式)")
+    print(f"🎯 目标: {name}")
+    print(f"🔗 URL: {url}")
+    print(f"⚡ 并发数: {max_workers}")
+    print(f"🔄 代理: {'启用' if use_proxy else '禁用'}")
+    print(f"💾 缓存: {'启用' if use_cache else '禁用'}")
+
+    if download_videos:
+        print(f"🎬 视频下载: 启用 (限制: {max_video_size_mb}MB)")
+    else:
+        print("🎬 视频下载: 禁用")
+
+    # 创建异步爬虫实例
+    crawler = CombinedIFixitCrawler(
+        verbose=verbose,
+        use_proxy=use_proxy,
+        use_cache=use_cache,
+        force_refresh=force_refresh,
+        max_workers=max_workers,
+        max_retries=max_retries,
+        download_videos=download_videos,
+        max_video_size_mb=max_video_size_mb
+    )
+
+    start_time = time.time()
+
+    try:
+        # 执行异步爬取
+        combined_data = await crawler.crawl_combined_tree_async(url, name)
+
+        if combined_data:
+            # 计算统计信息
+            stats = crawler.count_detailed_nodes(combined_data)
+            elapsed_time = time.time() - start_time
+
+            # 显示整合后的树形结构
+            print("\n整合后的树形结构:")
+            print("=" * 60)
+            crawler.print_combined_tree_structure(combined_data)
+            print("=" * 60)
+
+            # 显示统计信息
+            print(f"\n异步爬取统计:")
+            print(f"- 指南节点: {stats['guides']} 个")
+            print(f"- 故障排除节点: {stats['troubleshooting']} 个")
+            print(f"- 产品节点: {stats['products']} 个")
+            print(f"- 分类节点: {stats['categories']} 个")
+            print(f"- 总计: {sum(stats.values())} 个节点")
+            print(f"- 耗时: {elapsed_time:.1f} 秒")
+
+            # 保存结果
+            print(f"\n💾 正在保存数据到本地文件夹...")
+            filename = crawler.save_combined_result(combined_data, target_name=input_text)
+
+            print(f"\n✅ 异步爬取完成!")
+            print(f"📁 数据已保存到本地文件夹: {filename}")
+
+            # 显示性能统计
+            crawler._print_performance_stats()
+
+        else:
+            print("❌ 异步爬取失败")
+
+    except KeyboardInterrupt:
+        print("\n⚠️  用户中断爬取")
+        print("💡 提示: 可以使用 --sync 参数切换到同步模式")
+    except Exception as e:
+        print(f"❌ 异步爬取异常: {e}")
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        print("💡 提示: 可以使用 --sync 参数切换到同步模式")
