@@ -40,8 +40,8 @@ from tree_crawler import TreeCrawler
 class TunnelProxyManager:
     """隧道代理管理器 - 使用HTTP隧道代理池"""
 
-    def __init__(self, tunnel_host="h532.kdltpspro.com", tunnel_port=15818,
-                 username="t15220208576243", password="9lmw3uvb", max_reset_cycles=3):
+    def __init__(self, tunnel_host="b353.kdltpspro.com", tunnel_port=15818,
+                 username="t15237111788411", password="htjqu9dr", max_reset_cycles=3):
         """
         初始化隧道代理管理器
 

@@ -87,7 +87,7 @@ python auto_crawler.py --help
 
 ```python
 # 隧道代理配置（默认已配置）
-tunnel_host = "h532.kdltpspro.com"
+tunnel_host = "b353.kdltpspro.com"
 tunnel_port = 15818
 username = "your-username"
 password = "your-password"

@@ -9,11 +9,11 @@
 import httpx
 
 # 隧道域名:端口号
-tunnel = "h532.kdltpspro.com:15818"
+tunnel = "b353.kdltpspro.com:15818"
 
 # 用户名和密码方式
-username = "t15220208576243"
-password = "9lmw3uvb"
+username = "t15237111788411"
+password = "htjqu9dr"
 
 proxy_url = "http://%(user)s:%(pwd)s@%(proxy)s/" % {"user": username, "pwd": password, "proxy": tunnel}
 
