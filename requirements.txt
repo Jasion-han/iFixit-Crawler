@@ -5,15 +5,6 @@ beautifulsoup4>=4.12.0
 aiohttp>=3.8.0
 asyncio>=3.4.3
 
-# 数据库相关
-aiomysql>=0.2.0
-aiopg>=1.4.0
-pymysql>=1.1.0
-psycopg2-binary>=2.9.0
-
-# Redis相关
-aioredis>=2.0.0
-redis>=4.6.0
 
 # 代理和网络
 playwright>=1.37.0
@@ -29,7 +20,7 @@ python-dotenv>=1.0.0
 
 # 监控和日志
 psutil>=5.9.0
-logging>=0.4.9.6
+# logging>=0.4.9.6 - 已移除，因为logging是Python标准库
 
 # 工具库
 lxml>=4.9.0
