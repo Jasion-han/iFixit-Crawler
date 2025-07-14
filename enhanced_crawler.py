@@ -148,7 +148,8 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             product_info["instruction_url"] = ""
 
         except Exception as e:
-            print(f"Error extracting product info: {str(e)}")
+            if self.verbose:
+                print(f"Error extracting product info: {str(e)}")
             # 提供默认值
             if not product_info["product_name"]:
                 product_info["product_name"] = "Device Repair"
@@ -170,14 +171,16 @@ class EnhancedIFixitCrawler(IFixitCrawler):
     def extract_guide_content(self, guide_url):
         """提取指南页面的详细内容"""
         if not self.is_allowed_by_robots(guide_url):
-            print(f"跳过被robots.txt禁止的URL: {guide_url}")
+            if self.verbose:
+                print(f"跳过被robots.txt禁止的URL: {guide_url}")
             return None
 
         # 标准化URL - 移除fragment和多余参数
         normalized_url = self._normalize_guide_url(guide_url)
 
         if normalized_url in self.processed_guides:
-            print(f"Guide already processed, skipping: {normalized_url}")
+            if self.verbose:
+                print(f"Guide already processed, skipping: {normalized_url}")
             return None
 
         # 确保使用英文版本
@@ -185,7 +188,8 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         normalized_url = self._normalize_guide_url(guide_url)
         self.processed_guides.add(normalized_url)
 
-        print(f"Crawling guide content: {guide_url}")
+        if self.verbose:
+            print(f"Crawling guide content: {guide_url}")
 
         # 添加延迟避免过快请求
         time.sleep(random.uniform(1, 2))
@@ -526,7 +530,8 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             return guide_data
 
         except Exception as e:
-            print(f"提取指南内容时发生错误: {str(e)}")
+            if self.verbose:
+                print(f"提取指南内容时发生错误: {str(e)}")
             return None
 
     def clean_product_name(self, text):
@@ -1926,24 +1931,28 @@ class EnhancedIFixitCrawler(IFixitCrawler):
             return statistics
 
         except Exception as e:
-            print(f"提取统计数据时发生错误: {str(e)}")
+            if self.verbose:
+                print(f"提取统计数据时发生错误: {str(e)}")
             return {}
 
     def extract_troubleshooting_content(self, troubleshooting_url):
         """提取故障排除页面的详细内容 - 基于真实页面结构分析"""
         if not self.is_allowed_by_robots(troubleshooting_url):
-            print(f"跳过被robots.txt禁止的URL: {troubleshooting_url}")
+            if self.verbose:
+                print(f"跳过被robots.txt禁止的URL: {troubleshooting_url}")
             return None
 
         if troubleshooting_url in self.troubleshooting_visited:
-            print(f"Troubleshooting page already processed, skipping: {troubleshooting_url}")
+            if self.verbose:
+                print(f"Troubleshooting page already processed, skipping: {troubleshooting_url}")
             return None
 
         # 确保使用英文版本
         troubleshooting_url = self.ensure_english_url(troubleshooting_url)
         self.troubleshooting_visited.add(troubleshooting_url)
 
-        print(f"Crawling troubleshooting content: {troubleshooting_url}")
+        if self.verbose:
+            print(f"Crawling troubleshooting content: {troubleshooting_url}")
 
         # 添加延迟避免过快请求
         time.sleep(random.uniform(1, 2))
@@ -1965,7 +1974,8 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                 title_text = title_elem.get_text().strip()
                 title_text = re.sub(r'\s+', ' ', title_text)
                 troubleshooting_data["title"] = title_text
-                print(f"提取标题: {title_text}")
+                if self.verbose:
+                    print(f"提取标题: {title_text}")
 
             # 动态提取页面上的真实字段内容
             dynamic_sections = self.extract_dynamic_sections(soup)
@@ -2014,32 +2024,34 @@ class EnhancedIFixitCrawler(IFixitCrawler):
 
             troubleshooting_data = ordered_ts_data
 
-            # 打印提取结果统计
-            dynamic_fields = [k for k in troubleshooting_data.keys()
-                            if k not in ['url', 'title', 'causes', 'view_statistics', 'completed', 'favorites']]
+            # 打印提取结果统计（仅在verbose模式下）
+            if self.verbose:
+                dynamic_fields = [k for k in troubleshooting_data.keys()
+                                if k not in ['url', 'title', 'causes', 'view_statistics', 'completed', 'favorites']]
 
-            print(f"提取完成:")
-            for field in dynamic_fields:
-                content = troubleshooting_data.get(field, '')
-                if content:
-                    print(f"  {field}: {len(content)} 字符")
+                print(f"提取完成:")
+                for field in dynamic_fields:
+                    content = troubleshooting_data.get(field, '')
+                    if content:
+                        print(f"  {field}: {len(content)} 字符")
 
-            causes = troubleshooting_data.get('causes', [])
-            print(f"  Causes: {len(causes)} 个")
+                causes = troubleshooting_data.get('causes', [])
+                print(f"  Causes: {len(causes)} 个")
 
-            # 统计每个cause中的图片和视频数量
-            total_images = sum(len(cause.get('images', [])) for cause in causes)
-            total_videos = sum(len(cause.get('videos', [])) for cause in causes)
-            print(f"  Images (in causes): {total_images} 个")
-            print(f"  Videos (in causes): {total_videos} 个")
+                # 统计每个cause中的图片和视频数量
+                total_images = sum(len(cause.get('images', [])) for cause in causes)
+                total_videos = sum(len(cause.get('videos', [])) for cause in causes)
+                print(f"  Images (in causes): {total_images} 个")
+                print(f"  Videos (in causes): {total_videos} 个")
 
-            if statistics:
-                print(f"  Statistics: {len(statistics)} 项")
+                if statistics:
+                    print(f"  Statistics: {len(statistics)} 项")
 
             return troubleshooting_data
 
         except Exception as e:
-            print(f"提取故障排除内容时发生错误: {str(e)}")
+            if self.verbose:
+                print(f"提取故障排除内容时发生错误: {str(e)}")
             return None
 
     def extract_causes_sections_with_media(self, soup):
@@ -2327,8 +2339,6 @@ class EnhancedIFixitCrawler(IFixitCrawler):
                             "url": href,
                             "title": link_text
                         })
-
-            print(f"提取到 {len(videos)} 个视频")
             return videos
 
         except Exception as e:
@@ -6477,9 +6487,10 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         # 限制为7个链接
         final_links = ordered_links[:7]
 
-        print(f"Filtered and kept {len(final_links)} target troubleshooting links")
-        for link in final_links:
-            print(f"  - {link['title']}: {link['url']}")
+        if self.verbose:
+            print(f"Filtered and kept {len(final_links)} target troubleshooting links")
+            for link in final_links:
+                print(f"  - {link['title']}: {link['url']}")
 
         return final_links
 
@@ -6487,13 +6498,12 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         """爬取设备页面及其指南和故障排除内容"""
         # 确保使用英文版本
         device_url = self.ensure_english_url(device_url)
-        print(f"Starting to crawl device page: {device_url}")
+        print(f"🚀 开始爬取设备页面: {device_url}")
 
         # 首先获取基本的产品信息
-        print("Getting device page content...")
         soup = self.get_soup(device_url)
         if not soup:
-            print("Unable to get device page content")
+            print("❌ 无法获取设备页面内容")
             return None
         if not soup:
             return None
@@ -6502,17 +6512,17 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         product_info = self.extract_product_info(soup, device_url, [])
 
         # 提取指南链接
-        print("Extracting guide links...")
         guides = self.extract_guides_from_device_page(soup, device_url)
-        print(f"Found {len(guides)} guides")
+        print(f"📖 找到 {len(guides)} 个指南")
 
         # 提取故障排除链接
-        print("Extracting troubleshooting links...")
         troubleshooting_links = self.extract_troubleshooting_from_device_page(soup, device_url)
-        print(f"Found {len(troubleshooting_links)} troubleshooting pages")
+        print(f"🔧 找到 {len(troubleshooting_links)} 个故障排除页面")
 
         # 爬取每个指南的详细内容
         guides_content = []
+        if guides:
+            print(f"📖 正在爬取 {len(guides)} 个指南...")
         for guide in guides:
             guide_content = self.extract_guide_content(guide["url"])
             if guide_content:
@@ -6520,6 +6530,8 @@ class EnhancedIFixitCrawler(IFixitCrawler):
 
         # 爬取故障排除内容（只在第一次遇到时爬取）
         troubleshooting_content = []
+        if troubleshooting_links:
+            print(f"🔧 正在爬取 {len(troubleshooting_links)} 个故障排除页面...")
         for ts_link in troubleshooting_links:
             ts_content = self.extract_troubleshooting_content(ts_link["url"])
             if ts_content:
@@ -6538,7 +6550,7 @@ class EnhancedIFixitCrawler(IFixitCrawler):
     def save_enhanced_results(self, enhanced_data, filename=None):
         """保存增强版爬取结果"""
         if not enhanced_data:
-            print("没有数据需要保存")
+            print("❌ 没有数据需要保存")
             return
 
         # 确保结果目录存在
@@ -6561,9 +6573,9 @@ class EnhancedIFixitCrawler(IFixitCrawler):
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(enhanced_data, f, ensure_ascii=False, indent=2)
 
-        print(f"\n已保存增强版产品信息到 {filename}")
-        print(f"包含 {len(enhanced_data.get('guides', []))} 个指南")
-        print(f"包含 {len(enhanced_data.get('troubleshooting', []))} 个故障排除页面")
+        print(f"✅ 已保存增强版产品信息到 {filename}")
+        print(f"📖 包含 {len(enhanced_data.get('guides', []))} 个指南")
+        print(f"🔧 包含 {len(enhanced_data.get('troubleshooting', []))} 个故障排除页面")
 
 def test_troubleshooting_extraction():
     """测试故障排除内容提取的精确边界检测"""
@@ -6734,30 +6746,26 @@ def main():
         device_url = "https://www.ifixit.com/Device/MacBook_Pro_17%22_Unibody?lang=en"
         print("未指定URL，使用默认URL: MacBook Pro 17\" Unibody")
 
-    print(f"开始增强版爬取...")
-    print(f"目标URL: {device_url}")
-    print("=" * 80)
+    print("=" * 60)
 
     try:
         enhanced_data = crawler.crawl_device_with_guides_and_troubleshooting(device_url)
 
         if enhanced_data:
             crawler.save_enhanced_results(enhanced_data)
+
+            # 显示简化的统计信息
+            guides_count = len(enhanced_data.get('guides', []))
+            troubleshooting_count = len(enhanced_data.get('troubleshooting', []))
+            print("=" * 60)
+            print("🎉 爬取完成！")
+            print(f"📊 指南: {guides_count} 个 | 故障排除: {troubleshooting_count} 个")
+
             if crawler.verbose:
-                print("=" * 80)
-                print("🎉 爬取完成！")
-
-                # 显示统计信息
-                guides_count = len(enhanced_data.get('guides', []))
-                troubleshooting_count = len(enhanced_data.get('troubleshooting', []))
-                print(f"📊 统计信息:")
-                print(f"   - 指南数量: {guides_count}")
-                print(f"   - 故障排除页面: {troubleshooting_count}")
-
                 # 显示保存的文件名
                 device_name = device_url.split('/')[-1].replace('?lang=en', '')
                 output_file = f"results/enhanced_{device_name}.json"
-                print(f"   - 保存文件: {output_file}")
+                print(f"📁 保存文件: {output_file}")
 
         else:
             print("❌ 爬取失败")

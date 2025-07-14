@@ -12,7 +12,7 @@
 
 ### 🌳 内容提取
 - **🌳 完整结构**：设备分类层级结构 + 深度内容提取
-- **�📁 本地存储**：层级文件夹结构，自动下载媒体文件
+- **📁 灵活存储**：支持本地存储和阿里云服务器部署，通过环境变量配置
 - **🎥 媒体处理**：智能视频下载，支持大小限制和格式过滤
 - **🖼️ 图片优化**：跨页面去重，精准过滤，节省存储空间
 
@@ -33,7 +33,9 @@ iFixit爬虫/
 ├── intro.txt               # 隧道代理使用说明
 ├── requirements.txt         # 依赖包列表
 ├── robots.txt              # 爬虫规则
-└── ifixit_data/            # 爬取结果目录
+├── 阿里云部署说明.md        # 阿里云服务器部署指南
+├── test_env_config.py       # 环境变量配置测试脚本
+└── ifixit_data/            # 爬取结果目录（默认，可通过环境变量配置）
     └── Device/             # 按设备层级结构存储
         └── [产品路径]/     # 完整的产品分类路径
             ├── info.json   # 产品基本信息
@@ -53,7 +55,33 @@ iFixit爬虫/
 pip install -r requirements.txt
 ```
 
-### 2. 立即开始（推荐）
+### 2. 数据存储配置
+
+#### 本地开发（默认）
+```bash
+# 数据保存到当前目录的 ifixit_data/ 文件夹
+python auto_crawler.py iPhone
+```
+
+#### 阿里云服务器部署
+```bash
+# 设置环境变量，数据直接保存到 /home/data 目录
+export IFIXIT_DATA_DIR="/home/data"
+python auto_crawler.py iPhone
+
+# 或者永久设置
+echo 'export IFIXIT_DATA_DIR="/home/data"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### 自定义存储路径
+```bash
+# 保存到任意指定目录
+export IFIXIT_DATA_DIR="/path/to/your/data"
+python auto_crawler.py iPhone
+```
+
+### 3. 立即开始（推荐）
 
 ```bash
 # 🚀 默认高性能模式（8线程+代理池）
@@ -72,7 +100,7 @@ python auto_crawler.py iPad --stable
 python auto_crawler.py --help
 ```
 
-### 3. 性能对比
+### 4. 性能对比
 
 | 模式 | 命令 | 线程数 | 连接数 | 适用场景 |
 |------|------|--------|--------|----------|
@@ -81,7 +109,7 @@ python auto_crawler.py --help
 | **稳定** | `python auto_crawler.py device --stable` | 4 | 40 | 网络不稳定 |
 | **企业** | `python auto_crawler.py device --enterprise` | 16 | 160 | 高性能服务器 |
 
-### 4. 代理配置（可选）
+### 5. 代理配置（可选）
 
 工具内置HTTP隧道代理池，默认启用。如需自定义代理，编辑 `auto_crawler.py` 中的配置：
 
@@ -99,6 +127,69 @@ password = "your-password"
 - `httpx` - 异步HTTP客户端
 - `aiofiles` - 异步文件操作
 - `urllib3` - 连接池和重试机制
+
+## 🌐 部署配置
+
+### 📁 数据存储路径配置
+
+工具支持通过环境变量 `IFIXIT_DATA_DIR` 灵活配置数据保存路径：
+
+#### 本地开发环境
+```bash
+# 默认保存到当前目录的 ifixit_data/ 文件夹
+python auto_crawler.py iPhone
+```
+
+#### 阿里云服务器部署
+```bash
+# 方法1: 临时设置（推荐用于测试）
+export IFIXIT_DATA_DIR="/home/data"
+python auto_crawler.py iPhone
+
+# 方法2: 永久设置（推荐用于生产环境）
+echo 'export IFIXIT_DATA_DIR="/home/data"' >> ~/.bashrc
+source ~/.bashrc
+python auto_crawler.py iPhone
+
+# 方法3: 系统级设置
+sudo nano /etc/environment
+# 添加: IFIXIT_DATA_DIR="/home/data"
+```
+
+#### 自定义存储路径
+```bash
+# 保存到任意指定目录
+export IFIXIT_DATA_DIR="/path/to/your/data"
+python auto_crawler.py iPhone
+```
+
+### 🔧 配置验证
+
+使用测试脚本验证环境变量配置：
+```bash
+python test_env_config.py
+```
+
+### 📋 部署检查清单
+
+1. **目录权限**：确保目标目录有写入权限
+   ```bash
+   sudo mkdir -p /home/data
+   sudo chown -R $USER:$USER /home/data
+   sudo chmod -R 755 /home/data
+   ```
+
+2. **环境变量**：验证环境变量设置
+   ```bash
+   echo $IFIXIT_DATA_DIR  # 应输出: /home/data
+   ```
+
+3. **磁盘空间**：确保有足够的存储空间
+   ```bash
+   df -h /home/data
+   ```
+
+详细部署说明请参考：[阿里云部署说明.md](./阿里云部署说明.md)
 
 ## 📖 详细使用指南
 
@@ -624,8 +715,33 @@ MemoryError: Unable to allocate memory
 PermissionError: Access denied
 ```
 **解决方案**：
-- 确保有写入 `ifixit_data/` 目录的权限
+- 确保有写入目标目录的权限（默认 `ifixit_data/` 或环境变量指定的目录）
 - 检查磁盘空间是否充足
+- 如果使用自定义路径，确保目录存在且有权限：
+  ```bash
+  sudo mkdir -p /home/data
+  sudo chown -R $USER:$USER /home/data
+  sudo chmod -R 755 /home/data
+  ```
+
+#### 5. 环境变量配置错误
+```
+数据保存到了错误的目录
+```
+**解决方案**：
+- 检查环境变量设置：`echo $IFIXIT_DATA_DIR`
+- 重新设置环境变量：`export IFIXIT_DATA_DIR="/home/data"`
+- 验证配置：`python test_env_config.py`
+- 永久设置：`echo 'export IFIXIT_DATA_DIR="/home/data"' >> ~/.bashrc && source ~/.bashrc`
+
+#### 6. 目录不存在错误
+```
+FileNotFoundError: No such file or directory
+```
+**解决方案**：
+- 创建目标目录：`mkdir -p /home/data`
+- 检查路径拼写是否正确
+- 确保使用绝对路径：`export IFIXIT_DATA_DIR="/home/data"`
 
 ### 调试技巧
 
@@ -708,7 +824,24 @@ python auto_crawler.py 'Mac' --verbose --no-proxy
 - 子层级自动跳过，避免重复处理
 - 保持清晰的层级结构和内容组织
 
-### 场景3：批量处理多个设备类型
+### 场景3：阿里云服务器部署
+```bash
+# 设置数据保存到 /home/data 目录
+export IFIXIT_DATA_DIR="/home/data"
+
+# 高性能企业模式爬取
+python auto_crawler.py 'MacBook_Pro_17%22' --enterprise --verbose
+
+# 验证数据保存位置
+ls -la /home/data/Device/
+```
+
+**处理结果**：
+- 数据直接保存到阿里云服务器的 `/home/data/Device/` 目录
+- 利用服务器高性能配置，16线程并发处理
+- 适合大规模数据采集和生产环境部署
+
+### 场景4：批量处理多个设备类型
 ```bash
 # 分别处理不同设备类型
 python auto_crawler.py 'iPhone' --no-proxy
@@ -827,3 +960,60 @@ python auto_crawler.py device --cache-ttl 48
 - **📋 丰富选项**：支持爆发模式、保守模式、自定义配置
 - **📊 进度可视**：实时显示爬取进度和性能指标
 - **🗂️ 结构优化**：层级目录结构，内容保存在最合适位置
+
+## 📋 快速参考
+
+### 🚀 常用命令
+```bash
+# 本地开发（默认）
+python auto_crawler.py iPhone
+
+# 阿里云部署
+export IFIXIT_DATA_DIR="/home/data"
+python auto_crawler.py iPhone --enterprise
+
+# 高性能模式
+python auto_crawler.py MacBook --fast --workers 12
+
+# 调试模式
+python auto_crawler.py iPad --verbose --no-proxy
+
+# 验证环境配置
+python test_env_config.py
+```
+
+### 🔧 环境变量
+```bash
+# 设置数据保存路径
+export IFIXIT_DATA_DIR="/home/data"
+
+# 验证设置
+echo $IFIXIT_DATA_DIR
+
+# 永久设置
+echo 'export IFIXIT_DATA_DIR="/home/data"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### 📁 目录结构
+```
+${IFIXIT_DATA_DIR}/Device/
+├── Mac/Mac_Laptop/MacBook_Pro/MacBook_Pro_17"/
+│   ├── info.json
+│   ├── guides/
+│   └── troubleshooting/
+└── iPhone/iPhone_15/iPhone_15_Pro/
+    ├── info.json
+    ├── guides/
+    └── troubleshooting/
+```
+
+### 🆘 故障排除
+- **权限错误**：`sudo chown -R $USER:$USER /home/data`
+- **环境变量**：`python test_env_config.py`
+- **网络问题**：`--no-proxy --workers 4`
+- **详细日志**：`--verbose`
+
+---
+
+**📖 详细文档**：[阿里云部署说明.md](./阿里云部署说明.md)

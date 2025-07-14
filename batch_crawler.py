@@ -50,28 +50,25 @@ def crawl_batch(search_term, debug=False):
     
     # 去重
     product_links = list(set(product_links))
-    print(f"找到 {len(product_links)} 个产品链接")
-    
+    print(f"📋 找到 {len(product_links)} 个产品链接")
+
     # 爬取每个产品的详细信息
     results = []
     for i, link in enumerate(product_links, 1):
-        print(f"\n[{i}/{len(product_links)}] 爬取: {link}")
+        print(f"[{i}/{len(product_links)}] 正在爬取...")
         product_info = crawler.extract_product_info_from_url(link)
         if product_info:
             results.append(product_info)
-            # 输出部分结果供参考
-            print(f"产品: {product_info.get('product_name', 'N/A')}")
-            print(f"说明书: {product_info.get('instruction_url', 'N/A')}")
         # 添加延迟，避免请求过于频繁
         time.sleep(1)
-    
+
     # 保存结果到JSON文件
     filename = f"results/batch_{search_term.replace(' ', '_')}.json"
     os.makedirs("results", exist_ok=True)
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    
-    print(f"\n批量爬取完成，已保存 {len(results)} 个产品信息到 {filename}")
+
+    print(f"✅ 批量爬取完成，已保存 {len(results)} 个产品信息到 {filename}")
     return results
 
 def test_url(url, debug=False):

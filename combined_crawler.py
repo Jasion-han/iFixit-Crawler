@@ -23,7 +23,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
     def __init__(self, base_url="https://www.ifixit.com", verbose=False):
         super().__init__(base_url, verbose)
         # 初始化树形爬虫的功能
-        self.tree_crawler = TreeCrawler(base_url)
+        self.tree_crawler = TreeCrawler(base_url, verbose=verbose)
         self.processed_nodes = set()  # 记录已处理的节点，避免重复
         self.target_url = None  # 用户指定的目标URL
 

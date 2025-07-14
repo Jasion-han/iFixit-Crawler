@@ -15,12 +15,19 @@ import json
 import time
 import random
 import re
+import logging
 from crawler import IFixitCrawler
+from tree_building_progress import TreeBuildingProgressManager, TreeBuildingResumeHelper
 
 class TreeCrawler(IFixitCrawler):
-    def __init__(self, base_url="https://www.ifixit.com"):
+    def __init__(self, base_url="https://www.ifixit.com", enable_resume=True, logger=None, verbose=False):
         super().__init__(base_url)
         self.tree_data = {}  # 存储树形结构数据
+        self.enable_resume = enable_resume
+        self.logger = logger or logging.getLogger(__name__)
+        self.progress_manager = None
+        self.resume_helper = None
+        self.verbose = verbose  # 添加verbose属性
         
     def find_exact_path(self, target_url):
         """
@@ -376,7 +383,8 @@ class TreeCrawler(IFixitCrawler):
     
     def _find_path_to_target(self, current_url, target_url, current_path):
         """递归向下查找目标URL的路径"""
-        print(f"检查路径: {current_url}")
+        if self.verbose:
+            print(f"检查路径: {current_url}")
         
         # 先检查当前URL是否就是目标URL
         if current_url == target_url:
@@ -522,13 +530,39 @@ class TreeCrawler(IFixitCrawler):
         return None
 
     def crawl_tree(self, start_url=None, category_name=None):
-        """以树形结构爬取设备分类"""
+        """以树形结构爬取设备分类 - 支持断点续爬"""
         if not start_url:
             # 从设备页面开始
             start_url = self.base_url + "/Device"
             category_name = "设备"
-            
-        print(f"开始爬取: {start_url}")
+
+        # 初始化进度管理器
+        if self.enable_resume:
+            self.progress_manager = TreeBuildingProgressManager(start_url, logger=self.logger)
+            self.resume_helper = TreeBuildingResumeHelper(self.progress_manager, self.logger)
+
+            # 检查是否可以恢复
+            if self.resume_helper.can_resume():
+                print(f"🔄 检测到未完成的树构建任务，准备从断点恢复...")
+                self.progress_manager.display_progress_report()
+
+                # 获取恢复数据
+                resume_data = self.resume_helper.prepare_resume_data()
+                if resume_data:
+                    # 恢复已访问的URL
+                    self.visited_urls.update(resume_data.get('visited_urls', set()))
+
+                    # 恢复树形结构
+                    existing_tree = resume_data.get('tree_structure')
+                    if existing_tree:
+                        print(f"📋 恢复已构建的树形结构...")
+                        # 从现有树形结构继续构建
+                        return self._resume_tree_building(existing_tree, start_url, resume_data)
+
+            # 开始新的构建会话
+            self.progress_manager.start_session()
+
+        print(f"🌳 开始爬取: {start_url}")
         
         # 检查是否是品牌电视页面(如TCL_Television, LG_Television等)
         brand_match = re.search(r'([A-Za-z]+)_Television', start_url)
@@ -625,8 +659,133 @@ class TreeCrawler(IFixitCrawler):
                 # 如果不是最终产品页面，进行正常的子类别爬取
                 self._crawl_recursive_tree(target_node["url"], target_node)
 
+        # 完成构建会话
+        if self.enable_resume and self.progress_manager:
+            self.progress_manager.save_tree_structure(tree)
+            self.progress_manager.complete_session()
+            print(f"✅ 树构建完成，已处理 {len(self.visited_urls)} 个URL")
+
         return tree
-        
+
+    def _resume_tree_building(self, existing_tree, start_url, resume_data):
+        """从断点恢复树构建"""
+        try:
+            print(f"🔄 从断点恢复树构建...")
+
+            # 获取恢复策略
+            strategy = resume_data.get('strategy', 'continue_normal')
+            print(f"📋 恢复策略: {strategy}")
+
+            if strategy == "retry_failed_first":
+                # 优先重试失败的URL
+                failed_urls = self.progress_manager.get_failed_urls_for_retry()
+                if failed_urls:
+                    print(f"🔄 重试 {len(failed_urls)} 个失败的URL...")
+                    for failed_url in failed_urls:
+                        self.progress_manager.clear_failed_url(failed_url)
+                        self.visited_urls.discard(failed_url)
+
+            # 从现有树形结构继续构建
+            tree = existing_tree
+
+            # 找到需要继续处理的节点
+            current_processing = resume_data.get('current_processing')
+            if current_processing:
+                current_url = current_processing['url']
+                print(f"🎯 继续处理中断的URL: {current_url}")
+
+                # 找到对应的树节点
+                target_node = self._find_node_by_url(tree, current_url)
+                if target_node:
+                    # 继续从该节点爬取
+                    self._crawl_recursive_tree_with_resume(current_url, target_node)
+                else:
+                    print(f"⚠️ 无法找到中断的节点，从根节点继续")
+                    target_node = self._find_node_by_url(tree, start_url)
+                    if target_node:
+                        self._crawl_recursive_tree_with_resume(start_url, target_node)
+            else:
+                # 没有中断的处理，检查是否有未完成的节点
+                self._continue_incomplete_nodes(tree)
+
+            # 完成构建会话
+            if self.progress_manager:
+                self.progress_manager.save_tree_structure(tree)
+                self.progress_manager.complete_session()
+                print(f"✅ 恢复的树构建完成")
+
+            return tree
+
+        except Exception as e:
+            self.logger.error(f"恢复树构建失败: {e}")
+            if self.progress_manager:
+                self.progress_manager.fail_session(str(e))
+            raise
+
+    def _continue_incomplete_nodes(self, tree):
+        """继续处理未完成的节点"""
+        def check_node(node):
+            url = node.get('url', '')
+
+            # 如果节点未被处理过，继续处理
+            if url and not self.progress_manager.is_url_processed(url):
+                print(f"🔄 继续处理未完成的节点: {url}")
+                self._crawl_recursive_tree_with_resume(url, node)
+
+            # 递归检查子节点
+            if 'children' in node:
+                for child in node['children']:
+                    check_node(child)
+
+        check_node(tree)
+
+    def _continue_from_saved_tree_node(self, url, parent_node):
+        """从已保存的树结构中恢复子节点并继续遍历未处理的部分"""
+        try:
+            # 获取已保存的树结构
+            saved_tree = self.progress_manager.get_tree_structure()
+            if not saved_tree:
+                print(f"⚠️ 没有找到已保存的树结构，跳过: {url}")
+                return
+
+            # 在已保存的树中找到对应的节点
+            saved_node = self._find_node_by_url(saved_tree, url)
+            if not saved_node:
+                print(f"⚠️ 在已保存的树中未找到节点: {url}")
+                return
+
+            # 如果找到了对应的节点，恢复其子节点到当前节点
+            if 'children' in saved_node and saved_node['children']:
+                print(f"📋 从已保存的树中恢复 {len(saved_node['children'])} 个子节点: {url}")
+
+                # 将已保存的子节点复制到当前节点
+                if 'children' not in parent_node:
+                    parent_node['children'] = []
+
+                # 合并子节点（避免重复）
+                existing_urls = {child.get('url', '') for child in parent_node['children']}
+                for saved_child in saved_node['children']:
+                    child_url = saved_child.get('url', '')
+                    if child_url and child_url not in existing_urls:
+                        parent_node['children'].append(saved_child.copy())
+                        existing_urls.add(child_url)
+
+                # 继续遍历未处理的子节点
+                for child in parent_node['children']:
+                    child_url = child.get('url', '')
+                    if child_url and not self.progress_manager.is_url_processed(child_url):
+                        print(f"🔄 继续处理未完成的子节点: {child_url}")
+                        self._crawl_recursive_tree_with_resume(child_url, child)
+                    elif child_url and self.progress_manager.is_url_processed(child_url):
+                        # 即使子节点已处理，也要检查其子子节点
+                        self._continue_from_saved_tree_node(child_url, child)
+            else:
+                print(f"📋 节点 {url} 没有子节点需要恢复")
+
+        except Exception as e:
+            self.logger.error(f"从已保存树结构恢复节点失败 {url}: {e}")
+            print(f"❌ 恢复节点失败: {url} - {e}")
+
     def find_tv_path(self, target_url, category_name):
         """
         尝试构建电视类别的路径
@@ -725,170 +884,244 @@ class TreeCrawler(IFixitCrawler):
         
     def _crawl_recursive_tree(self, url, parent_node):
         """递归爬取树形结构"""
+        return self._crawl_recursive_tree_with_resume(url, parent_node)
+
+    def _crawl_recursive_tree_with_resume(self, url, parent_node):
+        """递归爬取树形结构 - 支持断点续爬"""
+        # 检查是否应该跳过此URL的处理，但仍需要遍历其子节点
+        if self.enable_resume and self.progress_manager:
+            if self.progress_manager.should_skip_url_processing_only(url):
+                print(f"⏭️ 跳过已处理的URL，但继续遍历子节点: {url}")
+                # 从已保存的树结构中恢复子节点并继续遍历
+                self._continue_from_saved_tree_node(url, parent_node)
+                return
+            elif self.progress_manager.is_url_failed(url):
+                print(f"⚠️ 跳过失败的URL: {url}")
+                return
+
         # 防止重复访问同一URL
         if url in self.visited_urls:
             return
-            
+
         # 跳过不应包含在树结构中的页面类型
         invalid_keywords = ["创建指南", "Guide/new", "翻译", "贡献者", "论坛问题", "其他贡献"]
         if any(keyword in url for keyword in invalid_keywords):
             print(f"跳过无效页面: {url}")
             return
-            
+
+        # 标记开始处理
+        if self.enable_resume and self.progress_manager:
+            parent_path = self._get_parent_path_from_tree(parent_node)
+            self.progress_manager.mark_url_processing(url, parent_path)
+
         self.visited_urls.add(url)
         
         # 防止过快请求，添加延迟
         time.sleep(random.uniform(0.5, 1.0))
-        
+
         # 构建当前位置的分类路径显示
         path_str = self._get_current_path(parent_node, self.tree_cache if hasattr(self, 'tree_cache') else None)
-        print(f"爬取: {path_str} > {url.split('/')[-1]}")
-        
-        soup = self.get_soup(url)
-        if not soup:
-            return
-            
-        # 提取子类别
-        categories = self.extract_categories(soup, url)
-        
-        # 过滤掉不应包含在树结构中的类别
-        real_categories = []
-        for category in categories:
-            category_name = category["name"].lower()
-            category_url = category["url"].lower()
-            
-            # 检查是否为有效类别
-            if not any(keyword.lower() in category_name or keyword.lower() in category_url for keyword in invalid_keywords):
-                # 额外检查确认是否为产品或产品类别
-                if ("/Device/" in category["url"] and  
-                    not any(x in category["url"] for x in ["/Edit/", "/History/", "?revision", "/Answers/"])):
-                    real_categories.append(category)
-        
-        # 处理品牌电视页面，如TCL_Television或LG_Television
-        brand_match = re.search(r'([A-Za-z]+)_Television', url)
-        if brand_match:
-            brand_name = brand_match.group(1)
-            print(f"检测到{brand_name} Television页面，尝试查找所有子类别")
-            
-            # 查找类别数量提示
-            category_count_elements = soup.find_all(string=re.compile(r"\d+\s*个类别"))
-            for element in category_count_elements:
-                count_text = element.strip()
-                print(f"找到类别数量提示: {count_text}")
-                
-                # 查找包含类别的区域
-                parent = element.parent
-                if parent:
-                    # 查找之后的div，通常包含类别列表
-                    next_section = parent.find_next_sibling()
-                    if next_section:
-                        # 查找所有链接
-                        links = next_section.find_all("a", href=True)
-                        for link in links:
-                            href = link.get("href")
-                            text = link.text.strip()
-                            
-                            # 检查链接是否有效
-                            if (href and text and "/Device/" in href and 
-                                not any(invalid in text.lower() or invalid in href.lower() 
-                                        for invalid in invalid_keywords)):
-                                
-                                full_url = self.base_url + href if href.startswith("/") else href
-                                
-                                # 检查是否已经在类别列表中
-                                if not any(c["url"] == full_url for c in real_categories):
-                                    print(f"添加品牌电视子类别: {text} - {full_url}")
-                                    real_categories.append({
-                                        "name": text,
-                                        "url": full_url
-                                    })
-        
-        # 检查是否为最终产品页面
-        is_final_page = self.is_final_product_page(soup, url)
-        
-        # 如果是最终产品页面（没有子类别），则提取产品信息
-        if is_final_page:
-            product_info = self.extract_product_info(soup, url, [])
+        print(f"🌳 爬取: {path_str} > {url.split('/')[-1]}")
 
-            # 只有当产品名称不为空时才添加到结果中
-            if product_info["product_name"]:
-                # 设置当前节点为叶子节点(产品)
-                parent_node["name"] = product_info["product_name"]
-                # 检查是否是根目录，不给根目录添加instruction_url
-                is_root_device = url == f"{self.base_url}/Device"
-                if not is_root_device:
-                    parent_node["instruction_url"] = product_info["instruction_url"]
-                print(f"已找到产品: {path_str} > {product_info['product_name']}")
-        else:
-            # 如果是我们的目标节点（如70UK6570PUB），将其视为产品和分类的混合类型
-            if "70UK6570PUB" in url:
-                # 先提取产品信息
-                product_info = self.extract_product_info(soup, url, [])
-                if product_info["product_name"]:
-                    # 设置当前节点为产品
-                    parent_node["name"] = product_info["product_name"]
-                    # 检查是否是根目录，不给根目录添加instruction_url
-                    is_root_device = url == f"{self.base_url}/Device"
-                    if not is_root_device:
-                        parent_node["instruction_url"] = product_info["instruction_url"]
+        try:
+            soup = self.get_soup(url)
+            if not soup:
+                if self.enable_resume and self.progress_manager:
+                    self.progress_manager.mark_url_failed(url, "无法获取页面内容")
+                return
 
-                    # 同时让它保持category类型的children属性，继续向下爬取
-                    print(f"找到产品与分类混合节点: {path_str} > {product_info['product_name']}")
-            
-            # 确保所有叶子节点(没有子节点的节点)都有instruction_url字段
-            if not is_final_page and "children" in parent_node and (not parent_node["children"] or len(parent_node["children"]) == 0) and "instruction_url" not in parent_node:
-                parent_node["instruction_url"] = ""
-                print(f"添加缺失的instruction_url字段到叶子节点: {parent_node.get('name', '')}")
-                
-            # 如果有子类别，则继续递归爬取
-            if real_categories:
-                # 分类节点处理
-                
-                print(f"类别页面: {path_str}")
-                print(f"找到 {len(real_categories)} 个子类别")
-                
-                # 限制子类别数量，避免爬取过多内容
-                max_categories = 50  # 调整为适合的值
-                if len(real_categories) > max_categories:
-                    print(f"子类别数量过多，仅爬取前 {max_categories} 个")
-                    real_categories = real_categories[:max_categories]
-                
-                # 遍历并爬取子类别
-                for category in real_categories:
-                    # 跳过已访问的链接
-                    if category["url"] in self.visited_urls:
-                        continue
-                        
-                    # 跳过编辑、历史、创建指南等非设备页面
-                    if any(x in category["url"] or x in category["name"] for x in ["/Edit/", "/History/", "?revision", "/Answers/", "创建指南", "Guide/new"]):
-                        continue
-                    
-                    # 清理类别名称（移除"Repair"等后缀）
-                    clean_name = category["name"]
-                    if " Repair" in clean_name:
-                        clean_name = clean_name.replace(" Repair", "")
-                    
-                    # 创建子节点
-                    child_node = {
-                        "name": clean_name,
-                        "url": category["url"],
-                        "children": []
-                    }
-                    parent_node["children"].append(child_node)
-                    
-                    print(f"爬取类别: {path_str} > {clean_name}")
-                    self._crawl_recursive_tree(category["url"], child_node)
-            elif not is_final_page:
-                # 如果没有找到子类别但也不符合最终产品页面的定义
+            # 提取子类别
+            categories = self.extract_categories(soup, url)
+
+            # 过滤掉不应包含在树结构中的类别
+            real_categories = []
+            for category in categories:
+                category_name = category["name"].lower()
+                category_url = category["url"].lower()
+
+                # 检查是否为有效类别
+                if not any(keyword.lower() in category_name or keyword.lower() in category_url for keyword in invalid_keywords):
+                    # 额外检查确认是否为产品或产品类别
+                    if ("/Device/" in category["url"] and
+                        not any(x in category["url"] for x in ["/Edit/", "/History/", "?revision", "/Answers/"])):
+                        real_categories.append(category)
+
+            # 处理品牌电视页面，如TCL_Television或LG_Television
+            brand_match = re.search(r'([A-Za-z]+)_Television', url)
+            if brand_match:
+                brand_name = brand_match.group(1)
+                print(f"检测到{brand_name} Television页面，尝试查找所有子类别")
+
+                # 查找类别数量提示（中文和英文）
+                category_count_elements = soup.find_all(string=re.compile(r"\d+\s*(个类别|Categories)"))
+                for element in category_count_elements:
+                    count_text = element.strip()
+                    print(f"找到类别数量提示: {count_text}")
+
+                    # 查找包含类别的区域
+                    parent = element.parent
+                    if parent:
+                        # 查找之后的div，通常包含类别列表
+                        next_section = parent.find_next_sibling()
+                        if next_section:
+                            # 查找所有链接
+                            links = next_section.find_all("a", href=True)
+                            for link in links:
+                                href = link.get("href")
+                                text = link.text.strip()
+
+                                # 检查链接是否有效
+                                if (href and text and "/Device/" in href and
+                                    not any(invalid in text.lower() or invalid in href.lower()
+                                            for invalid in invalid_keywords)):
+
+                                    full_url = self.base_url + href if href.startswith("/") else href
+
+                                    # 检查是否已经在类别列表中
+                                    if not any(c["url"] == full_url for c in real_categories):
+                                        print(f"添加品牌电视子类别: {text} - {full_url}")
+                                        real_categories.append({
+                                            "name": text,
+                                            "url": full_url
+                                        })
+
+            # 检查是否为最终产品页面
+            is_final_page = self.is_final_product_page(soup, url)
+
+            # 如果是最终产品页面（没有子类别），则提取产品信息
+            if is_final_page:
                 product_info = self.extract_product_info(soup, url, [])
+
+                # 只有当产品名称不为空时才添加到结果中
                 if product_info["product_name"]:
+                    # 设置当前节点为叶子节点(产品)
                     parent_node["name"] = product_info["product_name"]
                     # 检查是否是根目录，不给根目录添加instruction_url
                     is_root_device = url == f"{self.base_url}/Device"
                     if not is_root_device:
                         parent_node["instruction_url"] = product_info["instruction_url"]
                     print(f"已找到产品: {path_str} > {product_info['product_name']}")
-        
+            else:
+                # 如果是我们的目标节点（如70UK6570PUB），将其视为产品和分类的混合类型
+                if "70UK6570PUB" in url:
+                    # 先提取产品信息
+                    product_info = self.extract_product_info(soup, url, [])
+                    if product_info["product_name"]:
+                        # 设置当前节点为产品
+                        parent_node["name"] = product_info["product_name"]
+                        # 检查是否是根目录，不给根目录添加instruction_url
+                        is_root_device = url == f"{self.base_url}/Device"
+                        if not is_root_device:
+                            parent_node["instruction_url"] = product_info["instruction_url"]
+
+                        # 同时让它保持category类型的children属性，继续向下爬取
+                        print(f"找到产品与分类混合节点: {path_str} > {product_info['product_name']}")
+
+                # 确保所有叶子节点(没有子节点的节点)都有instruction_url字段
+                if not is_final_page and "children" in parent_node and (not parent_node["children"] or len(parent_node["children"]) == 0) and "instruction_url" not in parent_node:
+                    parent_node["instruction_url"] = ""
+                    print(f"添加缺失的instruction_url字段到叶子节点: {parent_node.get('name', '')}")
+
+                # 如果有子类别，则继续递归爬取
+                if real_categories:
+                    # 分类节点处理
+                    print(f"📂 类别页面: {path_str}")
+                    print(f"🔍 找到 {len(real_categories)} 个子类别")
+
+                    # 更新发现的子分类数量
+                    if self.enable_resume and self.progress_manager:
+                        self.progress_manager.update_children_discovered(len(real_categories))
+
+                    # 限制子类别数量，避免爬取过多内容
+                    max_categories = 50  # 调整为适合的值
+                    if len(real_categories) > max_categories:
+                        print(f"⚠️ 子类别数量过多，仅爬取前 {max_categories} 个")
+                        real_categories = real_categories[:max_categories]
+
+                    # 遍历并爬取子类别
+                    processed_children = 0
+                    for category in real_categories:
+                        # 跳过已访问的链接
+                        if category["url"] in self.visited_urls:
+                            continue
+
+                        # 清理类别名称（移除"Repair"等后缀）
+                        clean_name = category["name"]
+                        if " Repair" in clean_name:
+                            clean_name = clean_name.replace(" Repair", "")
+
+                        # 断点续爬：检查URL处理状态
+                        if self.enable_resume and self.progress_manager:
+                            if self.progress_manager.is_url_processed(category["url"]):
+                                # URL已处理，但需要从已保存的树中恢复子节点
+                                print(f"⏭️ URL已处理，从已保存树中恢复子节点: {category['url']}")
+
+                                # 创建子节点
+                                child_node = {
+                                    "name": clean_name,
+                                    "url": category["url"],
+                                    "children": []
+                                }
+                                parent_node["children"].append(child_node)
+
+                                # 从已保存的树中恢复并继续遍历子节点
+                                self._continue_from_saved_tree_node(category["url"], child_node)
+                                processed_children += 1
+                                continue
+                            elif self.progress_manager.is_url_failed(category["url"]):
+                                # URL处理失败，跳过
+                                print(f"⚠️ 跳过失败的URL: {category['url']}")
+                                processed_children += 1
+                                continue
+
+                        # 跳过编辑、历史、创建指南等非设备页面
+                        if any(x in category["url"] or x in category["name"] for x in ["/Edit/", "/History/", "?revision", "/Answers/", "创建指南", "Guide/new"]):
+                            continue
+
+                        # 创建子节点
+                        child_node = {
+                            "name": clean_name,
+                            "url": category["url"],
+                            "children": []
+                        }
+                        parent_node["children"].append(child_node)
+
+                        print(f"🌿 爬取类别: {path_str} > {clean_name}")
+                        self._crawl_recursive_tree_with_resume(category["url"], child_node)
+
+                        processed_children += 1
+
+                        # 更新已处理的子分类数量
+                        if self.enable_resume and self.progress_manager:
+                            self.progress_manager.update_children_processed(processed_children)
+                elif not is_final_page:
+                    # 如果没有找到子类别但也不符合最终产品页面的定义
+                    product_info = self.extract_product_info(soup, url, [])
+                    if product_info["product_name"]:
+                        parent_node["name"] = product_info["product_name"]
+                        # 检查是否是根目录，不给根目录添加instruction_url
+                        is_root_device = url == f"{self.base_url}/Device"
+                        if not is_root_device:
+                            parent_node["instruction_url"] = product_info["instruction_url"]
+                        print(f"已找到产品: {path_str} > {product_info['product_name']}")
+
+            # 标记URL处理完成
+            if self.enable_resume and self.progress_manager:
+                children_count = len(real_categories) if 'real_categories' in locals() else 0
+                self.progress_manager.mark_url_completed(url, children_count)
+
+        except Exception as e:
+            # 处理错误
+            self.logger.error(f"处理URL时出错 {url}: {e}")
+            if self.enable_resume and self.progress_manager:
+                self.progress_manager.mark_url_failed(url, str(e))
+            raise
+
+    def _get_parent_path_from_tree(self, node):
+        """从树节点获取父路径"""
+        # 这是一个简化的实现，实际可能需要更复杂的逻辑
+        return [node.get('name', '')]
+
     def _get_current_path(self, node, tree=None):
         """获取当前节点的完整路径字符串，用于调试输出"""
         if not tree:
@@ -1098,7 +1331,7 @@ def main():
         print("=" * 60)
         
         # 创建树形爬虫
-        crawler = TreeCrawler()
+        crawler = TreeCrawler(verbose=debug_mode)
         # 设置调试模式
         crawler.debug = debug_mode
         
@@ -1111,26 +1344,24 @@ def main():
         
         # 保存结果
         if tree_data:
-            # 先显示树形结构摘要
-            print("\n树形结构摘要 (+ 表示类别，- 表示产品):")
-            print("=" * 60)
-            crawler.print_tree_structure(tree_data)
-            print("=" * 60)
-            
             # 保存为JSON文件
-            print("\n2. 保存树形结构到文件...")
-            # 使用命令行参数中的原始输入作为文件名
             filename = crawler.save_tree_result(tree_data, target_name=input_text)
-            
+
             # 显示汇总信息
             product_count = count_products_in_tree(tree_data)
             category_count = count_categories_in_tree(tree_data)
-            
-            print("\n爬取完成!")
-            print(f"- 共找到 {category_count} 个分类")
-            print(f"- 共找到 {product_count} 个产品")
-            print(f"- 树形结构已保存到: {filename}")
-            print("\n示例路径展示:")
+
+            print("🎉 爬取完成!")
+            print(f"📊 分类: {category_count} 个 | 产品: {product_count} 个")
+            print(f"📁 已保存到: {filename}")
+
+            # 在verbose模式下显示详细信息
+            if hasattr(crawler, 'verbose') and crawler.verbose:
+                print("\n树形结构摘要 (+ 表示类别，- 表示产品):")
+                print("=" * 60)
+                crawler.print_tree_structure(tree_data)
+                print("=" * 60)
+                print("\n示例路径展示:")
             
             # 显示示例路径
             if product_count > 0:

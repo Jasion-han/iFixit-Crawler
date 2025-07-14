@@ -68,11 +68,11 @@ class IFixitCrawler:
             # 从页面提取面包屑导航
             breadcrumbs = self.extract_breadcrumbs(soup)
             
-            # 查找"个类别"标记
-            category_sections = soup.find_all(string=re.compile(r"\d+\s*个类别"))
+            # 查找"个类别"标记（中文）和"Categories"标记（英文）
+            category_sections = soup.find_all(string=re.compile(r"\d+\s*(个类别|Categories)"))
             if category_sections:
                 self.print_debug(f"找到类别标题: {[section for section in category_sections]}")
-                
+
                 for section in category_sections:
                     # 查找包含类别的区域
                     parent = section.parent
@@ -597,13 +597,14 @@ class IFixitCrawler:
             # 只有当产品名称不为空时才添加到结果中，并确保没有重复
             if product_info["product_name"] and not any(p["product_url"] == product_info["product_url"] for p in self.results):
                 self.results.append(product_info)
-                print(f"已找到产品: {product_info['product_name']}")
-                print(f"产品URL: {product_info['product_url']}")
-                print(f"说明书链接: {product_info['instruction_url'] or '无'}")
-                print(f"状态: 最终产品页面 (无子类别)")
+                if self.debug:
+                    print(f"已找到产品: {product_info['product_name']}")
+                    print(f"产品URL: {product_info['product_url']}")
+                    print(f"说明书链接: {product_info['instruction_url'] or '无'}")
+                    print(f"状态: 最终产品页面 (无子类别)")
         else:
             # 如果有子类别，则打印信息
-            if real_categories:
+            if real_categories and self.debug:
                 print(f"类别页面: {url}")
                 print(f"找到 {len(real_categories)} 个子类别")
         
@@ -623,17 +624,19 @@ class IFixitCrawler:
                 if category["name"] not in new_breadcrumb:
                     new_breadcrumb.append(category["name"])
                 
-                print(f"爬取类别: {' > '.join(new_breadcrumb)}")
+                if self.debug:
+                    print(f"爬取类别: {' > '.join(new_breadcrumb)}")
                 self.crawl_recursive(category["url"], new_breadcrumb, url)
         else:
             # 如果没有找到子类别但也不符合最终产品页面的定义
             product_info = self.extract_product_info(soup, url, breadcrumb)
             if product_info["product_name"]:
                 self.results.append(product_info)
-                print(f"已找到产品: {product_info['product_name']}")
-                print(f"产品URL: {product_info['product_url']}")
-                print(f"说明书链接: {product_info['instruction_url'] or '无'}")
-                print(f"状态: 最终产品页面 (无子类别)")
+                if self.debug:
+                    print(f"已找到产品: {product_info['product_name']}")
+                    print(f"产品URL: {product_info['product_url']}")
+                    print(f"说明书链接: {product_info['instruction_url'] or '无'}")
+                    print(f"状态: 最终产品页面 (无子类别)")
             
     def start_crawl(self, start_url=None):
         """开始爬取"""
