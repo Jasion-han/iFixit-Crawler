@@ -101,7 +101,7 @@ fi
 
 # 重启爬虫
 log_message "🚀 启动新的爬虫进程"
-if nohup python "$CRAWLER_SCRIPT" "$CRAWLER_URL" > "$CRAWLER_LOG" 2>&1 &; then
+if nohup python "$CRAWLER_SCRIPT" "$CRAWLER_URL" > "$CRAWLER_LOG" 2>&1 & then
     NEW_PID=$!
     log_message "✅ 爬虫启动成功，进程ID: $NEW_PID"
 
