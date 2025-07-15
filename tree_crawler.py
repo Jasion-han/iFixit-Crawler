@@ -921,7 +921,11 @@ class TreeCrawler(IFixitCrawler):
 
         # 构建当前位置的分类路径显示
         path_str = self._get_current_path(parent_node, self.tree_cache if hasattr(self, 'tree_cache') else None)
-        print(f"🌳 爬取: {path_str} > {url.split('/')[-1]}")
+        url_segment = url.split('/')[-1]
+        print(f"\n🌳 开始爬取节点:")
+        print(f"   路径: {path_str} > {url_segment}")
+        print(f"   完整URL: {url}")
+        print(f"   父节点: {parent_node.get('name', 'Unknown')}")
 
         try:
             soup = self.get_soup(url)
@@ -931,20 +935,48 @@ class TreeCrawler(IFixitCrawler):
                 return
 
             # 提取子类别
+            print(f"   🔍 开始提取子类别...")
             categories = self.extract_categories(soup, url)
+            print(f"   📊 原始类别数量: {len(categories)}")
 
             # 过滤掉不应包含在树结构中的类别
             real_categories = []
+            filtered_out = []
+
             for category in categories:
                 category_name = category["name"].lower()
                 category_url = category["url"].lower()
 
                 # 检查是否为有效类别
-                if not any(keyword.lower() in category_name or keyword.lower() in category_url for keyword in invalid_keywords):
-                    # 额外检查确认是否为产品或产品类别
-                    if ("/Device/" in category["url"] and
-                        not any(x in category["url"] for x in ["/Edit/", "/History/", "?revision", "/Answers/"])):
-                        real_categories.append(category)
+                is_valid = True
+                filter_reason = ""
+
+                # 检查无效关键词
+                for keyword in invalid_keywords:
+                    if keyword.lower() in category_name or keyword.lower() in category_url:
+                        is_valid = False
+                        filter_reason = f"包含无效关键词: {keyword}"
+                        break
+
+                # 检查是否为有效的设备链接
+                if is_valid:
+                    if "/Device/" not in category["url"]:
+                        is_valid = False
+                        filter_reason = "不是设备链接"
+                    elif any(x in category["url"] for x in ["/Edit/", "/History/", "?revision", "/Answers/"]):
+                        is_valid = False
+                        filter_reason = "是编辑/历史页面"
+
+                if is_valid:
+                    real_categories.append(category)
+                    print(f"   ✅ 有效类别: {category['name']}")
+                else:
+                    filtered_out.append((category['name'], filter_reason))
+                    print(f"   ❌ 过滤类别: {category['name']} ({filter_reason})")
+
+            print(f"   📈 过滤后有效类别数量: {len(real_categories)}")
+            if filtered_out:
+                print(f"   🗑️  过滤掉的类别数量: {len(filtered_out)}")
 
             # 处理品牌电视页面，如TCL_Television或LG_Television
             brand_match = re.search(r'([A-Za-z]+)_Television', url)
@@ -1000,7 +1032,11 @@ class TreeCrawler(IFixitCrawler):
                     is_root_device = url == f"{self.base_url}/Device"
                     if not is_root_device:
                         parent_node["instruction_url"] = product_info["instruction_url"]
-                    print(f"已找到产品: {path_str} > {product_info['product_name']}")
+                    print(f"✅ 已找到叶子节点产品: {path_str} > {product_info['product_name']}")
+
+                # 即使是最终产品页面，也要确保instruction_url字段存在
+                if "instruction_url" not in parent_node:
+                    parent_node["instruction_url"] = ""
             else:
                 # 如果是我们的目标节点（如70UK6570PUB），将其视为产品和分类的混合类型
                 if "70UK6570PUB" in url:
@@ -1028,21 +1064,47 @@ class TreeCrawler(IFixitCrawler):
                     print(f"📂 类别页面: {path_str}")
                     print(f"🔍 找到 {len(real_categories)} 个子类别")
 
+                    # 记录所有子类别名称，便于调试
+                    category_names = [c["name"] for c in real_categories]
+                    print(f"   子类别列表: {', '.join(category_names)}")
+
                     # 更新发现的子分类数量
                     if self.enable_resume and self.progress_manager:
                         self.progress_manager.update_children_discovered(len(real_categories))
 
                     # 限制子类别数量，避免爬取过多内容
-                    max_categories = 50  # 调整为适合的值
+                    max_categories = 100  # 增加限制值，确保不会遗漏重要类别
                     if len(real_categories) > max_categories:
                         print(f"⚠️ 子类别数量过多，仅爬取前 {max_categories} 个")
                         real_categories = real_categories[:max_categories]
 
                     # 遍历并爬取子类别
                     processed_children = 0
-                    for category in real_categories:
-                        # 跳过已访问的链接
+                    total_children = len(real_categories)
+                    print(f"   🔄 开始处理 {total_children} 个子类别...")
+
+                    for i, category in enumerate(real_categories, 1):
+                        # 记录当前处理的类别
+                        print(f"\n   📂 [{i}/{total_children}] 处理子类别: {category['name']}")
+                        print(f"      URL: {category['url']}")
+                        print(f"      进度: {(i/total_children)*100:.1f}%")
+
+                        # 跳过已访问的链接，但仍然创建节点结构
                         if category["url"] in self.visited_urls:
+                            print(f"   ⏭️ 跳过已访问的URL: {category['url']}")
+                            # 创建子节点，即使已访问过也保持结构完整性
+                            clean_name = category["name"]
+                            if " Repair" in clean_name:
+                                clean_name = clean_name.replace(" Repair", "")
+
+                            child_node = {
+                                "name": clean_name,
+                                "url": category["url"],
+                                "children": [],
+                                "instruction_url": ""
+                            }
+                            parent_node["children"].append(child_node)
+                            processed_children += 1
                             continue
 
                         # 清理类别名称（移除"Repair"等后缀）
@@ -1055,6 +1117,7 @@ class TreeCrawler(IFixitCrawler):
                             if self.progress_manager.is_url_processed(category["url"]):
                                 # URL已处理，但需要从已保存的树中恢复子节点
                                 print(f"⏭️ URL已处理，从已保存树中恢复子节点: {category['url']}")
+                                print(f"   类别名称: '{clean_name}'")
 
                                 # 创建子节点
                                 child_node = {
@@ -1065,12 +1128,30 @@ class TreeCrawler(IFixitCrawler):
                                 parent_node["children"].append(child_node)
 
                                 # 从已保存的树中恢复并继续遍历子节点
-                                self._continue_from_saved_tree_node(category["url"], child_node)
+                                # 确保即使从缓存恢复，也要完整处理所有子节点
+                                try:
+                                    self._continue_from_saved_tree_node(category["url"], child_node)
+                                    print(f"   ✅ 成功恢复子节点: '{clean_name}'")
+                                except Exception as e:
+                                    print(f"   ❌ 恢复子节点失败: '{clean_name}' - {str(e)}")
+                                    # 如果恢复失败，尝试重新爬取
+                                    print(f"   🔄 尝试重新爬取: {category['url']}")
+                                    self._crawl_recursive_tree_with_resume(category["url"], child_node)
+
                                 processed_children += 1
                                 continue
                             elif self.progress_manager.is_url_failed(category["url"]):
-                                # URL处理失败，跳过
-                                print(f"⚠️ 跳过失败的URL: {category['url']}")
+                                # URL处理失败，但仍然创建节点结构，避免遗漏
+                                print(f"⚠️ URL处理失败，但仍创建节点结构: {category['url']}")
+                                print(f"   类别名称: '{clean_name}'")
+
+                                # 创建子节点，即使处理失败也保持结构完整性
+                                child_node = {
+                                    "name": clean_name,
+                                    "url": category["url"],
+                                    "children": []
+                                }
+                                parent_node["children"].append(child_node)
                                 processed_children += 1
                                 continue
 
@@ -1082,12 +1163,31 @@ class TreeCrawler(IFixitCrawler):
                         child_node = {
                             "name": clean_name,
                             "url": category["url"],
-                            "children": []
+                            "children": [],
+                            "instruction_url": ""  # 确保所有节点都有instruction_url字段
                         }
                         parent_node["children"].append(child_node)
 
-                        print(f"🌿 爬取类别: {path_str} > {clean_name}")
-                        self._crawl_recursive_tree_with_resume(category["url"], child_node)
+                        print(f"🌿 开始递归爬取类别: {path_str} > {clean_name}")
+
+                        # 递归爬取子类别，确保完整遍历
+                        try:
+                            self._crawl_recursive_tree_with_resume(category["url"], child_node)
+                            print(f"   ✅ 完成递归爬取: {clean_name}")
+
+                            # 验证子节点是否有内容
+                            child_count = len(child_node.get("children", []))
+                            if child_count > 0:
+                                print(f"   📊 {clean_name} 包含 {child_count} 个子节点")
+                            else:
+                                print(f"   📄 {clean_name} 是叶子节点")
+
+                        except Exception as e:
+                            print(f"   ⚠️ 递归爬取失败，继续处理其他节点: {clean_name} - {str(e)}")
+                            # 即使递归失败，也保持节点结构
+                            if "instruction_url" not in child_node:
+                                child_node["instruction_url"] = ""
+                            # 继续处理其他节点，不要停止整个流程
 
                         processed_children += 1
 
@@ -1096,6 +1196,12 @@ class TreeCrawler(IFixitCrawler):
                             self.progress_manager.update_children_processed(processed_children)
                 elif not is_final_page:
                     # 如果没有找到子类别但也不符合最终产品页面的定义
+                    # 这种情况可能是页面结构特殊或者类别提取失败
+                    print(f"⚠️ 特殊情况：页面既不是最终产品页面，也没有找到子类别")
+                    print(f"   URL: {url}")
+                    print(f"   页面标题: {soup.title.text if soup.title else '无标题'}")
+
+                    # 尝试提取产品信息作为后备方案
                     product_info = self.extract_product_info(soup, url, [])
                     if product_info["product_name"]:
                         parent_node["name"] = product_info["product_name"]
@@ -1103,19 +1209,35 @@ class TreeCrawler(IFixitCrawler):
                         is_root_device = url == f"{self.base_url}/Device"
                         if not is_root_device:
                             parent_node["instruction_url"] = product_info["instruction_url"]
-                        print(f"已找到产品: {path_str} > {product_info['product_name']}")
+                        print(f"   ✅ 作为产品处理: {path_str} > {product_info['product_name']}")
+                    else:
+                        # 确保即使没有产品信息，也有instruction_url字段
+                        if "instruction_url" not in parent_node:
+                            parent_node["instruction_url"] = ""
+                        print(f"   ⚠️ 无法提取产品信息，保持原有节点结构")
 
             # 标记URL处理完成
             if self.enable_resume and self.progress_manager:
                 children_count = len(real_categories) if 'real_categories' in locals() else 0
                 self.progress_manager.mark_url_completed(url, children_count)
 
+            # 输出节点处理完成信息
+            node_type = "叶子节点" if is_final_page else f"分类节点({len(real_categories) if 'real_categories' in locals() else 0}个子类别)"
+            print(f"   ✅ 节点处理完成: {node_type}")
+            print(f"   📊 当前节点统计:")
+            print(f"      - 节点名称: {parent_node.get('name', 'Unknown')}")
+            print(f"      - 子节点数: {len(parent_node.get('children', []))}")
+            print(f"      - 是否有instruction_url: {'instruction_url' in parent_node}")
+            if 'real_categories' in locals() and real_categories:
+                print(f"      - 发现的子类别: {[c['name'] for c in real_categories]}")
+
         except Exception as e:
-            # 处理错误
-            self.logger.error(f"处理URL时出错 {url}: {e}")
+            # 处理错误，但不要停止整个爬取流程
+            self.logger.warning(f"处理URL时出错 {url}: {e}")
+            print(f"   ⚠️ 节点处理失败，继续处理其他节点: {str(e)[:100]}")
             if self.enable_resume and self.progress_manager:
                 self.progress_manager.mark_url_failed(url, str(e))
-            raise
+            # 不要抛出异常，让爬虫继续处理其他节点
 
     def _get_parent_path_from_tree(self, node):
         """从树节点获取父路径"""

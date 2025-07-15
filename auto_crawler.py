@@ -195,8 +195,8 @@ class TunnelProxyManager:
 class AsyncHttpClientManager:
     """异步HTTP客户端管理器 - 基于httpx的高性能异步请求"""
 
-    def __init__(self, proxy_manager=None, max_connections=200, max_keepalive_connections=50,
-                 timeout=8.0, max_retries=3):
+    def __init__(self, proxy_manager=None, max_connections=500, max_keepalive_connections=100,
+                 timeout=3.0, max_retries=2):
         """
         初始化异步HTTP客户端管理器（优化版本，支持更高并发）
 
@@ -320,44 +320,70 @@ class AsyncHttpClientManager:
                 response.raise_for_status()
                 return response
 
-            except (httpx.ProxyError, httpx.ConnectTimeout, httpx.ConnectError) as e:
-                # 代理相关错误，尝试切换代理
+            except (httpx.ProxyError, httpx.ConnectTimeout, httpx.ConnectError, httpx.ReadTimeout, httpx.TimeoutException) as e:
+                # 网络相关错误，尝试切换代理并重试
                 if self.proxy_manager and attempt < max_retries:
-                    print(f"🔄 代理错误，尝试切换: {str(e)[:100]}")
-                    self.proxy_manager.mark_proxy_failed(None, f"代理错误: {str(e)[:50]}")
+                    print(f"🔄 网络错误，尝试切换代理 (第{attempt+1}次): {str(e)[:100]}")
+                    self.proxy_manager.mark_proxy_failed(None, f"网络错误: {str(e)[:50]}")
 
                     # 重新初始化客户端以使用新代理
                     await self._close_client()
                     await self._init_client()
 
+                    # 添加指数退避延迟
+                    delay = min(2 ** attempt, 10)  # 最大延迟10秒
+                    print(f"⏳ 等待 {delay} 秒后重试...")
+                    await asyncio.sleep(delay)
+
                 last_error = e
 
             except Exception as e:
                 last_error = e
+
+                # 特殊处理事件循环关闭的情况
+                if "Event loop is closed" in str(e):
+                    print(f"⚠️ 事件循环已关闭，停止重试: {url}")
+                    return None
+
+                print(f"⚠️ 其他错误 (第{attempt+1}次): {str(e)[:100]}")
                 if attempt < max_retries:
-                    # 指数退避
-                    delay = min(60, (2 ** attempt) + random.uniform(0, 1))
+                    # 极速重试策略，最小化等待时间
+                    base_delay = 0.2  # 基础延迟0.2秒
+                    linear_increment = 0.5  # 每次重试增加0.5秒
+                    max_delay = 3  # 最大延迟3秒
+                    delay = min(max_delay, base_delay + (attempt * linear_increment) + random.uniform(0, 0.3))
+                    print(f"⏳ 等待{delay:.1f}秒后重试...")
                     await asyncio.sleep(delay)
 
+        # 所有重试都失败了，但不要抛出异常，而是返回None让调用者处理
         if last_error:
-            raise last_error
+            print(f"⚠️ 请求最终失败，跳过此URL: {url} - {str(last_error)[:100]}")
+            return None
 
     async def download_file(self, url, local_path, headers=None):
         """异步下载文件（优化版本，提升下载速度）"""
         if not headers:
             headers = self.media_headers
 
-        response = await self.get_with_retry(url, headers=headers)
+        try:
+            response = await self.get_with_retry(url, headers=headers)
+            if response is None:
+                print(f"⚠️ 下载失败，响应为空: {url}")
+                return None
 
-        # 确保目录存在
-        local_path.parent.mkdir(parents=True, exist_ok=True)
+            # 确保目录存在
+            local_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 异步写入文件，优化chunk大小以提升性能
-        async with aiofiles.open(local_path, 'wb') as f:
-            async for chunk in response.aiter_bytes(chunk_size=16384):  # 增加chunk大小
-                await f.write(chunk)
+            # 异步写入文件，优化chunk大小以提升性能
+            async with aiofiles.open(local_path, 'wb') as f:
+                async for chunk in response.aiter_bytes(chunk_size=16384):  # 增加chunk大小
+                    await f.write(chunk)
 
-        return local_path
+            return local_path
+
+        except Exception as e:
+            print(f"⚠️ 文件下载异常: {url} - {str(e)[:100]}")
+            return None
 
     async def download_files_batch(self, download_tasks, max_concurrent=20):
         """批量异步下载文件，优化性能"""
@@ -366,9 +392,15 @@ class AsyncHttpClientManager:
         async def download_with_semaphore(url, local_path, headers=None):
             async with semaphore:
                 try:
+                    # 检查事件循环是否仍然活跃
+                    loop = asyncio.get_event_loop()
+                    if loop.is_closed():
+                        print(f"⚠️ 事件循环已关闭，跳过下载: {url}")
+                        return None
+
                     return await self.download_file(url, local_path, headers)
                 except Exception as e:
-                    print(f"下载失败 {url}: {e}")
+                    print(f"⚠️ 批量下载失败: {url} - {str(e)[:50]}")
                     return None
 
         # 创建所有下载任务
@@ -1146,9 +1178,9 @@ class CacheManager:
 
 class CombinedIFixitCrawler(EnhancedIFixitCrawler):
     def __init__(self, base_url="https://www.ifixit.com", verbose=False, use_proxy=True,
-                 use_cache=True, force_refresh=False, max_workers=16, max_retries=2,
+                 use_cache=True, force_refresh=False, max_workers=16, max_retries=1,
                  download_videos=False, max_video_size_mb=50, max_connections=None,
-                 timeout=8, request_delay=0.1, proxy_switch_freq=1, cache_ttl=24,
+                 timeout=5, request_delay=0.01, proxy_switch_freq=1, cache_ttl=24,
                  custom_user_agent=None, burst_mode=False, conservative_mode=False,
                  skip_images=False, debug_mode=False, show_stats=False, enable_resume=True):
         super().__init__(base_url, verbose)
@@ -1367,8 +1399,13 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             self.logger.error(f"无法写入媒体失败日志: {e}")
 
     def _exponential_backoff(self, attempt):
-        """指数退避延迟"""
-        delay = min(300, (2 ** attempt) + random.uniform(0, 1))
+        """极速重试策略 - 最小化等待时间"""
+        # 极速模式：最小延迟，快速重试
+        base_delay = 0.5  # 基础延迟0.5秒
+        linear_increment = 1  # 每次重试增加1秒
+        max_delay = 5  # 最大延迟5秒
+        
+        delay = min(max_delay, base_delay + (attempt * linear_increment) + random.uniform(0, 0.5))
         time.sleep(delay)
         return delay
 
@@ -1398,24 +1435,29 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 self.stats["total_retries"] += 1
 
                 if not self._is_temporary_error(e):
-                    self.logger.error(f"永久性错误，停止重试: {e}")
-                    break
+                    self.logger.warning(f"永久性错误，跳过此项: {e}")
+                    # 对于永久性错误，返回None而不是抛出异常
+                    return None
 
                 if attempt < self.max_retries - 1:
                     delay = self._exponential_backoff(attempt)
                     self.logger.warning(f"重试 {attempt+1}/{self.max_retries} (延迟{delay:.1f}s): {e}")
 
                     # 网络错误时切换代理
-                    if self.use_proxy and "network" in str(e).lower():
+                    if self.use_proxy and ("network" in str(e).lower() or "proxy" in str(e).lower() or "timeout" in str(e).lower()):
                         self._switch_proxy(f"重试时网络错误: {str(e)}")
-                else:
-                    self.logger.error(f"重试失败，已达最大重试次数: {e}")
 
+                    time.sleep(delay)
+                else:
+                    self.logger.warning(f"重试失败，已达最大重试次数，跳过此项: {e}")
+
+        # 如果所有重试都失败，返回None让调用者继续处理其他任务
         self.stats["retry_failed"] += 1
         if last_error:
-            raise last_error
+            self.logger.warning(f"任务失败，继续处理其他任务: {str(last_error)}")
+            return None
         else:
-            raise Exception("重试失败，未知错误")
+            return None
 
 
 
@@ -1670,7 +1712,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             response = session.get(
                 url,
                 headers=self.headers,
-                timeout=8,
+                timeout=5,  # 减少超时时间从8秒到5秒
                 proxies=proxies
             )
             response.raise_for_status()
@@ -1680,25 +1722,33 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         except (requests.exceptions.ProxyError,
                 requests.exceptions.ConnectTimeout,
-                requests.exceptions.ConnectionError) as e:
-            # 代理相关错误，尝试切换代理
+                requests.exceptions.ConnectionError,
+                requests.exceptions.ReadTimeout,
+                requests.exceptions.Timeout) as e:
+            # 网络相关错误，尝试切换代理
             if self.use_proxy:
-                print(f"🔄 代理错误，尝试切换: {str(e)[:100]}")
-                if self._switch_proxy(f"代理错误: {str(e)[:50]}"):
-                    # 使用新代理重试一次
-                    new_proxies = self._get_next_proxy()
-                    response = session.get(
-                        url,
-                        headers=self.headers,
-                        timeout=8,
-                        proxies=new_proxies
-                    )
-                    response.raise_for_status()
+                print(f"🔄 网络错误，尝试切换代理: {str(e)[:100]}")
+                if self._switch_proxy(f"网络错误: {str(e)[:50]}"):
+                    try:
+                        # 使用新代理重试一次
+                        new_proxies = self._get_next_proxy()
+                        response = session.get(
+                            url,
+                            headers=self.headers,
+                            timeout=8,
+                            proxies=new_proxies
+                        )
+                        response.raise_for_status()
 
-                    from bs4 import BeautifulSoup
-                    return BeautifulSoup(response.content, 'html.parser')
-            # 如果切换代理失败或不使用代理，重新抛出异常
-            raise
+                        from bs4 import BeautifulSoup
+                        return BeautifulSoup(response.content, 'html.parser')
+                    except Exception as retry_e:
+                        print(f"⚠️ 代理重试也失败: {str(retry_e)[:50]}")
+                        # 不要抛出异常，返回None让上层处理
+                        return None
+            # 如果切换代理失败或不使用代理，返回None而不是抛出异常
+            print(f"⚠️ 网络请求失败，跳过此URL: {str(e)[:100]}")
+            return None
 
     def _get_soup_with_playwright(self, url):
         """使用Playwright获取JavaScript渲染后的页面内容"""
@@ -5612,6 +5662,10 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 # 如果没有找到目标节点，保存整个树结构（后备方案）
                 self._save_tree_structure(tree_data, root_dir)
 
+        # 验证数据完整性
+        print(f"\n🔍 验证数据完整性...")
+        self._validate_data_completeness(tree_data, root_dir)
+
         print(f"\n📁 整合结果已保存到本地文件夹: {root_dir}")
         return str(root_dir)
 
@@ -5677,14 +5731,33 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 print(f"      子节点 '{child_name}': 内容={child_has_content}, 子节点={child_has_children}, URL={bool(child.get('url'))}")
 
                 if child_has_content or child_has_children or child.get('url'):
-                    if not child_dir.exists():
-                        child_dir.mkdir(parents=True, exist_ok=True)
-                        print(f"   📁 创建子节点目录: {child_dir}")
-                    else:
-                        print(f"   📁 使用已存在的子节点目录: {child_dir}")
+                    try:
+                        if not child_dir.exists():
+                            child_dir.mkdir(parents=True, exist_ok=True)
+                            print(f"   📁 创建子节点目录: {child_dir}")
+                            # 记录目录名称处理过程，帮助调试
+                            print(f"      原始名称: '{child_name}'")
+                            print(f"      清理后名称: '{safe_name}'")
+                        else:
+                            print(f"   📁 使用已存在的子节点目录: {child_dir}")
 
-                    # 递归处理子节点，使用子节点的目录
-                    self._save_tree_structure(child, child_dir, current_path_parts + [node_name])
+                        # 递归处理子节点，使用子节点的目录
+                        self._save_tree_structure(child, child_dir, current_path_parts + [node_name])
+                    except Exception as e:
+                        # 增强错误处理，记录详细信息但不中断整个过程
+                        print(f"   ❌ 创建或处理目录失败: {child_dir}")
+                        print(f"      错误信息: {str(e)}")
+                        print(f"      子节点名称: '{child_name}'")
+                        print(f"      清理后名称: '{safe_name}'")
+                        # 尝试使用备用名称
+                        try:
+                            backup_name = f"Category_{hash(child_name) % 10000:04d}"
+                            backup_dir = base_dir / backup_name
+                            print(f"      尝试使用备用名称: '{backup_name}'")
+                            backup_dir.mkdir(parents=True, exist_ok=True)
+                            self._save_tree_structure(child, backup_dir, current_path_parts + [node_name])
+                        except Exception as backup_error:
+                            print(f"      备用名称也失败: {str(backup_error)}")
                 else:
                     # 只有当子节点完全没有任何有用信息时才跳过
                     print(f"   ⏭️  跳过无效子节点: {child_name} (无内容、无子节点、无URL)")
@@ -5698,13 +5771,90 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         safe_name = name.replace("/", "_").replace("\\", "_").replace(":", "_")
         safe_name = safe_name.replace('"', '_').replace("'", "_").replace("?", "_")
         safe_name = safe_name.replace("<", "_").replace(">", "_").replace("|", "_")
-        safe_name = safe_name.replace("*", "_").strip()
+        safe_name = safe_name.replace("*", "_").replace("(", "_").replace(")", "_")
+        safe_name = safe_name.strip()
 
         # 移除多余的下划线
         while "__" in safe_name:
             safe_name = safe_name.replace("__", "_")
 
         return safe_name.strip("_") or "Unknown"
+
+    def _validate_data_completeness(self, tree_data, root_dir):
+        """验证数据完整性，检查所有类别是否都有对应的目录"""
+        missing_categories = []
+        total_categories = 0
+        existing_directories = 0
+
+        def check_node(node, current_path=""):
+            nonlocal missing_categories, total_categories, existing_directories
+
+            if not node or not isinstance(node, dict):
+                return
+
+            node_name = node.get('name', 'Unknown')
+            node_url = node.get('url', '')
+
+            # 检查是否有子节点
+            children = node.get('children', [])
+            if children:
+                total_categories += len(children)
+
+                for child in children:
+                    child_name = child.get('name', 'Unknown')
+                    safe_name = self._clean_directory_name(child_name)
+
+                    # 构建预期的目录路径
+                    if current_path:
+                        expected_dir = root_dir / current_path / safe_name
+                    else:
+                        expected_dir = root_dir / safe_name
+
+                    # 检查目录是否存在
+                    if expected_dir.exists():
+                        existing_directories += 1
+                        print(f"   ✅ 目录存在: {safe_name}")
+                    else:
+                        missing_categories.append({
+                            'name': child_name,
+                            'safe_name': safe_name,
+                            'url': child.get('url', ''),
+                            'expected_path': str(expected_dir),
+                            'has_children': bool(child.get('children')),
+                            'has_content': bool(child.get('guides') or child.get('troubleshooting'))
+                        })
+                        print(f"   ❌ 目录缺失: {safe_name} (原名: {child_name})")
+
+                    # 递归检查子节点
+                    if current_path:
+                        check_node(child, f"{current_path}/{safe_name}")
+                    else:
+                        check_node(child, safe_name)
+
+        print(f"   正在检查树结构完整性...")
+        check_node(tree_data)
+
+        # 输出验证结果
+        print(f"\n📊 数据完整性验证结果:")
+        print(f"   总类别数: {total_categories}")
+        print(f"   已创建目录: {existing_directories}")
+        print(f"   缺失目录: {len(missing_categories)}")
+
+        if missing_categories:
+            print(f"\n❌ 发现 {len(missing_categories)} 个缺失的类别目录:")
+            for missing in missing_categories:
+                print(f"   - 类别: '{missing['name']}'")
+                print(f"     清理后名称: '{missing['safe_name']}'")
+                print(f"     预期路径: {missing['expected_path']}")
+                print(f"     有子节点: {missing['has_children']}")
+                print(f"     有内容: {missing['has_content']}")
+                if missing['url']:
+                    print(f"     URL: {missing['url']}")
+                print()
+        else:
+            print(f"   ✅ 所有类别目录都已正确创建")
+
+        return len(missing_categories) == 0
 
     def _save_node_content(self, node_data, node_dir):
         """保存单个节点的内容（guides和troubleshooting）"""
@@ -6521,7 +6671,7 @@ def main():
             print(f"警告: max-connections参数无效，使用默认值{max_connections}")
 
     # 解析重试参数
-    max_retries = 3
+    max_retries = 1  # 极速模式：最少重试次数
     if '--max-retries' in args:
         try:
             retries_idx = args.index('--max-retries')
@@ -7097,7 +7247,7 @@ async def main_async():
     use_proxy = True  # 默认启用代理
     use_cache = True
     force_refresh = False
-    max_workers = 10  # 异步模式默认更高并发
+    max_workers = 20  # 异步模式默认更高并发，提升到20
     max_retries = 3
     download_videos = True
     max_video_size_mb = 100

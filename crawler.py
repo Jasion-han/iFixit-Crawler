@@ -119,21 +119,45 @@ class IFixitCrawler:
             
             # 如果还是没有找到，尝试查找所有可能的设备链接
             if not categories:
+                self.print_debug(f"使用全局链接搜索方法")
                 # 查找所有链接
                 all_links = soup.find_all("a", href=True)
+                potential_categories = []
+
                 for link in all_links:
                     href = link.get("href")
                     text = link.text.strip()
-                    if href and text and "/Device/" in href and not any(x in href for x in ["/Edit/", "/History/", "?revision", "/Answers/"]):
-                        full_url = self.base_url + href if href.startswith("/") else href
-                        # 确保URL被正确编码
-                        import urllib.parse
-                        decoded_url = urllib.parse.unquote(full_url)
-                        encoded_url = urllib.parse.quote(decoded_url, safe=':/?#[]@!$&\'()*+,;=')
-                        categories.append({
-                            "name": text,
-                            "url": encoded_url
-                        })
+
+                    # 更宽松的初始筛选
+                    if href and text and "/Device/" in href:
+                        # 排除明显的非类别链接
+                        if not any(x in href for x in ["/Edit/", "/History/", "?revision", "/Answers/", "/Guide/", "/Teardown/"]):
+                            full_url = self.base_url + href if href.startswith("/") else href
+
+                            # 确保URL被正确编码
+                            import urllib.parse
+                            decoded_url = urllib.parse.unquote(full_url)
+                            encoded_url = urllib.parse.quote(decoded_url, safe=':/?#[]@!$&\'()*+,;=')
+
+                            potential_categories.append({
+                                "name": text,
+                                "url": encoded_url,
+                                "link_context": link.parent.name if link.parent else "unknown"
+                            })
+
+                # 进一步过滤和优化
+                for cat in potential_categories:
+                    # 排除过短或过长的文本
+                    if 2 <= len(cat["name"]) <= 100:
+                        # 排除明显的导航链接
+                        nav_keywords = ["home", "back", "next", "previous", "login", "register", "search"]
+                        if not any(keyword in cat["name"].lower() for keyword in nav_keywords):
+                            categories.append({
+                                "name": cat["name"],
+                                "url": cat["url"]
+                            })
+
+                self.print_debug(f"全局搜索找到 {len(categories)} 个潜在类别")
             
             # 去重
             unique_categories = []
@@ -157,22 +181,68 @@ class IFixitCrawler:
         """判断当前页面是否为最终产品页面（没有子类别的页面）"""
         # 检查是否有子类别
         sub_categories = self.extract_categories(soup, url)
-        
+
         # 过滤掉"创建指南"等非实际类别
-        real_categories = [c for c in sub_categories if not any(x in c["name"] or x in c["url"] for x in ["创建指南", "Guide/new"])]
-        
+        invalid_keywords = ["创建指南", "Guide/new", "翻译", "贡献者", "论坛问题", "其他贡献"]
+        real_categories = []
+
+        for category in sub_categories:
+            category_name = category["name"].lower()
+            category_url = category["url"].lower()
+
+            # 更严格的过滤条件
+            is_valid = True
+
+            # 检查是否包含无效关键词
+            for keyword in invalid_keywords:
+                if keyword.lower() in category_name or keyword.lower() in category_url:
+                    is_valid = False
+                    break
+
+            # 检查是否为有效的设备链接
+            if is_valid and "/Device/" in category["url"]:
+                # 排除编辑、历史等页面
+                if not any(x in category["url"] for x in ["/Edit/", "/History/", "?revision", "/Answers/"]):
+                    real_categories.append(category)
+
         # 检查是否有产品标题
         product_title = soup.select_one("div.device-title h1, h1.device-title, h1.title, h1")
-        
-        # 打印调试信息
+
+        # 增强调试信息
+        self.print_debug(f"页面分析 - URL: {url}")
         if product_title:
-            self.print_debug(f"找到产品标题: {product_title.text}")
-        
-        # 如果有产品标题但没有实际子类别，则认为是最终产品页面
+            self.print_debug(f"  产品标题: {product_title.text.strip()}")
+        self.print_debug(f"  原始类别数: {len(sub_categories)}")
+        self.print_debug(f"  有效类别数: {len(real_categories)}")
+
+        if real_categories:
+            self.print_debug(f"  有效类别列表:")
+            for cat in real_categories:
+                self.print_debug(f"    - {cat['name']}: {cat['url']}")
+
+        # 更严格的判断条件：
+        # 1. 必须有产品标题
+        # 2. 没有有效的子类别
+        # 3. 或者明确包含产品相关的指示器
+        is_final = False
+
         if product_title and len(real_categories) == 0:
-            return True
-            
-        return False
+            is_final = True
+            self.print_debug(f"  ✅ 判定为最终产品页面：有标题且无子类别")
+        elif len(real_categories) == 0:
+            # 即使没有明确的产品标题，如果确实没有子类别，也可能是最终页面
+            # 但需要更多验证
+            page_text = soup.get_text().lower()
+            product_indicators = ["repair", "fix", "guide", "troubleshoot", "manual", "instruction"]
+
+            if any(indicator in page_text for indicator in product_indicators):
+                is_final = True
+                self.print_debug(f"  ✅ 判定为最终产品页面：无子类别且包含产品指示器")
+
+        if not is_final and len(real_categories) > 0:
+            self.print_debug(f"  ❌ 判定为分类页面：包含 {len(real_categories)} 个子类别")
+
+        return is_final
         
     def extract_product_info(self, soup, url, breadcrumb):
         """提取产品名称和说明书信息"""
