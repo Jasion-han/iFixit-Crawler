@@ -196,7 +196,7 @@ class AsyncHttpClientManager:
     """异步HTTP客户端管理器 - 基于httpx的高性能异步请求"""
 
     def __init__(self, proxy_manager=None, max_connections=200, max_keepalive_connections=50,
-                 timeout=30.0, max_retries=3):
+                 timeout=8.0, max_retries=3):
         """
         初始化异步HTTP客户端管理器（优化版本，支持更高并发）
 
@@ -283,7 +283,7 @@ class AsyncHttpClientManager:
             proxy=proxy_url,  # httpx使用proxy而不是proxies
             headers=self.headers,
             follow_redirects=True,
-            verify=True
+            verify=False  # 禁用SSL验证以提升速度
         )
 
         # 创建并发控制信号量（优化：提升并发数以支持更快的媒体下载）
@@ -1146,9 +1146,9 @@ class CacheManager:
 
 class CombinedIFixitCrawler(EnhancedIFixitCrawler):
     def __init__(self, base_url="https://www.ifixit.com", verbose=False, use_proxy=True,
-                 use_cache=True, force_refresh=False, max_workers=8, max_retries=3,
+                 use_cache=True, force_refresh=False, max_workers=16, max_retries=2,
                  download_videos=False, max_video_size_mb=50, max_connections=None,
-                 timeout=30, request_delay=0.5, proxy_switch_freq=1, cache_ttl=24,
+                 timeout=8, request_delay=0.1, proxy_switch_freq=1, cache_ttl=24,
                  custom_user_agent=None, burst_mode=False, conservative_mode=False,
                  skip_images=False, debug_mode=False, show_stats=False, enable_resume=True):
         super().__init__(base_url, verbose)
@@ -1475,7 +1475,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 proxy_manager=self.proxy_manager,
                 max_connections=max_connections,
                 max_keepalive_connections=max_keepalive,
-                timeout=30.0,
+                timeout=8.0,
                 max_retries=self.max_retries
             )
             await self.async_http_manager._init_client()
@@ -1654,9 +1654,9 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         """使用requests获取页面内容，支持智能代理切换"""
         session = requests.Session()
         retry_strategy = Retry(
-            total=1,  # 减少重试次数，避免与上层重试机制冲突
-            backoff_factor=1,  # 减少退避因子
-            status_forcelist=[429, 500, 502, 503, 504],
+            total=0,  # 完全禁用urllib3的重试，由上层处理
+            backoff_factor=0,  # 无退避延迟
+            status_forcelist=[],  # 不重试任何状态码
             raise_on_status=False  # 不在状态码错误时立即抛出异常
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
@@ -1670,7 +1670,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             response = session.get(
                 url,
                 headers=self.headers,
-                timeout=30,
+                timeout=8,
                 proxies=proxies
             )
             response.raise_for_status()
@@ -1690,7 +1690,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                     response = session.get(
                         url,
                         headers=self.headers,
-                        timeout=30,
+                        timeout=8,
                         proxies=new_proxies
                     )
                     response.raise_for_status()
@@ -2295,7 +2295,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 "Pragma": "no-cache"
             }
             proxies = self._get_next_proxy() if self.use_proxy else None
-            response = requests.get(url, headers=media_headers, timeout=30, proxies=proxies)
+            response = requests.get(url, headers=media_headers, timeout=8, proxies=proxies, verify=False)
             response.raise_for_status()
 
             # 保存文件
@@ -4588,12 +4588,34 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             return node
 
         url = node.get('url', '')
+        node_name = node.get('name', 'Unknown')
         is_specified_target = self._is_specified_target_url(url)
+
+        # 添加详细的调试信息
+        children_count = len(node.get('children', []))
+        print(f"🔍 深度爬取节点: {node_name} (子节点: {children_count})")
+
+        if self.verbose:
+            print(f"   URL: {url}")
+            print(f"   是否指定目标: {is_specified_target}")
+            print(f"   是否跳过troubleshooting: {skip_troubleshooting}")
+            if node.get('children'):
+                child_names = [child.get('name', 'Unknown') for child in node['children'][:3]]
+                if len(node['children']) > 3:
+                    child_names.append(f"...等{len(node['children'])}个")
+                print(f"   子节点: {', '.join(child_names)}")
+
+        # 判断是否为目标页面，需要处理以下情况：
+        # 1. 指定的目标URL - 必须处理
+        # 2. 没有子类别的页面 - 必须处理
+        # 3. 有子类别但子类别为空数组的页面 - 必须处理
+        # 4. 有子类别且子类别非空的页面 - 不应该被当作目标页面，应该递归处理子节点
+        has_real_children = node.get('children') and len(node.get('children', [])) > 0
 
         is_target_page = (
             '/Device/' in url and
             not any(skip in url for skip in ['/Guide/', '/Troubleshooting/', '/Edit/', '/History/', '/Answers/']) and
-            (is_specified_target or not node.get('children') or len(node.get('children', [])) == 0)
+            (is_specified_target or not has_real_children)
         )
 
         if is_target_page:
@@ -4791,6 +4813,25 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
             except Exception as e:
                 print(f"  ✗ 深入爬取时出错: {str(e)}")
+
+            # 即使是目标页面，也要处理其子节点（如果有）
+            # 这确保了即使是有内容的页面，其子类别也会被递归处理
+            if 'children' in node and node['children'] and len(node['children']) > 0:
+                children_count = len(node['children'])
+                print(f"🔄 递归处理目标页面的 {children_count} 个子节点...")
+
+                # 检查当前节点是否已处理troubleshooting
+                current_url = node.get('url', '')
+                current_path = current_url.split('/Device/')[-1].split('?')[0].rstrip('/') if '/Device/' in current_url else ''
+                child_should_skip_troubleshooting = (
+                    skip_troubleshooting or
+                    (current_path and current_path in self.processed_troubleshooting_paths)
+                )
+
+                for i, child in enumerate(node['children']):
+                    if children_count > 1:
+                        print(f"   └─ [{i+1}/{children_count}] 处理目标页面的子节点: {child.get('name', 'Unknown')}")
+                    node['children'][i] = self.deep_crawl_product_content(child, child_should_skip_troubleshooting)
 
         elif 'children' in node and node['children']:
             children_count = len(node['children'])
@@ -5589,7 +5630,11 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         print(f"   🔍 处理节点: {node_name}")
         print(f"      节点URL: {current_url}")
-        print(f"      节点类型: {'产品' if tree_data.get('guides') or tree_data.get('troubleshooting') else '分类'}")
+        node_type = '产品' if tree_data.get('guides') or tree_data.get('troubleshooting') else '分类'
+        print(f"      节点类型: {node_type}")
+        print(f"      子节点数量: {len(tree_data.get('children', []))}")
+        print(f"      指南数量: {len(tree_data.get('guides', []))}")
+        print(f"      故障排除数量: {len(tree_data.get('troubleshooting', []))}")
 
         # 检查当前节点是否有实际内容需要保存
         has_guides = tree_data.get('guides') and len(tree_data.get('guides', [])) > 0
@@ -5624,17 +5669,25 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 child_has_content = (child.get('guides') and len(child.get('guides', [])) > 0) or \
                                   (child.get('troubleshooting') and len(child.get('troubleshooting', [])) > 0)
 
-                # 总是为子节点创建目录（如果它们有内容或子节点）
-                if child_has_content or child.get('children'):
+                # 检查子节点是否有真正的子节点（非空的children数组）
+                child_has_children = child.get('children') and len(child.get('children', [])) > 0
+
+                # 为所有子节点创建目录，包括叶子节点（即使没有内容）
+                # 这确保了树结构的完整性，即使某些叶子节点暂时没有guides或troubleshooting
+                print(f"      子节点 '{child_name}': 内容={child_has_content}, 子节点={child_has_children}, URL={bool(child.get('url'))}")
+
+                if child_has_content or child_has_children or child.get('url'):
                     if not child_dir.exists():
                         child_dir.mkdir(parents=True, exist_ok=True)
                         print(f"   📁 创建子节点目录: {child_dir}")
+                    else:
+                        print(f"   📁 使用已存在的子节点目录: {child_dir}")
 
                     # 递归处理子节点，使用子节点的目录
                     self._save_tree_structure(child, child_dir, current_path_parts + [node_name])
                 else:
-                    # 如果子节点没有内容也没有子节点，跳过
-                    print(f"   ⏭️  跳过空子节点: {child_name}")
+                    # 只有当子节点完全没有任何有用信息时才跳过
+                    print(f"   ⏭️  跳过无效子节点: {child_name} (无内容、无子节点、无URL)")
 
     def _clean_directory_name(self, name):
         """清理目录名称，移除文件系统不支持的字符"""
