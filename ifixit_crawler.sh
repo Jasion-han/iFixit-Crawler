@@ -88,6 +88,17 @@ else
     log_message "ℹ️  没有发现运行中的爬虫进程"
 fi
 
+# 设置数据保存路径环境变量
+log_message "🔧 设置数据保存路径: /home/data"
+export IFIXIT_DATA_DIR="/home/data"
+
+# 确保目标目录存在并有正确权限
+if [ ! -d "/home/data" ]; then
+    log_message "📁 创建数据目录: /home/data"
+    mkdir -p /home/data
+    chmod 755 /home/data
+fi
+
 # 重启爬虫
 log_message "🚀 启动新的爬虫进程"
 if nohup python "$CRAWLER_SCRIPT" "$CRAWLER_URL" > "$CRAWLER_LOG" 2>&1 &; then
