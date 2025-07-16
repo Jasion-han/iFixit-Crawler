@@ -257,37 +257,17 @@ class AsyncHttpClientManager:
 
     async def _init_client(self):
         """初始化异步HTTP客户端"""
-        # 配置连接池限制
-        limits = httpx.Limits(
-            max_connections=self.max_connections,
-            max_keepalive_connections=self.max_keepalive_connections
-        )
-
-        # 配置超时
-        timeout = httpx.Timeout(self.timeout)
-
-        # 配置代理
-        proxy_url = None
-        if self.proxy_manager:
-            proxy_config = self.proxy_manager.get_proxy()
-            if proxy_config:
-                proxy_url = proxy_config.get('http')
-                # 增加代理使用计数
-                if hasattr(self.proxy_manager, 'proxy_switch_count'):
-                    self.proxy_manager.proxy_switch_count += 1
-
-        # 创建客户端
-        self._client = httpx.AsyncClient(
-            limits=limits,
-            timeout=timeout,
-            proxy=proxy_url,  # httpx使用proxy而不是proxies
-            headers=self.headers,
-            follow_redirects=True,
-            verify=False  # 禁用SSL验证以提升速度
-        )
-
-        # 创建并发控制信号量（优化：提升并发数以支持更快的媒体下载）
-        self._semaphore = asyncio.Semaphore(min(self.max_connections, 50))
+        if not self._client:
+            self._semaphore = asyncio.Semaphore(self.max_connections)
+            self._client = httpx.AsyncClient(
+                timeout=self.timeout,
+                follow_redirects=True,
+                limits=httpx.Limits(
+                    max_connections=self.max_connections,
+                    max_keepalive_connections=self.max_keepalive_connections
+                ),
+                headers=self.headers
+            )
 
     async def _close_client(self):
         """关闭异步HTTP客户端"""
@@ -317,6 +297,12 @@ class AsyncHttpClientManager:
         for attempt in range(max_retries + 1):
             try:
                 response = await self.get(url, headers=headers, **kwargs)
+                
+                # 特殊处理404错误 - 不重试，直接返回响应
+                if response.status_code == 404:
+                    print(f"⚠️ 页面不存在 (404): {url}")
+                    return response
+                    
                 response.raise_for_status()
                 return response
 
@@ -342,17 +328,14 @@ class AsyncHttpClientManager:
 
                 # 特殊处理事件循环关闭的情况
                 if "Event loop is closed" in str(e):
-                    print(f"⚠️ 事件循环已关闭，停止重试: {url}")
                     return None
 
-                print(f"⚠️ 其他错误 (第{attempt+1}次): {str(e)[:100]}")
                 if attempt < max_retries:
                     # 极速重试策略，最小化等待时间
                     base_delay = 0.2  # 基础延迟0.2秒
                     linear_increment = 0.5  # 每次重试增加0.5秒
                     max_delay = 3  # 最大延迟3秒
                     delay = min(max_delay, base_delay + (attempt * linear_increment) + random.uniform(0, 0.3))
-                    print(f"⏳ 等待{delay:.1f}秒后重试...")
                     await asyncio.sleep(delay)
 
         # 所有重试都失败了，但不要抛出异常，而是返回None让调用者处理
@@ -368,7 +351,6 @@ class AsyncHttpClientManager:
         try:
             response = await self.get_with_retry(url, headers=headers)
             if response is None:
-                print(f"⚠️ 下载失败，响应为空: {url}")
                 return None
 
             # 确保目录存在
@@ -382,7 +364,6 @@ class AsyncHttpClientManager:
             return local_path
 
         except Exception as e:
-            print(f"⚠️ 文件下载异常: {url} - {str(e)[:100]}")
             return None
 
     async def download_files_batch(self, download_tasks, max_concurrent=20):
@@ -395,12 +376,10 @@ class AsyncHttpClientManager:
                     # 检查事件循环是否仍然活跃
                     loop = asyncio.get_event_loop()
                     if loop.is_closed():
-                        print(f"⚠️ 事件循环已关闭，跳过下载: {url}")
                         return None
 
                     return await self.download_file(url, local_path, headers)
                 except Exception as e:
-                    print(f"⚠️ 批量下载失败: {url} - {str(e)[:50]}")
                     return None
 
         # 创建所有下载任务
@@ -1561,10 +1540,31 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         try:
             response = await self.async_http_manager.get_with_retry(url)
+            
+            # 检查HTTP状态码
+            if response is None:
+                self.logger.error(f"获取页面失败 {url}: 响应为空")
+                self.failed_urls.add(url)
+                return None
+                
+            if response.status_code == 404:
+                self.logger.warning(f"页面不存在 {url}: 404 Not Found")
+                self.failed_urls.add(url)
+                # 对于404错误，抛出特定异常以便上层处理
+                raise httpx.HTTPStatusError("404 Not Found", request=response.request, response=response)
+                
+            # 对于其他错误状态码
+            if response.status_code >= 400:
+                self.logger.error(f"HTTP错误 {url}: {response.status_code}")
+                self.failed_urls.add(url)
+                raise httpx.HTTPStatusError(f"HTTP {response.status_code}", request=response.request, response=response)
 
             from bs4 import BeautifulSoup
             return BeautifulSoup(response.content, 'html.parser')
 
+        except httpx.HTTPStatusError:
+            # 直接向上传递HTTP状态错误，让上层处理
+            raise
         except Exception as e:
             self.logger.error(f"异步获取页面失败 {url}: {e}")
             self.failed_urls.add(url)
@@ -1938,16 +1938,42 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if not self.async_http_manager:
             await self._init_async_http_manager()
 
-        # 使用异步HTTP客户端下载文件
-        await self.async_http_manager.download_file(url, local_path, self.async_http_manager.media_headers)
-
-        self.stats["media_downloaded"] += 1
-        if self.verbose:
-            self.logger.info(f"媒体文件下载成功: {filename}")
-        else:
-            # 简化的进度提示
-            if self.stats["media_downloaded"] % 10 == 0:
-                print(f"      📥 已下载 {self.stats['media_downloaded']} 个媒体文件...")
+        try:
+            # 使用异步HTTP客户端下载文件
+            if self.async_http_manager:
+                # 确保目录存在
+                local_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # 使用异步HTTP客户端下载文件
+                # 设置媒体下载的请求头
+                media_headers = {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Referer': 'https://www.ifixit.com/'
+                }
+                response = await self.async_http_manager.get_with_retry(url, headers=media_headers)
+                if response is None:
+                    return None
+                    
+                # 异步写入文件
+                async with aiofiles.open(local_path, 'wb') as f:
+                    async for chunk in response.aiter_bytes(chunk_size=16384):
+                        await f.write(chunk)
+                        
+                self.stats["media_downloaded"] += 1
+                if self.verbose:
+                    self.logger.info(f"媒体文件下载成功: {filename}")
+                else:
+                    # 简化的进度提示
+                    if self.stats["media_downloaded"] % 10 == 0:
+                        print(f"      📥 已下载 {self.stats['media_downloaded']} 个媒体文件...")
+            else:
+                self.logger.error(f"异步HTTP客户端未初始化，无法下载媒体文件: {url}")
+                return None
+        except Exception as e:
+            self.logger.error(f"媒体文件下载失败: {url}, 错误: {e}")
+            return None
 
         # 检查是否是troubleshooting目录，如果是则返回相对于troubleshooting目录的路径
         is_troubleshooting = "troubleshooting" in str(local_dir)
@@ -2114,16 +2140,34 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if not self.async_http_manager:
             await self._init_async_http_manager()
 
-        # 使用异步HTTP客户端下载文件
-        await self.async_http_manager.download_file(url, local_path, self.async_http_manager.media_headers)
-
-        self.stats["media_downloaded"] += 1
-        if self.verbose:
-            self.logger.info(f"媒体文件下载成功: {filename}")
-        else:
-            # 优化的进度提示 - 更频繁的更新
-            if self.stats["media_downloaded"] % 5 == 0:
-                print(f"      📥 已下载 {self.stats['media_downloaded']} 个媒体文件...")
+        try:
+            # 使用异步HTTP客户端下载文件
+            if self.async_http_manager:
+                # 设置媒体下载的请求头
+                media_headers = {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Referer': 'https://www.ifixit.com/'
+                }
+                
+                # 使用异步HTTP客户端下载文件
+                response = await self.async_http_manager.get_with_retry(url, headers=media_headers)
+                if response is None:
+                    return None
+                
+                # 异步写入文件
+                async with aiofiles.open(local_path, 'wb') as f:
+                    async for chunk in response.aiter_bytes(chunk_size=16384):
+                        await f.write(chunk)
+                        
+                return local_path
+            else:
+                self.logger.error(f"异步HTTP客户端未初始化，无法下载媒体文件: {url}")
+                return None
+        except Exception as e:
+            self.logger.error(f"媒体文件下载失败: {url}, 错误: {e}")
+            return None
 
         # 检查是否是troubleshooting目录，如果是则返回相对于troubleshooting目录的路径
         is_troubleshooting = "troubleshooting" in str(local_dir)
@@ -2450,25 +2494,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         return ""
 
-    def extract_real_title_from_page(self, soup):
-        """从页面HTML中提取真实的title字段"""
-        if not soup:
-            return ""
 
-        h1_elem = soup.select_one("h1")
-        if h1_elem:
-            title = h1_elem.get_text().strip()
-            if title:
-                return title
-
-        title_elem = soup.select_one("title")
-        if title_elem:
-            title = title_elem.get_text().strip()
-            title = title.replace(" - iFixit", "").replace(" | iFixit", "").strip()
-            if title:
-                return title
-
-        return ""
 
     # 第一个extract_real_view_statistics方法已移除，使用下面的实现
 
@@ -3668,29 +3694,35 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 self._perform_cache_precheck(start_url, category_name)
                 self.cache_manager.display_cache_report()
 
-            # 第一步：使用 tree_crawler 逻辑构建基础树结构
-            print("📊 阶段 1/3: 构建基础树形结构...")
-            print("   正在分析页面结构和分类层次...")
-            base_tree = await self._crawl_tree_async(start_url, category_name)
+            try:
+                # 第一步：使用 tree_crawler 逻辑构建基础树结构
+                print("📊 阶段 1/3: 构建基础树形结构...")
+                print("   正在分析页面结构和分类层次...")
+                base_tree = await self._crawl_tree_async(start_url, category_name)
 
-            if not base_tree:
-                print("❌ 无法构建基础树结构")
+                if not base_tree:
+                    print("❌ 无法构建基础树结构")
+                    return None
+
+                print(f"✅ 基础树结构构建完成")
+                print("=" * 60)
+
+                # 第二步：为树中的每个节点提取详细内容
+                print("📝 阶段 2/3: 为每个节点提取详细内容...")
+                print("   正在处理节点基本信息和元数据...")
+                enriched_tree = await self._enrich_tree_with_detailed_content_async(base_tree)
+
+                # 第三步：对于产品页面，深入爬取其指南和故障排除内容
+                print("🔍 阶段 3/3: 深入爬取产品页面的子内容...")
+                print("   正在提取指南和故障排除详细信息...")
+                final_tree = await self._deep_crawl_product_content_async(enriched_tree)
+
+                return final_tree
+            except Exception as e:
+                self.logger.error(f"✗ 爬取过程中发生错误: {e}")
+                print(f"✗ 爬取过程中发生错误: {e}")
+                # 返回已经爬取的数据，避免完全失败
                 return None
-
-            print(f"✅ 基础树结构构建完成")
-            print("=" * 60)
-
-            # 第二步：为树中的每个节点提取详细内容
-            print("📝 阶段 2/3: 为每个节点提取详细内容...")
-            print("   正在处理节点基本信息和元数据...")
-            enriched_tree = await self._enrich_tree_with_detailed_content_async(base_tree)
-
-            # 第三步：对于产品页面，深入爬取其指南和故障排除内容
-            print("🔍 阶段 3/3: 深入爬取产品页面的子内容...")
-            print("   正在提取指南和故障排除详细信息...")
-            final_tree = await self._deep_crawl_product_content_async(enriched_tree)
-
-            return final_tree
 
         finally:
             # 确保关闭异步HTTP客户端
@@ -3717,18 +3749,38 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                     if soup:
                         # 提取节点的详细信息
                         node = await self._extract_node_details_async(node, soup)
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code == 404:
+                        self.logger.warning(f"页面不存在 {node.get('url', '')}: 404 Not Found")
+                        print(f"⚠️ 页面不存在: {node.get('url', '')}")
+                        # 标记节点为无效但继续处理
+                        node['valid'] = False
+                        node['error'] = "404 Not Found"
+                    else:
+                        self.logger.error(f"异步处理节点失败 {node.get('url', '')}: {e}")
                 except Exception as e:
                     self.logger.error(f"异步处理节点失败 {node.get('url', '')}: {e}")
+                    # 标记节点但不中断处理
+                    node['error'] = str(e)
 
             # 递归处理子节点
             if 'children' in node and node['children']:
                 # 并发处理所有子节点
                 child_tasks = [self._enrich_node_async(child) for child in node['children']]
-                node['children'] = await asyncio.gather(*child_tasks, return_exceptions=True)
+                try:
+                    node['children'] = await asyncio.gather(*child_tasks, return_exceptions=True)
 
-                # 过滤掉异常结果
-                node['children'] = [child for child in node['children']
-                                  if not isinstance(child, Exception)]
+                    # 过滤掉异常结果，但记录错误
+                    filtered_children = []
+                    for child in node['children']:
+                        if isinstance(child, Exception):
+                            self.logger.error(f"子节点处理失败: {child}")
+                        else:
+                            filtered_children.append(child)
+                    node['children'] = filtered_children
+                except Exception as e:
+                    self.logger.error(f"处理子节点时发生错误: {e}")
+                    # 保留现有子节点，不让整个处理失败
 
         return node
 
@@ -4989,7 +5041,6 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             return breadcrumbs
 
         # 如果没有面包屑，通过动态方式构建路径结构
-        print(f"   ⚠️  未找到面包屑导航，尝试动态构建路径结构")
         return self._build_dynamic_breadcrumbs(url)
 
     def _build_dynamic_breadcrumbs(self, url):
@@ -5627,8 +5678,6 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             print("   💾 保存内容和下载媒体文件...")
             print(f"   🔍 开始保存到: {root_dir}")
             print(f"   🎯 目标URL: {getattr(self, 'target_url', 'None')}")
-            print(f"   📊 树数据类型: {type(tree_data)}")
-            print(f"   📊 树数据键: {list(tree_data.keys()) if isinstance(tree_data, dict) else 'N/A'}")
 
             # 找到所有包含实际内容的节点
             content_nodes = self._find_all_content_nodes_in_tree(tree_data)
@@ -5658,7 +5707,6 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                         node_dir = root_dir / safe_name
                         self._save_node_content(node, node_dir)
             else:
-                print("   ⚠️  未找到包含内容的目标节点")
                 # 如果没有找到目标节点，保存整个树结构（后备方案）
                 self._save_tree_structure(tree_data, root_dir)
 
@@ -5685,8 +5733,6 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         print(f"   🔍 处理节点: {node_name}")
         print(f"      节点URL: {current_url}")
         node_type = '产品' if tree_data.get('guides') or tree_data.get('troubleshooting') else '分类'
-        print(f"      节点类型: {node_type}")
-        print(f"      子节点数量: {len(tree_data.get('children', []))}")
         print(f"      指南数量: {len(tree_data.get('guides', []))}")
         print(f"      故障排除数量: {len(tree_data.get('troubleshooting', []))}")
 
