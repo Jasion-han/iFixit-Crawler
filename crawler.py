@@ -57,6 +57,38 @@ class IFixitCrawler:
             
         return breadcrumbs
             
+    def _force_english_content(self, text):
+        """
+        强制将中文内容转换为英文内容
+        """
+        if not text:
+            return text
+
+        # 中文到英文的映射表
+        chinese_to_english = {
+            '英寸': '"',
+            '寸': '"',
+            '修复': 'Repair',
+            '维修': 'Repair',
+            '指南': 'Guide',
+            '故障排除': 'Troubleshooting',
+            '问题': 'Issues',
+            '解决方案': 'Solutions',
+            '教程': 'Tutorial',
+            '拆解': 'Teardown',
+            '安装': 'Installation',
+            '更换': 'Replacement',
+            '型号': 'Models',
+            '系列': 'Series'
+        }
+
+        # 替换中文内容
+        result = text
+        for chinese, english in chinese_to_english.items():
+            result = result.replace(chinese, english)
+
+        return result
+
     def extract_categories(self, soup, url):
         """提取页面中的设备类别链接"""
         categories = []
@@ -92,8 +124,10 @@ class IFixitCrawler:
                                     # 先解码再重新编码，确保一致性
                                     decoded_url = urllib.parse.unquote(full_url)
                                     encoded_url = urllib.parse.quote(decoded_url, safe=':/?#[]@!$&\'()*+,;=')
+                                    # 强制转换为英文内容
+                                    english_text = self._force_english_content(text)
                                     categories.append({
-                                        "name": text,
+                                        "name": english_text,
                                         "url": encoded_url
                                     })
             
@@ -112,8 +146,10 @@ class IFixitCrawler:
                             import urllib.parse
                             decoded_url = urllib.parse.unquote(full_url)
                             encoded_url = urllib.parse.quote(decoded_url, safe=':/?#[]@!$&\'()*+,;=')
+                            # 强制转换为英文内容
+                            english_text = self._force_english_content(text)
                             categories.append({
-                                "name": text,
+                                "name": english_text,
                                 "url": encoded_url
                             })
             
@@ -139,8 +175,10 @@ class IFixitCrawler:
                             decoded_url = urllib.parse.unquote(full_url)
                             encoded_url = urllib.parse.quote(decoded_url, safe=':/?#[]@!$&\'()*+,;=')
 
+                            # 强制转换为英文内容
+                            english_text = self._force_english_content(text)
                             potential_categories.append({
-                                "name": text,
+                                "name": english_text,
                                 "url": encoded_url,
                                 "link_context": link.parent.name if link.parent else "unknown"
                             })
@@ -152,8 +190,10 @@ class IFixitCrawler:
                         # 排除明显的导航链接
                         nav_keywords = ["home", "back", "next", "previous", "login", "register", "search"]
                         if not any(keyword in cat["name"].lower() for keyword in nav_keywords):
+                            # 再次确保英文转换（防止遗漏）
+                            final_name = self._force_english_content(cat["name"])
                             categories.append({
-                                "name": cat["name"],
+                                "name": final_name,
                                 "url": cat["url"]
                             })
 
@@ -266,11 +306,11 @@ class IFixitCrawler:
                 if title_elem:
                     # 清理产品名称，去除多余空格并处理引号
                     product_name = title_elem.text.strip()
-                    # 处理转义引号和英寸符号，将其替换为"英寸"
-                    product_name = product_name.replace('\\"', '英寸').replace('\\"', '英寸')
-                    product_name = product_name.replace('"', '英寸').replace('"', '英寸')
-                    product_name = re.sub(r'(\d+)\"', r'\1英寸', product_name)  # 将数字后面的英寸符号替换为"英寸"
+                    # 处理转义引号和英寸符号，保持英文格式
+                    product_name = product_name.replace('\\"', '"').replace('\\"', '"')
                     product_name = re.sub(r'\s+', ' ', product_name)  # 处理多余空格
+                    # 强制转换为英文内容
+                    product_name = self._force_english_content(product_name)
                     product_info["product_name"] = product_name
                     break
             
@@ -278,7 +318,9 @@ class IFixitCrawler:
             if not product_info["product_name"]:
                 url_path = url.split("/")[-1]
                 product_name = url_path.replace("_", " ").replace("-", " ")
-                product_name = product_name.replace('%22', '英寸').replace('%E2%80%9D', '英寸')  # 将%22替换为英寸
+                product_name = product_name.replace('%22', '"').replace('%E2%80%9D', '"')  # 将%22替换为英寸符号
+                # 强制转换为英文内容
+                product_name = self._force_english_content(product_name)
                 product_info["product_name"] = product_name
             
             # 查找"文档"栏目下的链接

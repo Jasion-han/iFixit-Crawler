@@ -46,35 +46,36 @@ class TreeCrawler(IFixitCrawler):
 
         # 如果目标就是根目录，则直接返回
         if target_url == device_url:
-            return [{"name": "设备", "url": device_url}]
+            return [{"name": "Device", "url": device_url}]
         
         # 从目标页面提取面包屑导航
         target_soup = self.get_soup(target_url)
         if not target_soup:
             print(f"无法获取页面内容: {target_url}")
-            return [{"name": "设备", "url": device_url}]
+            return [{"name": "Device", "url": device_url}]
         
         # 尝试从页面提取面包屑导航
         breadcrumbs = self.extract_breadcrumbs_from_page(target_soup)
         
         # 如果成功提取到面包屑导航
         if breadcrumbs and len(breadcrumbs) > 1:
-            print(f"从页面提取到面包屑导航: {' > '.join(breadcrumbs)}")
+            if self.verbose:
+                print(f"从页面提取到面包屑导航: {' > '.join(breadcrumbs)}")
             
             # 构建完整的路径
             path = []
             
-            # 映射常见的中文分类名称到URL路径部分
+            # 映射常见的分类名称到URL路径部分
             category_map = {
-                "设备": "Device",
-                "电子产品": "Electronics",
-                "电视": "Television",
-                "耳机": "Headphone",
-                "手机": "Phone",
-                "平板电脑": "Tablet",
-                "笔记本电脑": "Laptop",
-                "游戏机": "Game_Console",
-                "相机": "Camera"
+                "Device": "Device",
+                "Electronics": "Electronics",
+                "Television": "Television",
+                "Headphone": "Headphone",
+                "Phone": "Phone",
+                "Tablet": "Tablet",
+                "Laptop": "Laptop",
+                "Game_Console": "Game_Console",
+                "Camera": "Camera"
             }
             
             # 重新设计URL构建逻辑：每个层级都是真实的页面URL，不是拼接路径
@@ -116,7 +117,8 @@ class TreeCrawler(IFixitCrawler):
                     })
                 else:
                     # 如果找不到真实URL，使用fallback逻辑
-                    print(f"警告：无法找到 '{crumb_name}' 的真实URL，使用fallback")
+                    if self.verbose:
+                        print(f"警告：无法找到 '{crumb_name}' 的真实URL，使用fallback")
                     fallback_url = self._generate_fallback_url(crumb_name)
                     current_page_url = fallback_url
                     path.append({
@@ -195,10 +197,12 @@ class TreeCrawler(IFixitCrawler):
             # 智能匹配类别名称
             for category in categories:
                 if self._is_category_match(category["name"], category_name):
-                    print(f"找到真实URL: {category_name} -> {category['url']}")
+                    if self.verbose:
+                        print(f"找到真实URL: {category_name} -> {category['url']}")
                     return category["url"]
 
-            print(f"在页面 {current_page_url} 中未找到匹配的类别: {category_name}")
+            if self.verbose:
+                print(f"在页面 {current_page_url} 中未找到匹配的类别: {category_name}")
             return None
 
         except Exception as e:
@@ -269,6 +273,8 @@ class TreeCrawler(IFixitCrawler):
                             if link:
                                 text = link.get_text().strip()
                                 if text:
+                                    # 强制转换为英文内容
+                                    text = self._force_english_content(text)
                                     chakra_breadcrumbs.append(text)
 
                     if chakra_breadcrumbs:
@@ -299,11 +305,13 @@ class TreeCrawler(IFixitCrawler):
                             react_breadcrumbs = []
                             for crumb in props_data["breadcrumbs"]:
                                 if "name" in crumb and crumb["name"]:
-                                    # 这里的name可能是中文的"设备"、"电子产品"等
-                                    react_breadcrumbs.append(crumb["name"])
+                                    # 这里的name可能是中文的"设备"、"电子产品"等，需要强制转换
+                                    name = self._force_english_content(crumb["name"])
+                                    react_breadcrumbs.append(name)
 
                             if react_breadcrumbs:
-                                print(f"从React组件提取到面包屑: {' > '.join(react_breadcrumbs)}")
+                                if self.verbose:
+                                    print(f"从React组件提取到面包屑: {' > '.join(react_breadcrumbs)}")
                                 return react_breadcrumbs
                     except json.JSONDecodeError:
                         print("无法解析面包屑JSON数据")
@@ -315,7 +323,8 @@ class TreeCrawler(IFixitCrawler):
                 for item in breadcrumb_items:
                     name_meta = item.select_one("[itemprop='name']")
                     if name_meta and name_meta.get("content"):
-                        schema_breadcrumbs.append(name_meta.get("content"))
+                        content = self._force_english_content(name_meta.get("content"))
+                        schema_breadcrumbs.append(content)
 
                 if schema_breadcrumbs:
                     print(f"从Schema.org标记提取到面包屑: {' > '.join(schema_breadcrumbs)}")
@@ -330,6 +339,7 @@ class TreeCrawler(IFixitCrawler):
                     for link in links:
                         text = link.get_text().strip()
                         if text:
+                            text = self._force_english_content(text)
                             container_breadcrumbs.append(text)
                     
                     if container_breadcrumbs:
@@ -345,9 +355,10 @@ class TreeCrawler(IFixitCrawler):
                     href = link.get("href", "")
                     text = link.get_text().strip()
                     # 只保留有效的设备相关链接，过滤掉"创建指南"等
-                    if ("/Device/" in href and 
-                        text and 
-                        not any(invalid in text.lower() for invalid in ["创建", "翻译", "贡献者", "论坛", "guide"])):
+                    if ("/Device/" in href and
+                        text and
+                        not any(invalid in text.lower() for invalid in ["创建", "翻译", "贡献者", "论坛", "guide", "create", "translate", "contributor", "forum"])):
+                        text = self._force_english_content(text)
                         standard_breadcrumbs.append(text)
                 
                 if standard_breadcrumbs:
@@ -361,16 +372,16 @@ class TreeCrawler(IFixitCrawler):
                 url = url_path.get("href", "")
                 if "Headphone" in url:
                     # 耳机类别的标准路径
-                    return ["设备", "电子产品", "耳机", url.split("/")[-1].replace("_", " ")]
+                    return ["Device", "Electronics", "Headphone", url.split("/")[-1].replace("_", " ")]
                 elif "Television" in url:
                     # 电视类别的标准路径
                     if "_" in url:
                         brand = url.split("/")[-1].split("_")[0]
-                        return ["设备", "电子产品", "电视", f"{brand} Television"]
+                        return ["Device", "Electronics", "Television", f"{brand} Television"]
                     else:
-                        return ["设备", "电子产品", "电视"]
+                        return ["Device", "Electronics", "Television"]
                 elif "Electronics" in url:
-                    return ["设备", "电子产品"]
+                    return ["Device", "Electronics"]
                 
             # 如果所有方法都失败，返回空列表
             print("无法提取面包屑导航")
@@ -504,29 +515,68 @@ class TreeCrawler(IFixitCrawler):
         # 返回找到的分类路径（反转顺序，从根到叶）
         return list(reversed(parent_categories))
         
+    def _force_english_content(self, text):
+        """
+        强制将中文内容转换为英文内容
+        """
+        if not text:
+            return text
+
+        # 中文到英文的映射表
+        chinese_to_english = {
+            '英寸': '"',
+            '寸': '"',
+            '修复': 'Repair',
+            '维修': 'Repair',
+            '指南': 'Guide',
+            '故障排除': 'Troubleshooting',
+            '问题': 'Issues',
+            '解决方案': 'Solutions',
+            '教程': 'Tutorial',
+            '拆解': 'Teardown',
+            '安装': 'Installation',
+            '更换': 'Replacement',
+            '型号': 'Models',
+            '系列': 'Series'
+        }
+
+        # 替换中文内容
+        result = text
+        for chinese, english in chinese_to_english.items():
+            result = result.replace(chinese, english)
+
+        return result
+
     def _get_page_title(self, soup):
-        """从页面提取更准确的标题"""
+        """从页面提取更准确的标题，并强制使用英文内容"""
         # 尝试从标题标签获取
         title_elem = soup.select_one("div.device-title h1, h1.device-title, h1.title, h1")
         if title_elem:
             title = title_elem.get_text().strip()
             # 移除"Repair"等后缀
             title = title.replace(" Repair", "").replace(" repair", "")
+            # 强制转换为英文内容
+            title = self._force_english_content(title)
             return title
-            
+
         # 尝试从面包屑导航获取
         breadcrumbs = self.extract_breadcrumbs(soup)
         if breadcrumbs and len(breadcrumbs) > 0:
-            return breadcrumbs[-1]
-            
+            title = breadcrumbs[-1]
+            # 强制转换为英文内容
+            title = self._force_english_content(title)
+            return title
+
         # 尝试从页面标题获取
         if soup.title:
             title = soup.title.string
             # 移除网站名称和"Repair"等后缀
             title = title.replace(" - iFixit", "").replace(" - iFixit.cn", "")
             title = title.replace(" Repair", "").replace(" repair", "")
+            # 强制转换为英文内容
+            title = self._force_english_content(title)
             return title
-            
+
         return None
 
     def crawl_tree(self, start_url=None, category_name=None):
