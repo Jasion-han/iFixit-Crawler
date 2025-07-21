@@ -21,15 +21,17 @@ class TreeBuildingProgressManager:
     """树构建进度管理器 - 实现断点续爬功能"""
     
     def __init__(self, target_url: str, storage_root: str = None,
-                 logger: Optional[logging.Logger] = None):
+                 logger: Optional[logging.Logger] = None, command_arg: str = None):
         """
         初始化树构建进度管理器
-        
+
         Args:
             target_url: 目标URL
             storage_root: 存储根目录
             logger: 日志记录器
+            command_arg: 命令行参数，用于生成更友好的文件名
         """
+        self.command_arg = command_arg
         self.target_url = target_url
         # 支持通过环境变量配置数据保存路径，默认为 ifixit_data
         if storage_root is None:
@@ -63,21 +65,43 @@ class TreeBuildingProgressManager:
         self.load_progress()
         
     def _get_progress_file_path(self) -> Path:
-        """生成进度文件路径"""
-        # 基于目标URL生成唯一的进度文件名
-        url_hash = hashlib.md5(self.target_url.encode('utf-8')).hexdigest()[:16]
-        
-        # 从URL提取可读的名称部分
+        """生成进度文件路径 - 基于目标名称，不使用哈希值"""
+        # 优先使用命令行参数作为文件名
+        if hasattr(self, 'command_arg') and self.command_arg:
+            # 清理命令行参数，移除URL前缀和特殊字符
+            clean_name = self.command_arg
+            if clean_name.startswith('https://www.ifixit.com/'):
+                clean_name = clean_name.replace('https://www.ifixit.com/', '')
+            if clean_name.startswith('Device/'):
+                clean_name = clean_name.replace('Device/', '')
+            if clean_name.startswith('Guide/'):
+                clean_name = clean_name.replace('Guide/', '')
+
+            # 清理特殊字符，保留字母数字和下划线
+            clean_name = ''.join(c if c.isalnum() or c in '_-' else '_' for c in clean_name)
+            clean_name = clean_name.strip('_')
+
+            if clean_name:
+                filename = f"tree_progress_{clean_name}.json"
+                return self.storage_root / filename
+
+        # 从URL提取可读的名称部分作为后备方案
         parsed_url = urlparse(self.target_url)
         path_parts = parsed_url.path.strip('/').split('/')
-        
-        if len(path_parts) >= 2 and path_parts[0] == 'Device':
-            # 使用设备路径作为文件名的一部分
-            device_name = '_'.join(path_parts[1:]).replace('%20', '_')
-            filename = f"tree_progress_{device_name}_{url_hash}.json"
+
+        if len(path_parts) >= 2 and path_parts[0] in ['Device', 'Guide']:
+            # 使用路径的最后一部分作为文件名
+            target_name = path_parts[-1] if path_parts[-1] else path_parts[-2]
+            # URL解码并清理特殊字符
+            from urllib.parse import unquote
+            target_name = unquote(target_name)
+            clean_name = ''.join(c if c.isalnum() or c in '_-' else '_' for c in target_name)
+            clean_name = clean_name.strip('_')
+            filename = f"tree_progress_{clean_name}.json"
         else:
-            filename = f"tree_progress_{url_hash}.json"
-            
+            # 最后的后备方案
+            filename = "tree_progress_default.json"
+
         return self.storage_root / filename
     
     def load_progress(self) -> bool:
@@ -158,24 +182,26 @@ class TreeBuildingProgressManager:
             "children_discovered": 0,
             "children_processed": 0
         }
-        
+
         self.logger.debug(f"开始处理URL: {url}")
+
+        # 保存当前处理状态
+        self.save_progress()
         
     def mark_url_completed(self, url: str, children_count: int = 0):
         """标记URL处理完成"""
         self.progress_data['processed_urls'].add(url)
         self.progress_data['statistics']['total_processed'] += 1
-        
+
         # 清除当前处理状态
-        if (self.progress_data['current_processing'] and 
+        if (self.progress_data['current_processing'] and
             self.progress_data['current_processing']['url'] == url):
             self.progress_data['current_processing'] = None
-            
+
         self.logger.debug(f"URL处理完成: {url} (子分类: {children_count})")
-        
-        # 定期保存进度
-        if len(self.progress_data['processed_urls']) % 10 == 0:
-            self.save_progress()
+
+        # 立即保存进度，确保数据不丢失
+        self.save_progress()
     
     def mark_url_failed(self, url: str, error: str = ""):
         """标记URL处理失败"""

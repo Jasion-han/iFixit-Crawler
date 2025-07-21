@@ -304,15 +304,15 @@ class TunnelProxyManager:
 class AsyncHttpClientManager:
     """异步HTTP客户端管理器 - 基于httpx的高性能异步请求"""
 
-    def __init__(self, proxy_manager=None, max_connections=500, max_keepalive_connections=100,
+    def __init__(self, proxy_manager=None, max_connections=150, max_keepalive_connections=50,
                  timeout=3.0, max_retries=2):
         """
-        初始化异步HTTP客户端管理器（优化版本，支持更高并发）
+        初始化异步HTTP客户端管理器（优化版本，平衡速度与稳定性）
 
         Args:
             proxy_manager: 代理管理器实例
-            max_connections: 最大连接数（提升到200以支持更高并发）
-            max_keepalive_connections: 最大保持连接数（提升到50）
+            max_connections: 最大连接数（优化到150，避免连接池饱和）
+            max_keepalive_connections: 最大保持连接数（优化到50）
             timeout: 请求超时时间
             max_retries: 最大重试次数
         """
@@ -321,6 +321,10 @@ class AsyncHttpClientManager:
         self.max_keepalive_connections = max_keepalive_connections
         self.timeout = timeout
         self.max_retries = max_retries
+
+        # 添加日志记录器
+        import logging
+        self.logger = logging.getLogger(__name__)
 
         # 请求头配置 - 强制英文版本
         self.headers = {
@@ -357,6 +361,34 @@ class AsyncHttpClientManager:
         self._client = None
         self._semaphore = None
 
+    def _format_error_message(self, exception, url=None):
+        """格式化错误消息，提供更有用的信息"""
+        try:
+            # 获取异常类型
+            exc_type = type(exception).__name__
+
+            # 获取异常消息
+            exc_msg = str(exception) if exception else ""
+
+            # 如果异常消息为空，尝试获取更多信息
+            if not exc_msg or exc_msg.isspace():
+                if hasattr(exception, 'args') and exception.args:
+                    exc_msg = str(exception.args[0]) if exception.args[0] else "No error message"
+                else:
+                    exc_msg = "No error details available"
+
+            # 构建详细的错误消息
+            if url:
+                # 截断URL以避免过长的日志
+                short_url = url[:50] + "..." if len(url) > 50 else url
+                return f"{exc_type}: {exc_msg} (URL: {short_url})"
+            else:
+                return f"{exc_type}: {exc_msg}"
+
+        except Exception:
+            # 如果格式化失败，返回基本信息
+            return f"Unknown error: {type(exception).__name__}"
+
     async def __aenter__(self):
         """异步上下文管理器入口"""
         await self._init_client()
@@ -375,12 +407,12 @@ class AsyncHttpClientManager:
                 
             self._semaphore = asyncio.Semaphore(self.max_connections)
 
-            # 优化超时配置 - 增加超时时间减少频繁切换
+            # 优化超时配置 - 平衡速度与稳定性
             timeout_config = httpx.Timeout(
-                connect=5.0,    # 连接超时5秒
-                read=10.0,      # 读取超时10秒
-                write=5.0,      # 写入超时5秒
-                pool=3.0        # 连接池获取超时3秒
+                connect=8.0,    # 连接超时8秒，给连接建立更多时间
+                read=15.0,      # 读取超时15秒，适应大文件下载
+                write=8.0,      # 写入超时8秒
+                pool=15.0       # 连接池获取超时15秒，避免PoolTimeout错误
             )
 
             self._client = httpx.AsyncClient(
@@ -389,7 +421,7 @@ class AsyncHttpClientManager:
                 limits=httpx.Limits(
                     max_connections=self.max_connections,
                     max_keepalive_connections=self.max_keepalive_connections,
-                    keepalive_expiry=5.0  # 连接保持时间5秒，快速释放失效连接
+                    keepalive_expiry=30.0  # 连接保持时间30秒，减少连接创建开销
                 ),
                 headers=self.headers
             )
@@ -405,7 +437,7 @@ class AsyncHttpClientManager:
             self._client = None
 
     async def get(self, url, headers=None, **kwargs):
-        """异步GET请求 - 修复事件循环关闭问题"""
+        """异步GET请求 - 改进错误处理"""
         try:
             # 检查事件循环状态
             try:
@@ -429,12 +461,26 @@ class AsyncHttpClientManager:
 
                 return await self._client.get(url, headers=request_headers, **kwargs)
         except Exception as e:
-            # 安全的错误消息处理
-            error_msg = safe_str(e) if e is not None else "Unknown error"
+            # 改进的错误消息处理
+            error_msg = self._format_error_message(e, url)
+
             # 特殊处理事件循环关闭的情况
             if "Event loop is closed" in error_msg:
                 return None
-            print(f"异步HTTP请求失败: {error_msg}")
+
+            # 静默处理常见的网络错误，避免日志污染
+            silent_errors = [
+                "Connection pool is full",
+                "Connection timeout",
+                "Read timeout",
+                "No error details available",
+                "Empty string",
+                "PoolTimeout"  # 添加PoolTimeout到静默错误列表
+            ]
+
+            if not any(silent_error in error_msg for silent_error in silent_errors):
+                print(f"异步HTTP请求失败: {error_msg}")
+
             return None
 
     async def get_with_retry(self, url, headers=None, max_retries=None, **kwargs):
@@ -467,21 +513,33 @@ class AsyncHttpClientManager:
                 else:
                     return None
 
-            except (httpx.ProxyError, httpx.ConnectTimeout, httpx.ConnectError, httpx.ReadTimeout, httpx.TimeoutException) as e:
-                # 网络相关错误，减少频繁切换
+            except (httpx.ProxyError, httpx.ConnectTimeout, httpx.ConnectError, httpx.ReadTimeout, httpx.TimeoutException, httpx.PoolTimeout) as e:
+                # 网络相关错误处理，包括PoolTimeout特殊处理
+                error_msg = self._format_error_message(e, url)
+
+                # 对PoolTimeout错误进行特殊处理
+                if "PoolTimeout" in error_msg:
+                    # PoolTimeout需要更长的等待时间
+                    delay = 2.0 + attempt * 1.0  # 2秒, 3秒, 4秒...
+                    await asyncio.sleep(delay)
+                    continue
+
                 if self.proxy_manager and attempt < max_retries:
                     # 只在第一次重试时切换代理
                     if attempt == 0:
                         import time
                         current_time = time.strftime("%H:%M:%S")
-                        error_str = safe_str(e)
-                        print(f"[{current_time}] 🔄 网络错误，切换代理...")
 
-                        self.proxy_manager.mark_proxy_failed(None, f"网络错误: {error_str[:50]}")
+                        # 静默处理常见网络错误
+                        if not any(silent in error_msg for silent in ["timeout", "Connection", "Empty string", "PoolTimeout"]):
+                            print(f"[{current_time}] 🔄 网络错误，切换代理: {error_msg}")
 
-                        # 立即重新初始化客户端以使用新代理
-                        await self._close_client()
-                        await self._init_client()
+                        if hasattr(self, 'proxy_manager') and self.proxy_manager:
+                            self.proxy_manager.mark_proxy_failed(None, f"网络错误: {error_msg[:50]}")
+
+                            # 立即重新初始化客户端以使用新代理
+                            await self._close_client()
+                            await self._init_client()
 
                     # 递增延迟，避免过于频繁的重试
                     delay = 0.5 + attempt * 0.5  # 0.5秒, 1秒, 1.5秒...
@@ -528,16 +586,30 @@ class AsyncHttpClientManager:
 
             # 异步写入文件，优化chunk大小以提升性能
             async with aiofiles.open(local_path, 'wb') as f:
-                async for chunk in response.aiter_bytes(chunk_size=16384):  # 增加chunk大小
-                    await f.write(chunk)
+                try:
+                    async for chunk in response.aiter_bytes(chunk_size=16384):  # 增加chunk大小
+                        await f.write(chunk)
+                except Exception as e:
+                    # 捕获可能的格式化错误
+                    error_msg = self._format_error_message(e, url)
+                    if hasattr(self, 'logger') and self.logger:
+                        self.logger.error(f"异步写入文件失败: {error_msg}")
+                    raise
 
             return local_path
 
         except Exception as e:
             # 安全的错误处理
-            error_msg = str(e) if e is not None else "Unknown error"
+            error_msg = self._format_error_message(e, url)
             if "Event loop is closed" in error_msg:
                 return None
+
+            # 静默处理常见的下载错误
+            silent_errors = ["timeout", "Connection", "Empty string", "No error details"]
+            if not any(silent in error_msg for silent in silent_errors):
+                if hasattr(self, 'logger') and self.logger:
+                    self.logger.warning(f"文件下载失败: {error_msg}")
+
             return None
 
     async def download_files_batch(self, download_tasks, max_concurrent=20):
@@ -629,7 +701,7 @@ class CacheManager:
         return hashlib.md5(url.encode('utf-8')).hexdigest()
 
     def is_url_cached_and_valid(self, url, local_path):
-        """检查URL是否已缓存且数据有效"""
+        """检查URL是否已缓存且数据有效 - 增强版本，自动清理无效缓存"""
         url_hash = self.get_url_hash(url)
         self.stats['total_urls'] += 1
 
@@ -650,6 +722,7 @@ class CacheManager:
         # 检查本地路径是否存在
         if not local_path.exists():
             self.logger.info(f"   ❌ 本地路径不存在: {local_path}")
+            self._remove_invalid_cache_entry(url_hash, "本地路径不存在")
             self.stats['invalid_cache'] += 1
             self.stats['cache_misses'] += 1
             return False
@@ -657,6 +730,7 @@ class CacheManager:
         # 验证数据完整性
         if not self._validate_cached_data(local_path, cache_entry):
             self.logger.info(f"   ❌ 数据完整性验证失败")
+            self._remove_invalid_cache_entry(url_hash, "数据完整性验证失败")
             self.stats['invalid_cache'] += 1
             self.stats['cache_misses'] += 1
             return False
@@ -666,8 +740,111 @@ class CacheManager:
         self.stats['cache_hits'] += 1
         return True
 
+    def _remove_invalid_cache_entry(self, url_hash, reason):
+        """移除无效的缓存条目并保存索引"""
+        try:
+            if url_hash in self.cache_index:
+                cache_entry = self.cache_index[url_hash]
+                url = cache_entry.get('url', 'unknown')
+                self.logger.info(f"   🗑️ 清理无效缓存条目: {url} (原因: {reason})")
+
+                # 从缓存索引中移除
+                del self.cache_index[url_hash]
+
+                # 立即保存更新后的缓存索引
+                self.save_cache_index()
+
+                self.logger.info(f"   ✅ 无效缓存条目已清理并保存")
+            else:
+                self.logger.warning(f"   ⚠️ 尝试清理不存在的缓存条目: {url_hash}")
+        except Exception as e:
+            self.logger.error(f"   ❌ 清理缓存条目失败: {e}")
+
+    def clean_invalid_cache_entries(self):
+        """清理所有无效的缓存条目 - 通用方法，适用于任何产品"""
+        try:
+            invalid_entries = []
+            total_entries = len(self.cache_index)
+
+            self.logger.info(f"🧹 开始清理无效缓存条目，总计 {total_entries} 个条目")
+
+            for url_hash, cache_entry in list(self.cache_index.items()):
+                try:
+                    url = cache_entry.get('url', '')
+                    local_path_str = cache_entry.get('local_path', '')
+
+                    if not local_path_str:
+                        invalid_entries.append((url_hash, url, "缺少本地路径信息"))
+                        continue
+
+                    local_path = self.storage_root / local_path_str
+
+                    # 检查基本路径是否存在
+                    if not local_path.exists():
+                        invalid_entries.append((url_hash, url, "本地路径不存在"))
+                        continue
+
+                    # 检查关键文件是否存在
+                    info_file = local_path / "info.json"
+                    if not info_file.exists():
+                        invalid_entries.append((url_hash, url, "info.json文件不存在"))
+                        continue
+
+                    # 检查结构完整性
+                    structure = cache_entry.get('structure', {})
+
+                    # 检查guides目录
+                    if structure.get('has_guides', False):
+                        guides_dir = local_path / "guides"
+                        if not guides_dir.exists():
+                            invalid_entries.append((url_hash, url, "guides目录缺失"))
+                            continue
+
+                        expected_guides = structure.get('guides_count', 0)
+                        actual_guides = len(list(guides_dir.glob("guide_*")))
+                        if actual_guides != expected_guides:
+                            invalid_entries.append((url_hash, url, f"guides数量不匹配: 期望{expected_guides}, 实际{actual_guides}"))
+                            continue
+
+                    # 检查troubleshooting目录
+                    if structure.get('has_troubleshooting', False):
+                        ts_dir = local_path / "troubleshooting"
+                        if not ts_dir.exists():
+                            invalid_entries.append((url_hash, url, "troubleshooting目录缺失"))
+                            continue
+
+                        expected_ts = structure.get('troubleshooting_count', 0)
+                        actual_ts = len(list(ts_dir.glob("troubleshooting_*")))
+                        if actual_ts != expected_ts:
+                            invalid_entries.append((url_hash, url, f"troubleshooting数量不匹配: 期望{expected_ts}, 实际{actual_ts}"))
+                            continue
+
+                except Exception as e:
+                    invalid_entries.append((url_hash, cache_entry.get('url', 'unknown'), f"验证时出错: {e}"))
+
+            # 批量清理无效条目
+            if invalid_entries:
+                self.logger.info(f"🗑️ 发现 {len(invalid_entries)} 个无效缓存条目，开始清理...")
+
+                for url_hash, url, reason in invalid_entries:
+                    self.logger.info(f"   清理: {url} (原因: {reason})")
+                    if url_hash in self.cache_index:
+                        del self.cache_index[url_hash]
+
+                # 保存更新后的缓存索引
+                self.save_cache_index()
+                self.logger.info(f"✅ 已清理 {len(invalid_entries)} 个无效缓存条目")
+                return len(invalid_entries)
+            else:
+                self.logger.info(f"✅ 所有缓存条目都有效，无需清理")
+                return 0
+
+        except Exception as e:
+            self.logger.error(f"清理无效缓存条目失败: {e}")
+            return 0
+
     def _validate_cached_data(self, local_path, cache_entry):
-        """验证缓存数据的完整性 - 智能适配不同的文件结构"""
+        """验证缓存数据的完整性 - 智能适配不同的文件结构，增强实际内容检查"""
         try:
             self.logger.info(f"   🔍 验证数据完整性...")
 
@@ -680,8 +857,12 @@ class CacheManager:
             with open(info_file, 'r', encoding='utf-8') as f:
                 info_data = json.load(f)
 
-            # 检查troubleshooting缓存的一致性
+            # 检查info.json是否过于简单（可能是不完整的爬取）
             url = cache_entry.get('url', '')
+            if self._is_info_json_incomplete(info_data, url):
+                self.logger.info(f"   ⚠️ info.json内容过于简单，可能是不完整的爬取")
+                return False
+
             # troubleshooting缓存现在完全独立管理，不依赖cache_index检查
 
             structure = cache_entry.get('structure', {})
@@ -692,23 +873,63 @@ class CacheManager:
                 structure = self._infer_structure_from_files(local_path)
                 self.logger.info(f"   🔍 推断的结构: {structure}")
 
-            # 验证guides目录和文件
+            # 🔍 新增：检查实际页面内容与缓存记录是否一致
+            if not self._verify_structure_against_actual_content(url, structure, local_path):
+                self.logger.info(f"   ❌ 缓存结构与实际页面内容不一致")
+                return False
+
+            # 验证guides目录和文件 - 支持新旧两种格式，增强文件存在性检查
             if structure.get('has_guides', False):
                 guides_dir = local_path / "guides"
                 if not guides_dir.exists():
-                    self.logger.info(f"   ❌ guides目录不存在")
+                    self.logger.info(f"   ❌ guides目录不存在: {guides_dir}")
                     return False
 
-                # 检查guide子目录和文件（新的目录结构：guide_1/guide.json）
-                guide_subdirs = list(guides_dir.glob("guide_*"))
                 expected_count = structure.get('guides_count', 0)
-
-                # 验证每个guide子目录都有guide.json文件
                 valid_guides = 0
-                for guide_subdir in guide_subdirs:
-                    guide_file = guide_subdir / "guide.json"
-                    if guide_file.exists():
-                        valid_guides += 1
+
+                # 检查新格式：guide子目录结构（guide_1/, guide_2/等）
+                guide_subdirs = list(guides_dir.glob("guide_*"))
+                guide_subdirs = [d for d in guide_subdirs if d.is_dir()]  # 只要目录
+
+                if guide_subdirs:
+                    # 新格式验证
+                    for guide_subdir in guide_subdirs:
+                        guide_file = guide_subdir / "guide.json"
+                        media_dir = guide_subdir / "media"
+
+                        if guide_file.exists():
+                            # 验证JSON文件内容
+                            try:
+                                with open(guide_file, 'r', encoding='utf-8') as f:
+                                    guide_data = json.load(f)
+                                    if isinstance(guide_data, dict) and guide_data.get('title'):
+                                        # 检查媒体文件完整性（媒体目录是可选的，不强制要求）
+                                        valid_guides += 1
+                                    else:
+                                        self.logger.info(f"   ❌ guide.json内容无效: {guide_file}")
+                                        return False
+                            except Exception as e:
+                                self.logger.info(f"   ❌ guide.json损坏: {guide_file} - {e}")
+                                return False
+                        else:
+                            self.logger.info(f"   ❌ 缺少guide.json: {guide_subdir}")
+                            return False
+                else:
+                    # 旧格式验证：检查直接的JSON文件（guide_1.json, guide_2.json等）
+                    guide_files = list(guides_dir.glob("guide_*.json"))
+                    for guide_file in guide_files:
+                        try:
+                            with open(guide_file, 'r', encoding='utf-8') as f:
+                                guide_data = json.load(f)
+                                if isinstance(guide_data, dict) and guide_data.get('title'):
+                                    valid_guides += 1
+                                else:
+                                    self.logger.info(f"   ❌ guide文件内容无效: {guide_file}")
+                                    return False
+                        except Exception as e:
+                            self.logger.info(f"   ❌ guide文件损坏: {guide_file} - {e}")
+                            return False
 
                 if valid_guides != expected_count:
                     self.logger.info(f"   ❌ 指南文件数量不匹配: 期望 {expected_count}, 实际 {valid_guides}")
@@ -727,18 +948,54 @@ class CacheManager:
                 ts_subdirs = list(ts_dir.glob("troubleshooting_*"))
                 expected_count = structure.get('troubleshooting_count', 0)
 
-                # 验证每个troubleshooting子目录都有troubleshooting.json文件
+                # 验证每个troubleshooting子目录都有troubleshooting.json文件和媒体文件
                 valid_troubleshooting = 0
                 for ts_subdir in ts_subdirs:
                     ts_file = ts_subdir / "troubleshooting.json"
+                    media_dir = ts_subdir / "media"
+
                     if ts_file.exists():
-                        valid_troubleshooting += 1
+                        # 验证JSON文件内容的基本完整性
+                        try:
+                            with open(ts_file, 'r', encoding='utf-8') as f:
+                                ts_data = json.load(f)
+                                if isinstance(ts_data, dict) and ts_data.get('title'):
+                                    # 检查媒体文件（如果应该有的话）
+                                    # 注意：不是所有troubleshooting都有媒体文件，所以这里不强制要求
+                                    valid_troubleshooting += 1
+                                else:
+                                    self.logger.info(f"   ❌ troubleshooting文件内容无效: {ts_file}")
+                                    return False
+                        except Exception as e:
+                            self.logger.info(f"   ❌ troubleshooting文件损坏: {ts_file} - {e}")
+                            return False
+                    else:
+                        self.logger.info(f"   ❌ 缺少troubleshooting.json: {ts_subdir}")
+                        return False
 
                 if valid_troubleshooting != expected_count:
                     self.logger.info(f"   ❌ 故障排除文件数量不匹配: 期望 {expected_count}, 实际 {valid_troubleshooting}")
                     return False
-                else:
-                    self.logger.info(f"   ✅ 故障排除文件验证通过: {valid_troubleshooting} 个")
+
+                # 🔍 新增：检查troubleshooting_cache.json文件
+                ts_cache_file = local_path / "troubleshooting_cache.json"
+                if expected_count > 0 and not ts_cache_file.exists():
+                    self.logger.info(f"   ❌ troubleshooting_cache.json文件缺失")
+                    return False
+
+                # 验证troubleshooting_cache.json的完整性
+                if ts_cache_file.exists():
+                    try:
+                        with open(ts_cache_file, 'r', encoding='utf-8') as f:
+                            cache_data = json.load(f)
+                            if not isinstance(cache_data, list) or len(cache_data) != expected_count:
+                                self.logger.info(f"   ❌ troubleshooting_cache.json内容不完整: 期望 {expected_count} 项，实际 {len(cache_data) if isinstance(cache_data, list) else 0} 项")
+                                return False
+                    except Exception as e:
+                        self.logger.info(f"   ❌ troubleshooting_cache.json文件损坏: {e}")
+                        return False
+
+                self.logger.info(f"   ✅ 故障排除文件验证通过: {valid_troubleshooting} 个")
 
             # 验证媒体文件
             if structure.get('has_media', False):
@@ -871,6 +1128,116 @@ class CacheManager:
 
         return structure
 
+    def _is_info_json_incomplete(self, info_data, url):
+        """检查info.json是否过于简单，可能是不完整的爬取"""
+        try:
+            # 如果info.json只有基本字段（name, url, instruction_url），可能是不完整的
+            basic_fields = {'name', 'url', 'instruction_url'}
+            actual_fields = set(info_data.keys())
+
+            # 如果只有基本字段，且URL看起来像是产品页面，则可能不完整
+            if actual_fields.issubset(basic_fields) and '/Device/' in url:
+                # 进一步检查：如果URL不是根目录级别的分类页面，应该有更多内容
+                device_path = url.split('/Device/')[-1]
+                if '?' in device_path:
+                    device_path = device_path.split('?')[0]
+                device_path = device_path.rstrip('/')
+
+                # 如果路径有多个层级或包含特定关键词，应该是产品页面
+                path_parts = device_path.split('/')
+                product_keywords = ['repair', 'model', 'models', 'generation', 'inch', '"', 'pro', 'air', 'mini']
+
+                if (len(path_parts) > 2 or
+                    any(keyword.lower() in device_path.lower() for keyword in product_keywords)):
+                    self.logger.info(f"   🔍 检测到产品页面但info.json过于简单: {device_path}")
+                    return True
+
+            return False
+
+        except Exception as e:
+            self.logger.error(f"检查info.json完整性时出错: {e}")
+            return False
+
+    def _verify_structure_against_actual_content(self, url, structure, local_path):
+        """验证缓存结构与实际页面内容是否一致 - 修复版本，更加宽松"""
+        try:
+            # 只检查明确的文件缺失情况，不基于URL推测内容
+            # 这个方法现在主要用于验证已声明的结构是否完整
+
+            # 如果缓存记录说有guides，检查guides目录是否真的存在
+            if structure.get('has_guides', False):
+                guides_dir = local_path / "guides"
+                if not guides_dir.exists():
+                    self.logger.info(f"   ❌ 缓存记录声明有guides但目录不存在")
+                    return False
+
+            # 如果缓存记录说有troubleshooting，检查troubleshooting目录是否真的存在
+            if structure.get('has_troubleshooting', False):
+                ts_dir = local_path / "troubleshooting"
+                if not ts_dir.exists():
+                    self.logger.info(f"   ❌ 缓存记录声明有troubleshooting但目录不存在")
+                    return False
+
+            # 如果缓存记录说有media，检查media目录是否真的存在
+            if structure.get('has_media', False):
+                media_dir = local_path / "media"
+                if not media_dir.exists():
+                    self.logger.info(f"   ❌ 缓存记录声明有media但目录不存在")
+                    return False
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"验证结构一致性时出错: {e}")
+            return True  # 出错时保守地认为一致
+
+    def _looks_like_product_page(self, url):
+        """判断URL是否看起来像产品页面"""
+        try:
+            if '/Device/' not in url:
+                return False
+
+            device_path = url.split('/Device/')[-1]
+            if '?' in device_path:
+                device_path = device_path.split('?')[0]
+            device_path = device_path.rstrip('/')
+
+            # 产品页面的特征
+            product_indicators = [
+                'repair', 'model', 'models', 'generation', 'inch', '"',
+                'pro', 'air', 'mini', 'max', 'plus', 'se', 'classic',
+                'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9',  # 型号前缀
+                'mk', 'mg', 'mh', 'ml', 'mm', 'mn', 'mp', 'mr', 'mt',  # Apple型号前缀
+                '2019', '2020', '2021', '2022', '2023', '2024', '2025'  # 年份
+            ]
+
+            device_path_lower = device_path.lower()
+            return any(indicator in device_path_lower for indicator in product_indicators)
+
+        except Exception as e:
+            self.logger.error(f"判断产品页面时出错: {e}")
+            return False
+
+    def _has_product_page_indicators(self, local_path):
+        """检查本地路径是否有产品页面的指标"""
+        try:
+            # 检查是否有troubleshooting目录（产品页面通常有troubleshooting）
+            ts_dir = local_path / "troubleshooting"
+            if ts_dir.exists() and any(ts_dir.iterdir()):
+                return True
+
+            # 检查路径名称是否包含产品指标
+            path_name = local_path.name.lower()
+            product_indicators = ['repair', 'model', 'models', 'generation', 'inch', '"']
+            if any(indicator in path_name for indicator in product_indicators):
+                return True
+
+            return False
+
+        except Exception as e:
+            self.logger.error(f"检查产品页面指标时出错: {e}")
+            return False
+
     def _find_actual_device_path(self, device_url):
         """查找设备URL对应的实际存在路径"""
         try:
@@ -960,16 +1327,37 @@ class CacheManager:
                 return False
 
             # 验证缓存数据的完整性
-            with open(ts_cache_file, 'r', encoding='utf-8') as f:
-                cached_data = json.load(f)
+            try:
+                with open(ts_cache_file, 'r', encoding='utf-8') as f:
+                    cached_data = json.load(f)
 
-            # 检查缓存数据是否有效
-            if not isinstance(cached_data, list):
-                self.logger.info(f"🔍 Troubleshooting缓存数据格式无效")
+                # 检查缓存数据是否有效
+                if not isinstance(cached_data, list):
+                    self.logger.info(f"🔍 Troubleshooting缓存数据格式无效")
+                    return False
+
+                # 检查缓存文件是否为空或损坏
+                if len(cached_data) == 0:
+                    self.logger.info(f"🔍 Troubleshooting缓存文件为空")
+                    return False
+
+                # 验证缓存数据结构的基本完整性
+                for item in cached_data[:3]:  # 只检查前3个项目以提高性能
+                    if not isinstance(item, dict) or 'title' not in item:
+                        self.logger.info(f"🔍 Troubleshooting缓存数据结构无效")
+                        return False
+
+                self.logger.info(f"✅ Troubleshooting部分缓存有效: {len(cached_data)} 个项目")
+                return True
+
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                self.logger.warning(f"🔍 Troubleshooting缓存文件损坏，将重新生成: {e}")
+                # 删除损坏的缓存文件
+                try:
+                    ts_cache_file.unlink()
+                except:
+                    pass
                 return False
-
-            self.logger.info(f"✅ Troubleshooting部分缓存有效: {len(cached_data)} 个项目")
-            return True
 
         except Exception as e:
             self.logger.error(f"检查troubleshooting缓存失败: {e}")
@@ -1210,30 +1598,55 @@ class CacheManager:
             return None
 
     def load_troubleshooting_cache(self, cache_key, device_url):
-        """加载缓存的troubleshooting数据"""
+        """加载缓存的troubleshooting数据 - 增强错误处理"""
         try:
             # 使用统一的路径获取方法
             local_path = self._get_troubleshooting_cache_path(cache_key, device_url)
+            if local_path is None:
+                self.logger.info(f"无法确定troubleshooting缓存路径")
+                return None
+
             ts_cache_file = local_path / "troubleshooting_cache.json"
 
             if not ts_cache_file.exists():
+                self.logger.info(f"troubleshooting缓存文件不存在: {ts_cache_file}")
                 return None
 
-            with open(ts_cache_file, 'r', encoding='utf-8') as f:
-                cached_data = json.load(f)
+            try:
+                with open(ts_cache_file, 'r', encoding='utf-8') as f:
+                    cached_data = json.load(f)
 
-            self.logger.info(f"📋 加载troubleshooting缓存: {len(cached_data)} 个项目")
-            self.stats['cache_hits'] += 1
-            return cached_data
+                # 验证缓存数据的基本结构
+                if not isinstance(cached_data, list):
+                    self.logger.warning(f"troubleshooting缓存数据格式无效，删除缓存文件")
+                    ts_cache_file.unlink()
+                    return None
+
+                if len(cached_data) == 0:
+                    self.logger.info(f"troubleshooting缓存文件为空")
+                    return None
+
+                self.logger.info(f"📋 成功加载troubleshooting缓存: {len(cached_data)} 个项目")
+                self.stats['cache_hits'] += 1
+                return cached_data
+
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                self.logger.warning(f"troubleshooting缓存文件损坏，删除并重新生成: {e}")
+                try:
+                    ts_cache_file.unlink()
+                except:
+                    pass
+                return None
 
         except Exception as e:
-            self.logger.error(f"加载troubleshooting缓存失败: {e}")
+            self.logger.warning(f"加载troubleshooting缓存失败，降级到正常爬取模式: {e}")
             return None
 
     def save_troubleshooting_cache(self, cache_key, device_url, troubleshooting_data):
-        """保存troubleshooting数据到缓存"""
+        """保存troubleshooting数据到缓存 - 增强错误处理"""
         try:
             if not troubleshooting_data:
+                self.logger.info(f"跳过保存空的troubleshooting缓存")
                 return
 
             # 使用统一的路径获取方法
@@ -1241,11 +1654,15 @@ class CacheManager:
 
             # 现在_get_troubleshooting_cache_path总是返回一个路径，不会返回None
             if local_path is None:
-                self.logger.error(f"❌ 无法确定troubleshooting缓存路径")
+                self.logger.warning(f"❌ 无法确定troubleshooting缓存路径，跳过缓存保存")
                 return
 
             # 确保目录存在
-            local_path.mkdir(parents=True, exist_ok=True)
+            try:
+                local_path.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                self.logger.warning(f"创建缓存目录失败，跳过缓存保存: {e}")
+                return
 
             ts_cache_file = local_path / "troubleshooting_cache.json"
 
@@ -1255,28 +1672,40 @@ class CacheManager:
                     with open(ts_cache_file, 'r', encoding='utf-8') as f:
                         existing_data = json.load(f)
 
-                    # 如果现有数据不为空且新数据与现有数据相同，则跳过保存
+                    # 如果现有数据不为空且数据量相当，则跳过保存
                     if existing_data and len(existing_data) >= len(troubleshooting_data):
                         self.logger.info(f"🔒 保护现有troubleshooting缓存: {len(existing_data)} 个项目 (跳过覆盖)")
                         return
+                    else:
+                        self.logger.info(f"🔄 更新troubleshooting缓存: {len(existing_data) if existing_data else 0} -> {len(troubleshooting_data)} 个项目")
                 except Exception as e:
                     self.logger.warning(f"读取现有troubleshooting缓存失败，将保存新数据: {e}")
 
             # 保存troubleshooting数据
-            with open(ts_cache_file, 'w', encoding='utf-8') as f:
-                safe_json_dump(troubleshooting_data, f, ensure_ascii=False, indent=2)
+            try:
+                with open(ts_cache_file, 'w', encoding='utf-8') as f:
+                    safe_json_dump(troubleshooting_data, f, ensure_ascii=False, indent=2)
 
-            # troubleshooting缓存现在完全独立，不再添加到主缓存索引
-            self.logger.info(f"💾 保存troubleshooting缓存: {len(troubleshooting_data)} 个项目")
+                self.logger.info(f"💾 成功保存troubleshooting缓存: {ts_cache_file} ({len(troubleshooting_data)} 个项目)")
+                print(f"    💾 已保存troubleshooting缓存: {len(troubleshooting_data)} 个项目")
+            except Exception as e:
+                self.logger.error(f"写入troubleshooting缓存文件失败: {e}")
 
         except Exception as e:
-            self.logger.error(f"保存troubleshooting缓存失败: {e}")
+            # 缓存保存失败不应该影响正常的爬取流程
+            self.logger.warning(f"保存troubleshooting缓存失败，但不影响正常流程: {e}")
+            print(f"    ⚠️  缓存保存失败，但数据已正常处理")
 
     def save_troubleshooting_cache_after_directory_creation(self, cache_key, device_url, troubleshooting_data, ts_dir):
-        """在Troubleshooting目录创建后立即保存cache文件"""
+        """在Troubleshooting目录创建后立即保存cache文件 - 增强错误处理"""
         try:
             if not troubleshooting_data or not ts_dir:
-                self.logger.warning(f"跳过保存troubleshooting缓存: 数据为空或目录无效")
+                self.logger.info(f"跳过保存troubleshooting缓存: 数据为空或目录无效")
+                return
+
+            # 验证ts_dir是否存在
+            if not ts_dir.exists():
+                self.logger.warning(f"Troubleshooting目录不存在，跳过缓存保存: {ts_dir}")
                 return
 
             # 获取Troubleshooting目录的父目录（与Troubleshooting文件夹同层）
@@ -1285,35 +1714,43 @@ class CacheManager:
 
             self.logger.info(f"🔍 准备保存troubleshooting缓存到: {ts_cache_file}")
 
-            # 简化缓存保护机制：只在强制刷新模式下跳过现有文件
+            # 简化缓存保护机制：检查现有文件
             if not self.force_refresh and ts_cache_file.exists():
                 try:
                     with open(ts_cache_file, 'r', encoding='utf-8') as f:
                         existing_data = json.load(f)
 
                     # 只有在现有数据明显更多时才跳过
-                    if existing_data and len(existing_data) > len(troubleshooting_data) * 1.5:
+                    if existing_data and len(existing_data) > len(troubleshooting_data) * 1.2:
                         self.logger.info(f"🔒 保护现有troubleshooting缓存: {len(existing_data)} 个项目 (跳过覆盖)")
                         return
                     else:
-                        self.logger.info(f"🔄 更新troubleshooting缓存: {len(existing_data)} -> {len(troubleshooting_data)} 个项目")
+                        self.logger.info(f"🔄 更新troubleshooting缓存: {len(existing_data) if existing_data else 0} -> {len(troubleshooting_data)} 个项目")
                 except Exception as e:
                     self.logger.warning(f"读取现有troubleshooting缓存失败，将保存新数据: {e}")
 
             # 确保目录存在
-            cache_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                cache_dir.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                self.logger.warning(f"创建缓存目录失败，跳过缓存保存: {e}")
+                return
 
             # 保存troubleshooting数据
-            with open(ts_cache_file, 'w', encoding='utf-8') as f:
-                safe_json_dump(troubleshooting_data, f, ensure_ascii=False, indent=2)
+            try:
+                with open(ts_cache_file, 'w', encoding='utf-8') as f:
+                    safe_json_dump(troubleshooting_data, f, ensure_ascii=False, indent=2)
 
-            self.logger.info(f"💾 成功保存troubleshooting缓存: {ts_cache_file} ({len(troubleshooting_data)} 个项目)")
-            print(f"   💾 已生成troubleshooting_cache.json: {ts_cache_file}")
+                self.logger.info(f"💾 成功保存troubleshooting缓存: {ts_cache_file} ({len(troubleshooting_data)} 个项目)")
+                print(f"   💾 已生成troubleshooting_cache.json: {ts_cache_file}")
+            except Exception as e:
+                self.logger.error(f"写入troubleshooting缓存文件失败: {e}")
+                print(f"   ⚠️  缓存文件写入失败，但不影响正常流程")
 
         except Exception as e:
-            self.logger.error(f"在目录创建后保存troubleshooting缓存失败: {e}")
-            import traceback
-            self.logger.error(f"详细错误信息: {traceback.format_exc()}")
+            # 缓存保存失败不应该影响正常的文件保存流程
+            self.logger.warning(f"在目录创建后保存troubleshooting缓存失败，但不影响正常流程: {e}")
+            print(f"   ⚠️  troubleshooting缓存保存失败，但文件已正常保存")
 
     def _generate_content_hash_for_data(self, data):
         """为数据生成内容哈希值"""
@@ -1364,13 +1801,16 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                  download_videos=False, max_video_size_mb=50, max_connections=None,
                  timeout=3, request_delay=0.01, proxy_switch_freq=1, cache_ttl=24,
                  custom_user_agent=None, burst_mode=False, conservative_mode=False,
-                 skip_images=False, debug_mode=False, show_stats=False, enable_resume=True):
+                 skip_images=False, debug_mode=False, show_stats=False, enable_resume=True,
+                 command_arg=None):
         super().__init__(base_url, verbose)
 
         # 立即初始化日志系统，确保logger可用
         self._setup_logging()
 
         self.enable_resume = enable_resume
+        self.command_arg = command_arg  # 保存命令行参数
+        # 将命令行参数传递给TreeCrawler，用于生成友好的缓存文件名
         self.tree_crawler = TreeCrawler(base_url, enable_resume=enable_resume, logger=self.logger, verbose=verbose)
         self.processed_nodes = set()
         self.target_url = None
@@ -1528,10 +1968,477 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         # 使用CacheManager进行智能缓存检查
         if self.cache_manager:
-            return self.cache_manager.is_url_cached_and_valid(url, local_path)
+            is_valid = self.cache_manager.is_url_cached_and_valid(url, local_path)
+
+            # 如果缓存无效，检查是否可以部分修复
+            if not is_valid:
+                repair_info = self._analyze_partial_repair_needs(url, local_path)
+                if repair_info['can_partial_repair']:
+                    if self.verbose:
+                        print(f"   🔧 检测到部分数据缺失，尝试部分修复...")
+                        for issue in repair_info['issues']:
+                            print(f"      - {issue}")
+
+                    # 执行部分修复
+                    if self._perform_partial_repair(url, local_path, repair_info):
+                        # 重新验证缓存
+                        return self.cache_manager.is_url_cached_and_valid(url, local_path)
+
+            return is_valid
 
         # 后备方案：使用原有的简单缓存检查
         return self._legacy_cache_check(url, local_path)
+
+    def _analyze_partial_repair_needs(self, url, local_path):
+        """分析部分修复需求 - 增强版本，支持guides和troubleshooting的部分修复"""
+        repair_info = {
+            'can_partial_repair': False,
+            'issues': [],
+            'missing_components': []
+        }
+
+        try:
+            if not local_path.exists():
+                repair_info['issues'].append("路径不存在，需要完整重新爬取")
+                return repair_info
+
+            # 检查info.json
+            info_file = local_path / "info.json"
+            if not info_file.exists():
+                repair_info['issues'].append("缺少info.json文件")
+                return repair_info
+
+            # 读取info.json获取预期的结构信息
+            try:
+                with open(info_file, 'r', encoding='utf-8') as f:
+                    info_data = json.load(f)
+            except Exception as e:
+                repair_info['issues'].append(f"info.json文件损坏: {e}")
+                return repair_info
+
+            # 检查guides目录和内容
+            guides_dir = local_path / "guides"
+            if 'guides' in info_data and info_data['guides']:
+                # 预期应该有guides内容
+                if not guides_dir.exists():
+                    repair_info['can_partial_repair'] = True
+                    repair_info['issues'].append("缺少guides目录")
+                    repair_info['missing_components'].append('guides_directory')
+                else:
+                    # 检查guides内容完整性
+                    guide_files = list(guides_dir.glob("*.json"))
+                    guide_subdirs = list(guides_dir.glob("guide_*"))
+
+                    expected_guides_count = len(info_data.get('guides', []))
+                    actual_guides_count = len(guide_files) + len(guide_subdirs)
+
+                    if actual_guides_count == 0:
+                        repair_info['can_partial_repair'] = True
+                        repair_info['issues'].append("guides目录为空")
+                        repair_info['missing_components'].append('guides_content')
+                    elif actual_guides_count < expected_guides_count:
+                        repair_info['can_partial_repair'] = True
+                        repair_info['issues'].append(f"guides内容不完整: 期望{expected_guides_count}个，实际{actual_guides_count}个")
+                        repair_info['missing_components'].append('guides_partial')
+
+            # 检查troubleshooting目录和内容
+            ts_dir = local_path / "troubleshooting"
+            ts_cache_file = local_path / "troubleshooting_cache.json"
+
+            if 'troubleshooting' in info_data and info_data['troubleshooting']:
+                # 预期应该有troubleshooting内容
+                if not ts_dir.exists():
+                    repair_info['can_partial_repair'] = True
+                    repair_info['issues'].append("缺少troubleshooting目录")
+                    repair_info['missing_components'].append('troubleshooting_directory')
+                else:
+                    # 检查troubleshooting内容完整性
+                    ts_files = list(ts_dir.glob("*.json"))
+                    ts_subdirs = list(ts_dir.glob("troubleshooting_*"))
+
+                    expected_ts_count = len(info_data.get('troubleshooting', []))
+                    actual_ts_count = len(ts_files) + len(ts_subdirs)
+
+                    if actual_ts_count == 0:
+                        repair_info['can_partial_repair'] = True
+                        repair_info['issues'].append("troubleshooting目录为空")
+                        repair_info['missing_components'].append('troubleshooting_content')
+                    elif actual_ts_count < expected_ts_count:
+                        repair_info['can_partial_repair'] = True
+                        repair_info['issues'].append(f"troubleshooting内容不完整: 期望{expected_ts_count}个，实际{actual_ts_count}个")
+                        repair_info['missing_components'].append('troubleshooting_partial')
+
+            # 检查troubleshooting_cache.json
+            if ts_dir.exists() and not ts_cache_file.exists():
+                repair_info['can_partial_repair'] = True
+                repair_info['issues'].append("缺少troubleshooting_cache.json文件")
+                repair_info['missing_components'].append('troubleshooting_cache')
+
+            # 检查媒体文件
+            media_dir = local_path / "media"
+            if 'media' in info_data and info_data['media']:
+                if not media_dir.exists() or not any(media_dir.iterdir()):
+                    repair_info['can_partial_repair'] = True
+                    repair_info['issues'].append("缺少媒体文件")
+                    repair_info['missing_components'].append('media_files')
+
+        except Exception as e:
+            repair_info['issues'].append(f"分析修复需求时出错: {e}")
+
+        return repair_info
+
+    def _perform_partial_repair(self, url, local_path, repair_info):
+        """执行部分修复 - 增强版本，支持guides和troubleshooting的部分修复"""
+        try:
+            repair_success = False
+
+            # 修复guides相关问题
+            if any(comp in repair_info['missing_components'] for comp in ['guides_directory', 'guides_content', 'guides_partial']):
+                if self.verbose:
+                    print(f"   🔧 开始修复guides内容...")
+                if self._repair_guides_content(url, local_path):
+                    repair_success = True
+                    if self.verbose:
+                        print(f"   ✅ guides内容修复成功")
+                else:
+                    if self.verbose:
+                        print(f"   ❌ guides内容修复失败")
+
+            # 修复troubleshooting相关问题
+            if any(comp in repair_info['missing_components'] for comp in ['troubleshooting_directory', 'troubleshooting_content', 'troubleshooting_partial']):
+                if self.verbose:
+                    print(f"   🔧 开始修复troubleshooting内容...")
+                if self._repair_troubleshooting_content(url, local_path):
+                    repair_success = True
+                    if self.verbose:
+                        print(f"   ✅ troubleshooting内容修复成功")
+                else:
+                    if self.verbose:
+                        print(f"   ❌ troubleshooting内容修复失败")
+
+            # 修复troubleshooting缓存文件
+            if 'troubleshooting_cache' in repair_info['missing_components']:
+                if self.verbose:
+                    print(f"   🔧 开始修复troubleshooting缓存...")
+                if self._repair_troubleshooting_cache(url, local_path):
+                    repair_success = True
+                    if self.verbose:
+                        print(f"   ✅ troubleshooting缓存修复成功")
+
+            # 修复媒体文件
+            if 'media_files' in repair_info['missing_components']:
+                if self.verbose:
+                    print(f"   🔧 开始修复媒体文件...")
+                if self._repair_media_files(url, local_path):
+                    repair_success = True
+                    if self.verbose:
+                        print(f"   ✅ 媒体文件修复成功")
+
+            return repair_success
+
+        except Exception as e:
+            if self.verbose:
+                print(f"   ❌ 部分修复失败: {e}")
+            return False
+
+    def _repair_guides_content(self, url, local_path):
+        """修复guides内容"""
+        try:
+            if self.verbose:
+                print(f"   🔍 开始重新爬取guides内容: {url}")
+
+            # 获取页面内容
+            soup = self.get_soup(url)
+            if not soup:
+                return False
+
+            # 提取guides链接
+            guides_links = self.extract_guides_from_device_page(soup, url)
+            if not guides_links:
+                if self.verbose:
+                    print(f"   ⚠️ 未找到guides链接")
+                return False
+
+            # 确保guides目录存在
+            guides_dir = local_path / "guides"
+            guides_dir.mkdir(parents=True, exist_ok=True)
+
+            # 爬取每个guide的详细内容
+            guides_data = []
+            for i, guide_link in enumerate(guides_links, 1):
+                if isinstance(guide_link, dict):
+                    guide_url = guide_link.get('url', '')
+                else:
+                    guide_url = guide_link
+
+                if guide_url:
+                    if self.verbose:
+                        print(f"   📖 处理guide {i}/{len(guides_links)}: {guide_url}")
+
+                    guide_content = self.extract_guide_content(guide_url)
+                    if guide_content:
+                        guide_content['url'] = guide_url
+                        guides_data.append(guide_content)
+
+                        # 保存单个guide文件
+                        guide_filename = f"guide_{i}.json"
+                        guide_file_path = guides_dir / guide_filename
+
+                        with open(guide_file_path, 'w', encoding='utf-8') as f:
+                            safe_json_dump(guide_content, f, ensure_ascii=False, indent=2)
+
+            # 更新info.json中的guides信息
+            info_file = local_path / "info.json"
+            if info_file.exists():
+                try:
+                    with open(info_file, 'r', encoding='utf-8') as f:
+                        info_data = json.load(f)
+
+                    info_data['guides'] = guides_data
+
+                    with open(info_file, 'w', encoding='utf-8') as f:
+                        safe_json_dump(info_data, f, ensure_ascii=False, indent=2)
+
+                except Exception as e:
+                    if self.verbose:
+                        print(f"   ⚠️ 更新info.json失败: {e}")
+
+            if self.verbose:
+                print(f"   ✅ 成功修复guides内容: {len(guides_data)} 个")
+
+            return len(guides_data) > 0
+
+        except Exception as e:
+            if self.verbose:
+                print(f"   ❌ 修复guides内容失败: {e}")
+            return False
+
+    def _repair_troubleshooting_content(self, url, local_path):
+        """修复troubleshooting内容"""
+        try:
+            if self.verbose:
+                print(f"   🔍 开始重新爬取troubleshooting内容: {url}")
+
+            # 获取页面内容
+            soup = self.get_soup(url)
+            if not soup:
+                return False
+
+            # 提取troubleshooting链接
+            troubleshooting_links = self.extract_troubleshooting_from_device_page(soup, url)
+            if not troubleshooting_links:
+                if self.verbose:
+                    print(f"   ⚠️ 未找到troubleshooting链接")
+                return False
+
+            # 确保troubleshooting目录存在
+            ts_dir = local_path / "troubleshooting"
+            ts_dir.mkdir(parents=True, exist_ok=True)
+
+            # 爬取每个troubleshooting的详细内容
+            troubleshooting_data = []
+            for i, ts_link in enumerate(troubleshooting_links, 1):
+                if isinstance(ts_link, dict):
+                    ts_url = ts_link.get('url', '')
+                else:
+                    ts_url = ts_link
+
+                if ts_url:
+                    if self.verbose:
+                        print(f"   🔧 处理troubleshooting {i}/{len(troubleshooting_links)}: {ts_url}")
+
+                    ts_content = self.extract_troubleshooting_content(ts_url)
+                    if ts_content:
+                        ts_content['url'] = ts_url
+                        troubleshooting_data.append(ts_content)
+
+                        # 保存单个troubleshooting文件
+                        ts_filename = f"troubleshooting_{i}.json"
+                        ts_file_path = ts_dir / ts_filename
+
+                        with open(ts_file_path, 'w', encoding='utf-8') as f:
+                            safe_json_dump(ts_content, f, ensure_ascii=False, indent=2)
+
+            # 生成troubleshooting_cache.json
+            if troubleshooting_data:
+                ts_cache_file = local_path / "troubleshooting_cache.json"
+                with open(ts_cache_file, 'w', encoding='utf-8') as f:
+                    safe_json_dump(troubleshooting_data, f, ensure_ascii=False, indent=2)
+
+            # 更新info.json中的troubleshooting信息
+            info_file = local_path / "info.json"
+            if info_file.exists():
+                try:
+                    with open(info_file, 'r', encoding='utf-8') as f:
+                        info_data = json.load(f)
+
+                    info_data['troubleshooting'] = troubleshooting_data
+
+                    with open(info_file, 'w', encoding='utf-8') as f:
+                        safe_json_dump(info_data, f, ensure_ascii=False, indent=2)
+
+                except Exception as e:
+                    if self.verbose:
+                        print(f"   ⚠️ 更新info.json失败: {e}")
+
+            if self.verbose:
+                print(f"   ✅ 成功修复troubleshooting内容: {len(troubleshooting_data)} 个")
+
+            return len(troubleshooting_data) > 0
+
+        except Exception as e:
+            if self.verbose:
+                print(f"   ❌ 修复troubleshooting内容失败: {e}")
+            return False
+
+    def _repair_troubleshooting_cache(self, url, local_path):
+        """修复troubleshooting缓存文件"""
+        try:
+            ts_dir = local_path / "troubleshooting"
+            if not ts_dir.exists():
+                return False
+
+            # 收集troubleshooting数据
+            troubleshooting_data = []
+
+            for ts_subdir in ts_dir.glob("troubleshooting_*"):
+                if ts_subdir.is_dir():
+                    ts_file = ts_subdir / "troubleshooting.json"
+                    if ts_file.exists():
+                        try:
+                            with open(ts_file, 'r', encoding='utf-8') as f:
+                                ts_data = json.load(f)
+                                if isinstance(ts_data, dict) and ts_data.get('title'):
+                                    troubleshooting_data.append(ts_data)
+                        except Exception as e:
+                            if self.verbose:
+                                print(f"   ⚠️ 读取troubleshooting文件失败: {ts_file} - {e}")
+
+            # 生成troubleshooting_cache.json
+            if troubleshooting_data:
+                ts_cache_file = local_path / "troubleshooting_cache.json"
+                with open(ts_cache_file, 'w', encoding='utf-8') as f:
+                    json.dump(troubleshooting_data, f, ensure_ascii=False, indent=2)
+
+                if self.verbose:
+                    print(f"   ✅ 成功修复troubleshooting_cache.json: {len(troubleshooting_data)} 项")
+
+                return True
+
+            return False
+
+        except Exception as e:
+            if self.verbose:
+                print(f"   ❌ 修复troubleshooting缓存失败: {e}")
+            return False
+
+    def _repair_media_files(self, url, local_path):
+        """修复媒体文件"""
+        try:
+            if self.verbose:
+                print(f"   🔍 开始重新下载媒体文件: {url}")
+
+            # 读取info.json获取媒体信息
+            info_file = local_path / "info.json"
+            if not info_file.exists():
+                return False
+
+            with open(info_file, 'r', encoding='utf-8') as f:
+                info_data = json.load(f)
+
+            # 确保媒体目录存在
+            media_dir = local_path / "media"
+            media_dir.mkdir(parents=True, exist_ok=True)
+
+            # 收集所有需要下载的媒体URL
+            media_urls = set()
+
+            # 从guides中收集媒体URL
+            if 'guides' in info_data:
+                for guide in info_data['guides']:
+                    if isinstance(guide, dict):
+                        # 收集guide中的图片和视频
+                        if 'images' in guide:
+                            for img in guide['images']:
+                                if isinstance(img, str) and img.startswith('http'):
+                                    media_urls.add(img)
+                        if 'videos' in guide:
+                            for video in guide['videos']:
+                                if isinstance(video, str) and video.startswith('http'):
+                                    media_urls.add(video)
+
+            # 从troubleshooting中收集媒体URL
+            if 'troubleshooting' in info_data:
+                for ts in info_data['troubleshooting']:
+                    if isinstance(ts, dict):
+                        # 收集troubleshooting中的图片和视频
+                        if 'images' in ts:
+                            for img in ts['images']:
+                                if isinstance(img, str) and img.startswith('http'):
+                                    media_urls.add(img)
+                        if 'videos' in ts:
+                            for video in ts['videos']:
+                                if isinstance(video, str) and video.startswith('http'):
+                                    media_urls.add(video)
+
+            # 下载缺失的媒体文件
+            downloaded_count = 0
+            for media_url in media_urls:
+                try:
+                    # 生成本地文件名
+                    import hashlib
+                    url_hash = hashlib.md5(media_url.encode()).hexdigest()[:12]
+
+                    # 从URL获取文件扩展名
+                    from urllib.parse import urlparse
+                    parsed_url = urlparse(media_url)
+                    path_parts = parsed_url.path.split('.')
+                    if len(path_parts) > 1:
+                        ext = path_parts[-1].lower()
+                        if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi']:
+                            filename = f"{url_hash}.{ext}"
+                        else:
+                            filename = f"{url_hash}.jpg"  # 默认扩展名
+                    else:
+                        filename = f"{url_hash}.jpg"  # 默认扩展名
+
+                    local_file_path = media_dir / filename
+
+                    # 如果文件不存在，下载它
+                    if not local_file_path.exists():
+                        # 使用requests创建临时session
+                        import requests
+                        session = requests.Session()
+
+                        # 设置代理（如果有的话）
+                        if hasattr(self, 'proxy_manager') and self.proxy_manager:
+                            proxy_config = self.proxy_manager.get_proxy()
+                            if proxy_config:
+                                session.proxies = proxy_config
+
+                        response = session.get(media_url, timeout=30)
+                        if response.status_code == 200:
+                            with open(local_file_path, 'wb') as f:
+                                f.write(response.content)
+                            downloaded_count += 1
+                            if self.verbose:
+                                print(f"   📥 下载媒体文件: {filename}")
+
+                        session.close()
+
+                except Exception as e:
+                    if self.verbose:
+                        print(f"   ⚠️ 下载媒体文件失败 {media_url}: {e}")
+
+            if self.verbose:
+                print(f"   ✅ 成功修复媒体文件: {downloaded_count} 个")
+
+            return downloaded_count > 0
+
+        except Exception as e:
+            if self.verbose:
+                print(f"   ❌ 修复媒体文件失败: {e}")
+            return False
 
     def _legacy_cache_check(self, url, local_path):
         """原有的缓存检查逻辑（后备方案）"""
@@ -1756,16 +2663,16 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         """初始化异步HTTP客户端管理器"""
         try:
             if not self.async_http_manager:
-                # 优化：提升连接池大小以支持更高的媒体下载并发
-                max_connections = max(self.max_workers * 15, 200)  # 提升连接池大小
-                max_keepalive = max(self.max_workers * 3, 50)      # 提升保持连接数
+                # 优化：平衡连接池大小，避免PoolTimeout错误
+                max_connections = min(self.max_workers * 8, 120)   # 适度降低连接池大小
+                max_keepalive = min(self.max_workers * 2, 40)      # 适度降低保持连接数
 
                 self.async_http_manager = AsyncHttpClientManager(
                     proxy_manager=self.proxy_manager,
                     max_connections=max_connections,
                     max_keepalive_connections=max_keepalive,
-                    timeout=5.0,  # 减少超时时间从8秒到5秒
-                    max_retries=1  # 减少重试次数，快速失败
+                    timeout=8.0,  # 增加超时时间，给请求更多时间
+                    max_retries=2  # 适度重试，平衡速度与成功率
                 )
                 
                 # 确保初始化成功
@@ -2240,7 +3147,9 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             self.stats["videos_skipped"] += 1
             return url
 
-        self.logger.info(f"准备下载视频文件 ({file_size_mb:.1f}MB): {url}")
+        # 安全的文件大小格式化
+        size_info = f"{file_size_mb:.1f}MB" if file_size_mb is not None else "未知大小"
+        self.logger.info(f"准备下载视频文件 ({size_info}): {url}")
 
         try:
             result = await self._download_media_file_impl_async(url, local_dir, filename)
@@ -2341,8 +3250,14 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
                 # 异步写入文件
                 async with aiofiles.open(local_path, 'wb') as f:
-                    async for chunk in response.aiter_bytes(chunk_size=16384):
-                        await f.write(chunk)
+                    try:
+                        async for chunk in response.aiter_bytes(chunk_size=16384):
+                            await f.write(chunk)
+                    except Exception as e:
+                        # 捕获可能的格式化错误
+                        error_msg = str(e) if e is not None else "Unknown error"
+                        self.logger.error(f"异步写入文件失败 {url}: {error_msg}")
+                        raise
                         
                 self.stats["media_downloaded"] += 1
                 if self.verbose:
@@ -2437,7 +3352,9 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 self.stats["videos_skipped"] += 1
                 return url
 
-            self.logger.info(f"准备下载视频文件 ({file_size_mb:.1f}MB): {url}")
+            # 安全的文件大小格式化
+            size_info = f"{file_size_mb:.1f}MB" if file_size_mb is not None else "未知大小"
+            self.logger.info(f"准备下载视频文件 ({size_info}): {url}")
 
         try:
             # 使用异步实现
@@ -2557,8 +3474,14 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 
                 # 异步写入文件
                 async with aiofiles.open(local_path, 'wb') as f:
-                    async for chunk in response.aiter_bytes(chunk_size=16384):
-                        await f.write(chunk)
+                    try:
+                        async for chunk in response.aiter_bytes(chunk_size=16384):
+                            await f.write(chunk)
+                    except Exception as e:
+                        # 捕获可能的格式化错误
+                        error_msg = str(e) if e is not None else "Unknown error"
+                        self.logger.error(f"异步写入文件失败 {url}: {error_msg}")
+                        raise
 
                 # 计算正确的相对路径
                 is_troubleshooting = "troubleshooting" in str(local_dir)
@@ -2798,8 +3721,8 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 return False
 
         if media_urls:
-            # 限制并发数，减少并发以避免事件循环过载
-            semaphore = asyncio.Semaphore(min(8, len(media_urls)))  # 降低并发数
+            # 限制并发数，特别针对图片服务器优化
+            semaphore = asyncio.Semaphore(min(5, len(media_urls)))  # 进一步降低图片下载并发数
 
             async def limited_download(container, key, url):
                 async with semaphore:
@@ -4531,7 +5454,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         return Path(self.storage_root) / "Device"
 
     def _process_node_incrementally(self, node, base_path, path_segments):
-        """递归处理节点，逐步保存内容"""
+        """递归处理节点，逐步保存内容 - 增强缓存检查"""
         if not node or not isinstance(node, dict):
             return node
 
@@ -4551,17 +5474,62 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         # 检查是否需要处理当前节点
         if node_url and not node_url in self.processed_nodes:
-            if self.verbose:
-                print(f"📦 处理: {' > '.join(current_segments)}")
+            # 🔍 增强缓存检查 - 检查持久化缓存
+            if self._check_cache_validity(node_url, node_path):
+                self.stats["cache_hits"] += 1
+                if self.verbose:
+                    print(f"✅ 缓存命中，跳过处理: {' > '.join(current_segments)}")
+                else:
+                    print(f"   ✅ 跳过已缓存: {node_name}")
 
-            # 提取节点内容
-            enriched_node = self._extract_node_content(node)
+                # 从缓存加载数据
+                try:
+                    cached_node = self._load_cached_node_data(node_path)
+                    if cached_node:
+                        # 更新节点数据，但保留原始children结构
+                        for key, value in cached_node.items():
+                            if key not in ['children']:
+                                node[key] = value
+                        enriched_node = node
+                    else:
+                        enriched_node = node
+                except Exception as e:
+                    if self.verbose:
+                        print(f"   ⚠️ 缓存加载失败: {e}")
+                    enriched_node = node
 
-            # 如果有内容，立即保存
-            if self._has_content(enriched_node):
-                self._save_node_immediately(enriched_node, node_path)
+                self.processed_nodes.add(node_url)
+            else:
+                # 缓存未命中，需要重新处理
+                if self.verbose:
+                    print(f"📦 处理: {' > '.join(current_segments)}")
 
-            self.processed_nodes.add(node_url)
+                # 提取节点内容
+                enriched_node = self._extract_node_content(node)
+
+                # 如果有内容，立即保存
+                if self._has_content(enriched_node):
+                    self._save_node_immediately(enriched_node, node_path)
+
+                    # 添加到缓存索引
+                    if self.cache_manager:
+                        try:
+                            # 统计内容
+                            guides_count = len(enriched_node.get('guides', []))
+                            troubleshooting_count = len(enriched_node.get('troubleshooting', []))
+                            media_count = self._count_media_files_in_path(node_path)
+
+                            self.cache_manager.add_to_cache(
+                                node_url, node_path,
+                                guides_count=guides_count,
+                                troubleshooting_count=troubleshooting_count,
+                                media_count=media_count
+                            )
+                        except Exception as e:
+                            if self.verbose:
+                                print(f"   ⚠️ 添加到缓存失败: {e}")
+
+                self.processed_nodes.add(node_url)
         else:
             enriched_node = node
 
@@ -4573,6 +5541,19 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 )
 
         return enriched_node
+
+    def _count_media_files_in_path(self, node_path):
+        """统计指定路径下的媒体文件数量"""
+        try:
+            media_count = 0
+            # 统计所有media目录下的文件
+            for media_dir in node_path.rglob("media"):
+                if media_dir.is_dir():
+                    media_files = [f for f in media_dir.iterdir() if f.is_file()]
+                    media_count += len(media_files)
+            return media_count
+        except Exception:
+            return 0
 
     def _extract_node_content(self, node):
         """提取节点的详细内容，包括guide和troubleshooting的完整内容"""
@@ -4710,28 +5691,212 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 safe_json_dump(ts, f, ensure_ascii=False, indent=2)
 
     def _perform_cache_precheck(self, start_url, category_name=None):
-        """执行缓存预检查，分析哪些内容需要重新处理"""
+        """执行缓存预检查，分析哪些内容需要重新处理，并检测缺失的文件 - 通用版本"""
         try:
             # 确保cache_manager存在
             if not self.cache_manager:
                 print("   ⚠️ 缓存管理器未初始化，跳过预检查")
                 return
-                
-            # 检查clean_invalid_cache方法是否存在
-            if hasattr(self.cache_manager, 'clean_invalid_cache'):
-                # 清理无效缓存
+
+            print("   🧹 开始清理无效缓存条目...")
+
+            # 使用新的通用清理方法
+            if hasattr(self.cache_manager, 'clean_invalid_cache_entries'):
+                cleaned_count = self.cache_manager.clean_invalid_cache_entries()
+                if cleaned_count > 0:
+                    print(f"   ✅ 已清理 {cleaned_count} 个无效缓存条目")
+                else:
+                    print(f"   ✅ 所有缓存条目都有效，无需清理")
+            elif hasattr(self.cache_manager, 'clean_invalid_cache'):
+                # 后备方案：使用旧的清理方法
                 cleaned_count = self.cache_manager.clean_invalid_cache()
                 if cleaned_count > 0:
                     print(f"   已清理 {cleaned_count} 个无效缓存条目")
             else:
-                print("   ⚠️ 缓存管理器没有clean_invalid_cache方法，跳过清理")
+                print("   ⚠️ 缓存管理器没有清理方法，跳过清理")
 
-            # 这里可以添加更多的预检查逻辑
-            # 比如检查目标URL的整体缓存状态
-            print("   缓存预检查完成")
-                
+            # 新增：深度检查目标产品的文件完整性
+            self._deep_check_target_integrity(start_url, category_name)
+
+            print("   ✅ 缓存预检查完成")
+
         except Exception as e:
             self.logger.error(f"缓存预检查失败: {e}")
+            print(f"   ❌ 缓存预检查失败: {e}")
+
+    def _deep_check_target_integrity(self, start_url, category_name=None):
+        """深度检查目标产品的文件完整性，标记缺失的内容为需要重新爬取"""
+        try:
+            # 获取目标产品的本地路径
+            target_path = self._get_target_root_dir(start_url)
+            if not target_path or not target_path.exists():
+                print(f"   📁 目标路径不存在，将进行完整爬取: {target_path}")
+                return
+
+            print(f"   🔍 深度检查目标完整性: {target_path}")
+
+            # 检查并标记缺失的guides
+            guides_dir = target_path / "guides"
+            if guides_dir.exists():
+                missing_guides = self._check_guides_integrity(guides_dir)
+                if missing_guides:
+                    print(f"   ⚠️ 发现 {missing_guides} 个不完整的guides，将重新爬取")
+                    # 清理相关的缓存条目
+                    self._invalidate_guides_cache(target_path)
+                else:
+                    print(f"   ✅ guides目录完整")
+            else:
+                print(f"   📁 guides目录不存在，将在爬取时创建")
+
+            # 检查并标记缺失的troubleshooting
+            ts_dir = target_path / "troubleshooting"
+            if ts_dir.exists():
+                missing_ts = self._check_troubleshooting_integrity(ts_dir)
+                if missing_ts:
+                    print(f"   ⚠️ 发现 {missing_ts} 个不完整的troubleshooting，将重新爬取")
+                    # 清理相关的缓存条目
+                    self._invalidate_troubleshooting_cache(target_path)
+                else:
+                    print(f"   ✅ troubleshooting目录完整")
+            else:
+                print(f"   📁 troubleshooting目录不存在，将在爬取时创建")
+
+        except Exception as e:
+            self.logger.error(f"深度完整性检查失败: {e}")
+
+    def _check_guides_integrity(self, guides_dir):
+        """检查guides目录的完整性，返回不完整的数量（支持新旧两种格式）"""
+        missing_count = 0
+        try:
+            # 检查新格式：guide子目录结构（guide_1/, guide_2/等）
+            guide_subdirs = list(guides_dir.glob("guide_*"))
+            guide_subdirs = [d for d in guide_subdirs if d.is_dir()]  # 只要目录
+
+            if guide_subdirs:
+                # 新格式检查
+                for guide_subdir in guide_subdirs:
+                    guide_file = guide_subdir / "guide.json"
+                    media_dir = guide_subdir / "media"
+
+                    # 检查必要文件是否存在
+                    if not guide_file.exists():
+                        missing_count += 1
+                        continue
+
+                    # 检查JSON文件内容
+                    try:
+                        with open(guide_file, 'r', encoding='utf-8') as f:
+                            guide_data = json.load(f)
+                            if not isinstance(guide_data, dict) or not guide_data.get('title'):
+                                missing_count += 1
+                                continue
+                    except:
+                        missing_count += 1
+                        continue
+
+                    # 检查媒体目录
+                    if not media_dir.exists():
+                        missing_count += 1
+                        continue
+            else:
+                # 旧格式检查：直接的JSON文件（guide_1.json, guide_2.json等）
+                guide_files = list(guides_dir.glob("guide_*.json"))
+                for guide_file in guide_files:
+                    try:
+                        with open(guide_file, 'r', encoding='utf-8') as f:
+                            guide_data = json.load(f)
+                            if not isinstance(guide_data, dict) or not guide_data.get('title'):
+                                missing_count += 1
+                    except:
+                        missing_count += 1
+
+        except Exception as e:
+            self.logger.error(f"检查guides完整性时出错: {e}")
+
+        return missing_count
+
+    def _check_troubleshooting_integrity(self, ts_dir):
+        """检查troubleshooting目录的完整性，返回不完整的数量"""
+        missing_count = 0
+        try:
+            ts_subdirs = list(ts_dir.glob("troubleshooting_*"))
+            for ts_subdir in ts_subdirs:
+                ts_file = ts_subdir / "troubleshooting.json"
+                media_dir = ts_subdir / "media"
+
+                # 检查必要文件是否存在
+                if not ts_file.exists():
+                    missing_count += 1
+                    continue
+
+                # 检查JSON文件内容
+                try:
+                    with open(ts_file, 'r', encoding='utf-8') as f:
+                        ts_data = json.load(f)
+                        if not isinstance(ts_data, dict):
+                            missing_count += 1
+                            continue
+                except:
+                    missing_count += 1
+                    continue
+
+                # 检查媒体目录
+                if not media_dir.exists():
+                    missing_count += 1
+                    continue
+
+        except Exception as e:
+            self.logger.error(f"检查troubleshooting完整性时出错: {e}")
+
+        return missing_count
+
+    def _invalidate_guides_cache(self, target_path):
+        """使guides相关的缓存失效"""
+        try:
+            if not self.cache_manager:
+                return
+
+            # 查找并删除与guides相关的缓存条目
+            guides_pattern = str(target_path / "guides")
+            cache_keys_to_remove = []
+
+            for url_hash, cache_entry in self.cache_manager.cache_index.items():
+                local_path = cache_entry.get('local_path', '')
+                if guides_pattern in local_path:
+                    cache_keys_to_remove.append(url_hash)
+
+            for key in cache_keys_to_remove:
+                del self.cache_manager.cache_index[key]
+
+            if cache_keys_to_remove:
+                print(f"   🗑️ 已清理 {len(cache_keys_to_remove)} 个guides相关缓存条目")
+
+        except Exception as e:
+            self.logger.error(f"清理guides缓存时出错: {e}")
+
+    def _invalidate_troubleshooting_cache(self, target_path):
+        """使troubleshooting相关的缓存失效"""
+        try:
+            if not self.cache_manager:
+                return
+
+            # 查找并删除与troubleshooting相关的缓存条目
+            ts_pattern = str(target_path / "troubleshooting")
+            cache_keys_to_remove = []
+
+            for url_hash, cache_entry in self.cache_manager.cache_index.items():
+                local_path = cache_entry.get('local_path', '')
+                if ts_pattern in local_path:
+                    cache_keys_to_remove.append(url_hash)
+
+            for key in cache_keys_to_remove:
+                del self.cache_manager.cache_index[key]
+
+            if cache_keys_to_remove:
+                print(f"   🗑️ 已清理 {len(cache_keys_to_remove)} 个troubleshooting相关缓存条目")
+
+        except Exception as e:
+            self.logger.error(f"清理troubleshooting缓存时出错: {e}")
 
     def _get_node_cache_path(self, url, node_name):
         """获取节点的缓存路径，确保与保存时的路径一致"""
@@ -4995,23 +6160,24 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
 
         # 添加troubleshooting任务
         if not skip_troubleshooting:
-            print(f"    🔧 正在搜索故障排除页面...")
+            print(f"    🔧 正在检查故障排除缓存...")
 
-            # 检查troubleshooting部分的缓存
+            # 优先检查troubleshooting部分的缓存
             troubleshooting_cache_key = f"{device_url}#troubleshooting"
             cached_troubleshooting = self._check_troubleshooting_cache(troubleshooting_cache_key, device_url)
 
             if cached_troubleshooting is not None:
-                print(f"    ✅ 使用缓存的故障排除数据 ({len(cached_troubleshooting)} 个)")
+                print(f"    ✅ 发现有效缓存，跳过故障排除页面爬取 ({len(cached_troubleshooting)} 个)")
                 troubleshooting_data = cached_troubleshooting
-                # 标记为已从缓存加载，避免重复保存
+                # 标记为已从缓存加载，避免重复保存和文件生成
                 self._troubleshooting_from_cache = True
             else:
-                print(f"    🔍 未找到故障排除缓存，开始提取...")
+                print(f"    🔍 未找到有效缓存，开始搜索故障排除页面...")
                 troubleshooting_links = self.extract_troubleshooting_from_device_page(soup, device_url)
-                print(f"    🔧 找到 {len(troubleshooting_links)} 个故障排除页面")
+                print(f"    🔧 找到 {len(troubleshooting_links)} 个故障排除页面，准备爬取...")
                 self._troubleshooting_from_cache = False
 
+                # 只有在没有缓存时才添加troubleshooting任务
                 for ts_link in troubleshooting_links:
                     if isinstance(ts_link, dict):
                         ts_url = ts_link.get('url', '')
@@ -5085,11 +6251,11 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 except Exception as e:
                     self.logger.error(f"任务失败 {task_type} {url}: {e}")
 
-        # 不在这里保存troubleshooting缓存，等待文件系统保存阶段
-        # if troubleshooting_data and not skip_troubleshooting and not getattr(self, '_troubleshooting_from_cache', False):
-        #     troubleshooting_cache_key = f"{device_url}#troubleshooting"
-        #     print(f"    💾 保存故障排除数据到缓存 ({len(troubleshooting_data)} 个)")
-        #     self._save_troubleshooting_cache(troubleshooting_cache_key, device_url, troubleshooting_data)
+        # 立即保存troubleshooting缓存（如果数据是新爬取的）
+        if troubleshooting_data and not skip_troubleshooting and not getattr(self, '_troubleshooting_from_cache', False):
+            troubleshooting_cache_key = f"{device_url}#troubleshooting"
+            print(f"    💾 立即保存故障排除数据到缓存 ({len(troubleshooting_data)} 个)")
+            self._save_troubleshooting_cache(troubleshooting_cache_key, device_url, troubleshooting_data)
 
         return guides_data, troubleshooting_data
 
@@ -5173,13 +6339,27 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         return None
 
     def _check_troubleshooting_cache(self, cache_key, device_url):
-        """检查troubleshooting部分的缓存"""
+        """检查troubleshooting部分的缓存 - 增强错误处理"""
         if not self.cache_manager:
             return None
 
-        if self.cache_manager.is_troubleshooting_section_cached(cache_key, device_url):
-            return self.cache_manager.load_troubleshooting_cache(cache_key, device_url)
-        return None
+        try:
+            # 先检查缓存是否存在且有效
+            if self.cache_manager.is_troubleshooting_section_cached(cache_key, device_url):
+                # 尝试加载缓存数据
+                cached_data = self.cache_manager.load_troubleshooting_cache(cache_key, device_url)
+                if cached_data is not None:
+                    return cached_data
+                else:
+                    # 缓存文件存在但加载失败，可能已损坏
+                    print(f"    ⚠️  缓存文件存在但加载失败，将重新爬取")
+                    return None
+            else:
+                return None
+        except Exception as e:
+            # 缓存检查失败不应该影响正常流程
+            print(f"    ⚠️  缓存检查失败，降级到正常爬取模式: {e}")
+            return None
 
     def _should_have_troubleshooting_content(self, url):
         """检查页面是否应该有troubleshooting内容"""
@@ -6007,7 +7187,7 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         return node
 
     def _check_target_completeness(self, target_name):
-        """检查目标产品目录是否已存在完整的文件结构"""
+        """检查目标产品目录是否已存在完整的文件结构 - 深度验证版本"""
         if not target_name:
             return False, None
 
@@ -6022,17 +7202,110 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
         if not info_file.exists():
             return False, target_dir
 
-        # 检查是否有guides或troubleshooting目录
+        # 深度检查guides目录的完整性（支持新旧两种格式）
         guides_dir = target_dir / "guides"
+        guides_complete = True
+        if guides_dir.exists():
+            # 检查新格式：guides子目录结构（guide_1/, guide_2/等）
+            guide_subdirs = list(guides_dir.glob("guide_*"))
+            guide_subdirs = [d for d in guide_subdirs if d.is_dir()]  # 只要目录
+
+            if guide_subdirs:
+                # 新格式：每个guide有自己的目录
+                for guide_subdir in guide_subdirs:
+                    guide_file = guide_subdir / "guide.json"
+                    media_dir = guide_subdir / "media"
+
+                    # 检查guide.json是否存在且有效
+                    if not guide_file.exists():
+                        guides_complete = False
+                        break
+
+                    try:
+                        with open(guide_file, 'r', encoding='utf-8') as f:
+                            guide_data = json.load(f)
+                            if not isinstance(guide_data, dict) or not guide_data.get('title'):
+                                guides_complete = False
+                                break
+                    except:
+                        guides_complete = False
+                        break
+
+                    # 检查媒体目录是否存在（允许为空，但目录应该存在）
+                    if not media_dir.exists():
+                        guides_complete = False
+                        break
+            else:
+                # 旧格式：检查是否有直接的JSON文件（guide_1.json, guide_2.json等）
+                guide_files = list(guides_dir.glob("guide_*.json"))
+                if guide_files:
+                    # 验证每个JSON文件的完整性
+                    for guide_file in guide_files:
+                        try:
+                            with open(guide_file, 'r', encoding='utf-8') as f:
+                                guide_data = json.load(f)
+                                if not isinstance(guide_data, dict) or not guide_data.get('title'):
+                                    guides_complete = False
+                                    break
+                        except:
+                            guides_complete = False
+                            break
+                else:
+                    # 既没有子目录也没有JSON文件
+                    guides_complete = False
+
+        # 深度检查troubleshooting目录的完整性
         troubleshooting_dir = target_dir / "troubleshooting"
+        troubleshooting_complete = True
+        if troubleshooting_dir.exists():
+            # 检查troubleshooting子目录结构（troubleshooting_1, troubleshooting_2等）
+            ts_subdirs = list(troubleshooting_dir.glob("troubleshooting_*"))
+            if ts_subdirs:
+                for ts_subdir in ts_subdirs:
+                    ts_file = ts_subdir / "troubleshooting.json"
+                    media_dir = ts_subdir / "media"
 
-        has_content = False
-        if guides_dir.exists() and list(guides_dir.glob("*.json")):
-            has_content = True
-        if troubleshooting_dir.exists() and list(troubleshooting_dir.glob("*.json")):
-            has_content = True
+                    # 检查troubleshooting.json是否存在且有效
+                    if not ts_file.exists():
+                        troubleshooting_complete = False
+                        break
 
-        return has_content, target_dir
+                    try:
+                        with open(ts_file, 'r', encoding='utf-8') as f:
+                            ts_data = json.load(f)
+                            if not isinstance(ts_data, dict):
+                                troubleshooting_complete = False
+                                break
+                    except:
+                        troubleshooting_complete = False
+                        break
+
+                    # 检查媒体目录是否存在（允许为空，但目录应该存在）
+                    if not media_dir.exists():
+                        troubleshooting_complete = False
+                        break
+            else:
+                # troubleshooting目录存在但没有troubleshooting_*子目录，检查是否有直接的JSON文件
+                ts_files = list(troubleshooting_dir.glob("*.json"))
+                if not ts_files:
+                    troubleshooting_complete = False
+
+        # 只有当至少有一个目录存在且完整时，才认为是完整的
+        has_complete_content = False
+        if guides_dir.exists() and guides_complete:
+            has_complete_content = True
+        if troubleshooting_dir.exists() and troubleshooting_complete:
+            has_complete_content = True
+
+        # 如果有任何不完整的目录，返回False以触发重新爬取
+        if guides_dir.exists() and not guides_complete:
+            print(f"   ⚠️ 检测到guides目录不完整，需要重新爬取")
+            return False, target_dir
+        if troubleshooting_dir.exists() and not troubleshooting_complete:
+            print(f"   ⚠️ 检测到troubleshooting目录不完整，需要重新爬取")
+            return False, target_dir
+
+        return has_complete_content, target_dir
 
     def _get_target_root_dir(self, target_url):
         """从目标URL获取真实的设备路径，直接从主要设备类型开始"""
@@ -7347,20 +8620,33 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
             print(f"   🔧 故障排除处理完成: {troubleshooting_count}/{len(node_data['troubleshooting'])} 成功")
 
             # 在Troubleshooting目录创建后立即保存cache文件
+            # 修改逻辑：每个产品都应该有自己的缓存文件
             if self.cache_manager:
                 try:
                     current_url = node_data.get('url', '')
-                    if current_url and node_data.get('troubleshooting'):
-                        troubleshooting_cache_key = f"{current_url}#troubleshooting"
-                        self.cache_manager.save_troubleshooting_cache_after_directory_creation(
-                            troubleshooting_cache_key, current_url, node_data['troubleshooting'], ts_dir)
-                        print(f"   💾 已生成troubleshooting_cache.json文件: {node_dir / 'troubleshooting_cache.json'}")
+                    troubleshooting_data = node_data.get('troubleshooting')
+                    from_cache = getattr(self, '_troubleshooting_from_cache', False)
+
+                    print(f"   🔍 缓存生成检查: URL={bool(current_url)}, 数据={bool(troubleshooting_data)}, 来自缓存={from_cache}")
+
+                    if current_url and troubleshooting_data:
+                        cache_file_path = node_dir / 'troubleshooting_cache.json'
+                        cache_exists = cache_file_path.exists()
+                        should_create_cache = not cache_exists or not from_cache
+
+                        print(f"   🔍 缓存决策: 文件存在={cache_exists}, 应创建={should_create_cache}")
+
+                        if should_create_cache:
+                            troubleshooting_cache_key = f"{current_url}#troubleshooting"
+                            self.cache_manager.save_troubleshooting_cache_after_directory_creation(
+                                troubleshooting_cache_key, current_url, troubleshooting_data, ts_dir)
+                            print(f"   💾 已生成troubleshooting_cache.json文件: {cache_file_path}")
+                        else:
+                            print(f"   📋 缓存文件已存在且数据来自缓存，跳过生成: {cache_file_path}")
                     else:
-                        print(f"   ⚠️  跳过生成troubleshooting缓存: URL或数据为空")
+                        print(f"   ⚠️  跳过生成troubleshooting缓存: URL={bool(current_url)}, 数据={bool(troubleshooting_data)}")
                 except Exception as cache_error:
-                    print(f"   ⚠️  保存troubleshooting缓存失败: {cache_error}")
-                    import traceback
-                    print(f"   详细错误: {traceback.format_exc()}")
+                    print(f"   ⚠️  保存troubleshooting缓存失败，但不影响正常流程: {cache_error}")
 
         # 更新缓存索引
         try:
@@ -7623,10 +8909,18 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                 print(f"   💾 保存了 {len(node_data['troubleshooting'])} 个troubleshooting到: {ts_dir}")
 
                 # 在Troubleshooting目录创建后立即保存cache文件
+                # 修改逻辑：每个产品都应该有自己的缓存文件
                 if self.cache_manager and current_url:
-                    troubleshooting_cache_key = f"{current_url}#troubleshooting"
-                    self.cache_manager.save_troubleshooting_cache_after_directory_creation(
-                        troubleshooting_cache_key, current_url, node_data['troubleshooting'], ts_dir)
+                    cache_file_path = root_dir / 'troubleshooting_cache.json'
+                    should_create_cache = (
+                        not cache_file_path.exists() or
+                        not getattr(self, '_troubleshooting_from_cache', False)
+                    )
+
+                    if should_create_cache:
+                        troubleshooting_cache_key = f"{current_url}#troubleshooting"
+                        self.cache_manager.save_troubleshooting_cache_after_directory_creation(
+                            troubleshooting_cache_key, current_url, node_data['troubleshooting'], ts_dir)
             else:
                 print(f"   ⚠️  跳过保存troubleshooting，因为它们不属于当前页面: {current_url}")
 
@@ -7692,10 +8986,18 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                         safe_json_dump(ts_data, f, ensure_ascii=False, indent=2)
 
                 # 在Troubleshooting目录创建后立即保存cache文件
+                # 修改逻辑：每个产品都应该有自己的缓存文件
                 if self.cache_manager and current_url:
-                    troubleshooting_cache_key = f"{current_url}#troubleshooting"
-                    self.cache_manager.save_troubleshooting_cache_after_directory_creation(
-                        troubleshooting_cache_key, current_url, node_data['troubleshooting'], ts_dir)
+                    cache_file_path = subcat_dir / 'troubleshooting_cache.json'
+                    should_create_cache = (
+                        not cache_file_path.exists() or
+                        not getattr(self, '_troubleshooting_from_cache', False)
+                    )
+
+                    if should_create_cache:
+                        troubleshooting_cache_key = f"{current_url}#troubleshooting"
+                        self.cache_manager.save_troubleshooting_cache_after_directory_creation(
+                            troubleshooting_cache_key, current_url, node_data['troubleshooting'], ts_dir)
 
                 print(f"   💾 保存了 {len(node_data['troubleshooting'])} 个troubleshooting到子类别: {subcat_dir}")
             else:
@@ -7776,10 +9078,18 @@ class CombinedIFixitCrawler(EnhancedIFixitCrawler):
                         safe_json_dump(ts_data, f, ensure_ascii=False, indent=2)
 
                 # 在Troubleshooting目录创建后立即保存cache文件
+                # 修改逻辑：每个产品都应该有自己的缓存文件
                 if self.cache_manager and current_url:
-                    troubleshooting_cache_key = f"{current_url}#troubleshooting"
-                    self.cache_manager.save_troubleshooting_cache_after_directory_creation(
-                        troubleshooting_cache_key, current_url, node_data['troubleshooting'], ts_dir)
+                    cache_file_path = node_dir / 'troubleshooting_cache.json'
+                    should_create_cache = (
+                        not cache_file_path.exists() or
+                        not getattr(self, '_troubleshooting_from_cache', False)
+                    )
+
+                    if should_create_cache:
+                        troubleshooting_cache_key = f"{current_url}#troubleshooting"
+                        self.cache_manager.save_troubleshooting_cache_after_directory_creation(
+                            troubleshooting_cache_key, current_url, node_data['troubleshooting'], ts_dir)
 
                 print(f"   💾 保存了 {len(node_data['troubleshooting'])} 个troubleshooting到节点: {node_dir}")
             else:
@@ -8291,7 +9601,7 @@ def main():
 
         # 确定目标URL
         url = input_text if input_text.startswith('http') else f"https://www.ifixit.com/Device/{input_text}"
-        progress_manager = TreeBuildingProgressManager(url)
+        progress_manager = TreeBuildingProgressManager(url, command_arg=input_text)
         progress_manager.reset_progress()
         print("✅ 进度已重置")
 
@@ -8305,7 +9615,7 @@ def main():
 
         # 确定目标URL
         url = input_text if input_text.startswith('http') else f"https://www.ifixit.com/Device/{input_text}"
-        progress_manager = TreeBuildingProgressManager(url)
+        progress_manager = TreeBuildingProgressManager(url, command_arg=input_text)
         progress_manager.display_progress_report()
 
         if '--progress-only' in args:
@@ -8332,7 +9642,7 @@ def main():
         # 创建整合爬虫实例（用于检测）
         temp_crawler = CombinedIFixitCrawler(verbose=False, use_proxy=False)
 
-        # 检查目标是否已经完整爬取
+        # 检查目标是否已经完整爬取（使用深度检查）
         is_complete, target_dir = temp_crawler._check_target_completeness(input_text)
 
         if is_complete and not force_refresh and target_dir:
@@ -8376,6 +9686,15 @@ def main():
                     return
                 else:
                     print("❌ 无效选择，请输入 1、2 或 3")
+        elif target_dir and target_dir.exists() and not force_refresh:
+            # 目标目录存在但不完整，进行智能补全
+            print("\n" + "=" * 60)
+            print(f"🔍 检测到目标目录存在但不完整: {name}")
+            print(f"📁 目录位置: {target_dir}")
+            print("🔄 将自动补全缺失的内容...")
+            print("=" * 60)
+
+            # 继续执行爬取流程，但会利用缓存跳过已有的完整内容
 
         # 🚀 显示高性能配置信息
         print("\n" + "=" * 80)
@@ -8446,7 +9765,8 @@ def main():
             conservative_mode=conservative_mode,
             skip_images=skip_images,
             debug_mode=debug_mode,
-            show_stats=show_stats
+            show_stats=show_stats,
+            command_arg=input_text  # 传递命令行参数
         )
 
         # 记录开始时间

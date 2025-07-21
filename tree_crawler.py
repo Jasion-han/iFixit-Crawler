@@ -28,6 +28,44 @@ class TreeCrawler(IFixitCrawler):
         self.progress_manager = None
         self.resume_helper = None
         self.verbose = verbose  # 添加verbose属性
+
+    def _extract_command_arg_from_url(self, url):
+        """从URL中提取命令参数用于生成友好的文件名"""
+        try:
+            if '/Device/' in url:
+                # 提取Device后面的部分
+                device_path = url.split('/Device/')[-1]
+                if '?' in device_path:
+                    device_path = device_path.split('?')[0]
+                device_path = device_path.rstrip('/')
+
+                if device_path:
+                    from urllib.parse import unquote
+                    device_path = unquote(device_path)
+                    # 取最后一个路径段作为命令参数
+                    return device_path.split('/')[-1]
+            elif '/Guide/' in url:
+                # 提取Guide后面的部分
+                guide_path = url.split('/Guide/')[-1]
+                if '?' in guide_path:
+                    guide_path = guide_path.split('?')[0]
+                guide_path = guide_path.rstrip('/')
+
+                if guide_path:
+                    from urllib.parse import unquote
+                    guide_path = unquote(guide_path)
+                    return guide_path.split('/')[-1]
+
+            # 后备方案：使用URL的最后一个路径段
+            from urllib.parse import urlparse, unquote
+            parsed = urlparse(url)
+            path_parts = parsed.path.strip('/').split('/')
+            if path_parts and path_parts[-1]:
+                return unquote(path_parts[-1])
+
+            return "default"
+        except Exception:
+            return "default"
         
     def find_exact_path(self, target_url):
         """
@@ -588,7 +626,9 @@ class TreeCrawler(IFixitCrawler):
 
         # 初始化进度管理器
         if self.enable_resume:
-            self.progress_manager = TreeBuildingProgressManager(start_url, logger=self.logger)
+            # 从start_url提取命令参数用于生成友好的文件名
+            command_arg = self._extract_command_arg_from_url(start_url)
+            self.progress_manager = TreeBuildingProgressManager(start_url, logger=self.logger, command_arg=command_arg)
             self.resume_helper = TreeBuildingResumeHelper(self.progress_manager, self.logger)
 
             # 检查是否可以恢复
@@ -613,107 +653,116 @@ class TreeCrawler(IFixitCrawler):
             self.progress_manager.start_session()
 
         print(f"🌳 开始爬取: {start_url}")
-        
-        # 检查是否是品牌电视页面(如TCL_Television, LG_Television等)
-        brand_match = re.search(r'([A-Za-z]+)_Television', start_url)
-        if brand_match:
-            brand_name = brand_match.group(1)
-            print(f"检测到 {brand_name} Television 页面，构建标准路径")
-            
-            # 直接构建标准四级路径: 设备 > 电子产品 > 电视 > 品牌电视
-            device_url = self.base_url + "/Device"
-            electronics_url = self.base_url + "/Device/Electronics"
-            tv_url = self.base_url + "/Device/Television"
-            
-            full_path = [
-                {"name": "设备", "url": device_url},
-                {"name": "电子产品", "url": electronics_url},
-                {"name": "电视", "url": tv_url},
-                {"name": f"{brand_name} Television", "url": start_url}
-            ]
-            
-            print(f"标准路径构建完成: {' > '.join([c['name'] for c in full_path])}")
-            
-            # 构建树形结构
-            tree = self._build_tree_from_path(full_path)
-            
-            # 找到目标节点
-            target_node = self._find_node_by_url(tree, start_url)
-            if not target_node:
-                target_node = tree
-            
-            # 从目标节点开始爬取子类别
-            print(f"开始从 {target_node['url']} 爬取子类别")
-            self._crawl_recursive_tree(target_node["url"], target_node)
-            
-            return tree
-        
-        # 对于其他URL，尝试构建从根目录到目标URL的精确路径
-        full_path = self.find_exact_path(start_url)
-        if not full_path or len(full_path) < 2:
-            print(f"无法找到从根目录到 {start_url} 的路径，尝试从页面元素中提取更多信息")
-            
-            # 尝试获取页面内容以检查页面结构
-            target_soup = self.get_soup(start_url)
-            if target_soup:
-                # 从页面标题或面包屑中推断名称
-                page_title = self._get_page_title(target_soup)
-                
-                # 检查是否包含电视相关内容
-                if "Television" in start_url or "TV" in start_url or "电视" in page_title:
-                    print("检测到电视相关页面，查找电视类别路径")
-                    # 尝试构建电视相关路径
-                    tv_path = self.find_tv_path(start_url, category_name)
-                    if tv_path:
-                        full_path = tv_path
-                        
-            # 如果仍然无法找到路径，使用基本路径
-            if not full_path or len(full_path) < 2:
-                print(f"无法找到完整路径，使用基本路径")
-                full_path = [{"name": "设备", "url": self.base_url + "/Device"}]
-                if start_url != self.base_url + "/Device":
-                    full_path.append({"name": category_name or start_url.split("/")[-1].replace("_", " "), "url": start_url})
-        
-        print(f"完整路径: {' > '.join([c['name'] for c in full_path])}")
-        
-        # 2. 构建树形结构
-        tree = self._build_tree_from_path(full_path)
-        
-        # 3. 根据完整路径找到目标节点
-        target_node = self._find_node_by_url(tree, start_url)
-        if not target_node:
-            print("无法在树中找到目标节点，使用根节点")
-            target_node = tree
 
-        # 4. 只对目标节点进行内容爬取，保留完整路径结构
-        print(f"开始从 {target_node['url']} 爬取子类别")
+        try:
+            # 检查是否是品牌电视页面(如TCL_Television, LG_Television等)
+            brand_match = re.search(r'([A-Za-z]+)_Television', start_url)
+            if brand_match:
+                brand_name = brand_match.group(1)
+                print(f"检测到 {brand_name} Television 页面，构建标准路径")
 
-        # 检查目标节点是否是叶子节点（最终产品页面）
-        soup = self.get_soup(target_node["url"])
-        if soup:
-            # 检查是否为最终产品页面
-            is_final_page = self.is_final_product_page(soup, target_node["url"])
+                # 直接构建标准四级路径: 设备 > 电子产品 > 电视 > 品牌电视
+                device_url = self.base_url + "/Device"
+                electronics_url = self.base_url + "/Device/Electronics"
+                tv_url = self.base_url + "/Device/Television"
 
-            if is_final_page:
-                # 如果是最终产品页面，提取产品信息但保留路径结构
-                product_info = self.extract_product_info(soup, target_node["url"], [])
-                if product_info["product_name"]:
-                    target_node["name"] = product_info["product_name"]
-                    # 检查是否是根目录，不给根目录添加instruction_url
-                    target_url = target_node.get("url", "")
-                    is_root_device = target_url == f"{self.base_url}/Device"
-                    if not is_root_device:
-                        target_node["instruction_url"] = product_info["instruction_url"]
-                    print(f"已找到产品: {product_info['product_name']}")
-            else:
-                # 如果不是最终产品页面，进行正常的子类别爬取
+                full_path = [
+                    {"name": "设备", "url": device_url},
+                    {"name": "电子产品", "url": electronics_url},
+                    {"name": "电视", "url": tv_url},
+                    {"name": f"{brand_name} Television", "url": start_url}
+                ]
+
+                print(f"标准路径构建完成: {' > '.join([c['name'] for c in full_path])}")
+
+                # 构建树形结构
+                tree = self._build_tree_from_path(full_path)
+
+                # 找到目标节点
+                target_node = self._find_node_by_url(tree, start_url)
+                if not target_node:
+                    target_node = tree
+
+                # 从目标节点开始爬取子类别
+                print(f"开始从 {target_node['url']} 爬取子类别")
                 self._crawl_recursive_tree(target_node["url"], target_node)
 
-        # 完成构建会话
-        if self.enable_resume and self.progress_manager:
-            self.progress_manager.save_tree_structure(tree)
-            self.progress_manager.complete_session()
-            print(f"✅ 树构建完成，已处理 {len(self.visited_urls)} 个URL")
+                # 完成构建会话
+                if self.enable_resume and self.progress_manager:
+                    self.progress_manager.save_tree_structure(tree)
+                    self.progress_manager.complete_session()
+                    print(f"✅ 树构建完成，已处理 {len(self.visited_urls)} 个URL")
+
+                return tree
+
+            # 对于其他URL，尝试构建从根目录到目标URL的精确路径
+            full_path = self.find_exact_path(start_url)
+            if not full_path or len(full_path) < 2:
+                print(f"无法找到从根目录到 {start_url} 的路径，尝试从页面元素中提取更多信息")
+
+                # 尝试获取页面内容以检查页面结构
+                target_soup = self.get_soup(start_url)
+                if target_soup:
+                    # 从页面标题或面包屑中推断名称
+                    page_title = self._get_page_title(target_soup)
+
+                    # 检查是否包含电视相关内容
+                    if "Television" in start_url or "TV" in start_url or "电视" in page_title:
+                        print("检测到电视相关页面，查找电视类别路径")
+                        # 尝试构建电视相关路径
+                        tv_path = self.find_tv_path(start_url, category_name)
+                        if tv_path:
+                            full_path = tv_path
+
+                # 如果仍然无法找到路径，使用基本路径
+                if not full_path or len(full_path) < 2:
+                    print(f"无法找到完整路径，使用基本路径")
+                    full_path = [{"name": "设备", "url": self.base_url + "/Device"}]
+                    if start_url != self.base_url + "/Device":
+                        full_path.append({"name": category_name or start_url.split("/")[-1].replace("_", " "), "url": start_url})
+
+            print(f"完整路径: {' > '.join([c['name'] for c in full_path])}")
+
+            # 2. 构建树形结构
+            tree = self._build_tree_from_path(full_path)
+
+            # 3. 根据完整路径找到目标节点
+            target_node = self._find_node_by_url(tree, start_url)
+            if not target_node:
+                print("无法在树中找到目标节点，使用根节点")
+                target_node = tree
+
+            # 4. 只对目标节点进行内容爬取，保留完整路径结构
+            print(f"开始从 {target_node['url']} 爬取子类别")
+
+            # 检查目标节点是否是叶子节点（最终产品页面）
+            soup = self.get_soup(target_node["url"])
+            if soup:
+                # 检查是否为最终产品页面
+                is_final_page = self.is_final_product_page(soup, target_node["url"])
+
+                if is_final_page:
+                    # 如果是最终产品页面，提取产品信息但保留路径结构
+                    product_info = self.extract_product_info(soup, target_node["url"], [])
+                    if product_info["product_name"]:
+                        target_node["name"] = product_info["product_name"]
+                        # 检查是否是根目录，不给根目录添加instruction_url
+                        target_url = target_node.get("url", "")
+                        is_root_device = target_url == f"{self.base_url}/Device"
+                        if not is_root_device:
+                            target_node["instruction_url"] = product_info["instruction_url"]
+                        print(f"已找到产品: {product_info['product_name']}")
+                else:
+                    # 如果不是最终产品页面，进行正常的子类别爬取
+                    self._crawl_recursive_tree(target_node["url"], target_node)
+
+        finally:
+            # 无论是否发生异常，都要保存进度
+            if self.enable_resume and self.progress_manager:
+                if 'tree' in locals():
+                    self.progress_manager.save_tree_structure(tree)
+                self.progress_manager.complete_session()
+                print(f"✅ 树构建完成，已处理 {len(self.visited_urls)} 个URL")
 
         return tree
 
