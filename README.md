@@ -1402,6 +1402,51 @@ python check_crawler_status.py
 python test_filename_generation.py
 ```
 
+#### `rename_guides_troubleshooting.py` - 重命名指南和故障排除文件夹
+
+此工具用于重命名已爬取数据中的指南(guides)和故障排除(troubleshooting)文件夹，使其名称更具可读性。
+
+命名规则：`父节点名称 + JSON文件中的title`
+
+使用方法：
+```bash
+# 重命名指定Device目录下的所有guides和troubleshooting文件夹
+python rename_guides_troubleshooting.py <Device目录路径>
+
+# 示例
+python rename_guides_troubleshooting.py ./ifixit_data/Device
+```
+
+注意事项：
+- 工具会读取每个guide.json或troubleshooting.json文件中的title字段
+- 重命名后的文件夹名称会经过清理，移除非法字符
+- 如果目标名称已存在，工具会自动添加数字后缀
+- 重命名操作不可逆，请在执行前备份重要数据
+
+示例输出：
+```
+开始重命名Device目录下的guides和troubleshooting文件夹...
+Device根目录: ./ifixit_data/Device
+
+=== 重命名guides文件夹 ===
+
+处理guides文件夹: ifixit_data/Device/iPhone/guides
+  重命名: guide_1 -> iPhone_How_to_Remove_the_Battery
+  重命名: guide_2 -> iPhone_Screen_Replacement
+
+=== 重命名troubleshooting文件夹 ===
+
+处理troubleshooting文件夹: ifixit_data/Device/iPhone/troubleshooting
+  重命名: troubleshooting_1 -> iPhone_iPhone_Wont_Turn_On
+  重命名: troubleshooting_2 -> iPhone_Battery_Drains_Fast
+
+=== 重命名完成 ===
+guides文件夹重命名: 2 个
+troubleshooting文件夹重命名: 2 个
+总计重命名: 4 个
+错误数量: 0 个
+```
+
 #### ⚠️ 注意事项
 
 1. **推荐使用顺序**：
@@ -1409,6 +1454,7 @@ python test_filename_generation.py
    - 调试：`check_crawler_status.py` + `--verbose --debug` 参数
    - 批量：`batch_crawler.py`
    - 测试：`test_filename_generation.py`
+   - 重命名：`rename_guides_troubleshooting.py`
 
 2. **避免同时运行**：
    - 不要同时运行多个爬虫脚本
